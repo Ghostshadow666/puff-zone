@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUFF ZONE — Catalogue Client</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #05050f; --card: rgba(15, 15, 32, 0.75); --purple: #A855F7; --cyan: #22D3EE; --text: #F1F5F9; --text2: #94A3B8; --border: rgba(168, 85, 247, 0.3); --green: #22C55E; }
+  body { background: radial-gradient(ellipse at 15% 0%, rgba(168, 85, 247, 0.15), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(34, 211, 238, 0.1), transparent 55%), var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; margin: 0; padding: 40px 20px; min-height: 100vh; }
+  
+  .header { text-align: center; margin-bottom: 40px; }
+  .header h1 { background: linear-gradient(135deg, #C084FC 0%, #22D3EE 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin: 0; letter-spacing: 2px; }
+  .header p { color: var(--text2); font-weight: 700; font-size: 1.1rem; margin-top: 5px; }
+  
+  .container { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  
+  .cat-card { background: var(--card); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); transition: transform 0.3s; display: flex; flex-direction: column; }
+  .cat-card:hover { transform: translateY(-5px); border-color: var(--cyan); }
+  
+  .cat-image { width: 100%; height: 200px; object-fit: contain; background: rgba(0,0,0,0.5); padding: 20px; box-sizing: border-box; border-bottom: 1px solid var(--border); }
+  
+  .cat-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+  .cat-title { font-size: 1.4rem; font-weight: 900; color: var(--cyan); margin-bottom: 10px; }
+  
+  .cat-prices { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+  .price-badge { background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 800; color: var(--text); }
+  
+  .flavors-list { margin-top: auto; }
+  .flavor-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; font-weight: 700; }
+  .flavor-item:last-child { border-bottom: none; }
+  .flavor-stock { font-size: 0.75rem; font-weight: 900; color: var(--green); }
+  .flavor-stock.out { color: #EF4444; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚀 PUFF ZONE</h1>
+  <p>Notre sélection exclusive</p>
+</div>
+
+<div class="container" id="clientCatalogue">
+  <div style="text-align: center; grid-column: 1/-1; color: var(--text2); font-style: italic;">Chargement du catalogue...</div>
+</div>
+
+<script>
+  // On pointe vers notre nouvelle API Node.js
+  const API_URL = 'http://localhost:5000/api';
+
+  async function loadClientCatalogue() {
+    try {
+      // On récupère les catégories et les saveurs en même temps
+      const [resCats, resFlavs] = await Promise.all([
+        fetch(`${API_URL}/categories`),
+        fetch(`${API_URL}/saveurs`)
+      ]);
+      
+      const categories = await resCats.json();
+      const saveurs = await resFlavs.json();
+      
+      const container = document.getElementById('clientCatalogue');
+      
+      if (!categories || categories.length === 0) {
+        container.innerHTML = '<div style="text-align:center; grid-column:1/-1; color:var(--text2);">Aucun produit disponible pour le moment.</div>';
+        return;
+      }
+
+      let html = '';
+      categories.forEach(cat => {
+        // On filtre les saveurs qui appartiennent à cette catégorie
+        const catFlavors = (saveurs || []).filter(f => f.categorie_id === cat.id);
+        
+        // Image par défaut si pas de photo
+        const imgUrl = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
+        
+        html += `
+          <div class="cat-card">
+            <img src="${imgUrl}" class="cat-image" alt="${cat.nom}">
+            <div class="cat-content">
+              <div class="cat-title">${cat.nom}</div>
+              
+              <div class="cat-prices">
+                <span class="price-badge">1 Unité : ${cat.prix_unite}€</span>
+                <span class="price-badge">Lot 5 : ${cat.prix_lot_5}€</span>
+                <span class="price-badge">Lot 10 : ${cat.prix_lot_10}€</span>
+              </div>
+              
+              <div class="flavors-list">
+                <div style="font-size: 0.75rem; font-weight: 900; color: var(--text2); text-transform: uppercase; margin-bottom: 5px;">Saveurs disponibles :</div>
+                ${catFlavors.length === 0 ? '<div style="color:var(--text2); font-size:0.8rem;">Aucune saveur en stock.</div>' : ''}
+                ${catFlavors.map(f => {
+                  const isOut = f.stock <= 0;
+                  return `
+                    <div class="flavor-item">
+                      <span style="${isOut ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${f.nom}</span>
+                      <span class="flavor-stock ${isOut ? 'out' : ''}">${isOut ? 'Rupture' : 'En stock'}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+      
+    } catch (err) {
+      document.getElementById('clientCatalogue').innerHTML = '<div style="text-align:center; grid-column:1/-1; color:#EF4444;">Erreur de connexion au serveur. Vérifie que le backend (node server.js) est allumé.</div>';
+    }
+  }
+
+  // Lancement au chargement de la page
+  document.addEventListener('DOMContentLoaded', loadClientCatalogue);
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUFF ZONE — Livreurs</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05050f;
+    --card: rgba(15, 15, 32, 0.75);
+    --purple: #A855F7;
+    --cyan: #22D3EE;
+    --text: #F1F5F9;
+    --text2: #94A3B8;
+    --border: rgba(168, 85, 247, 0.3);
+    --green: #22C55E;
+    --red: #EF4444;
+  }
+  body {
+    background: radial-gradient(ellipse at 15% 0%, rgba(168, 85, 247, 0.15), transparent 55%), 
+                radial-gradient(ellipse at 85% 100%, rgba(34, 211, 238, 0.1), transparent 55%), 
+                var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    margin: 0;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 30px; }
+  .header h1 {
+    background: linear-gradient(135deg, #C084FC 0%, #22D3EE 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 2rem;
+    margin: 0;
+    letter-spacing: 1px;
+  }
+  .card {
+    background: var(--card);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  .card h2 { margin-top: 0; font-size: 1.2rem; color: var(--text); }
+  .form-row { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+  input[type="text"], input[type="password"] {
+    flex: 1; min-width: 150px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--cyan); }
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; color: var(--text2); }
+  .btn {
+    background: linear-gradient(135deg, var(--purple), var(--cyan));
+    color: white; border: none; padding: 10px 20px; border-radius: 10px;
+    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); }
+  .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 0.8rem; }
+  .btn-danger:hover { background: rgba(239, 68, 68, 0.25); box-shadow: none; }
+  .driver-card {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 15px; margin-bottom: 10px;
+  }
+  .driver-info { display: flex; flex-direction: column; gap: 4px; }
+  .driver-name { font-weight: 900; font-size: 1.1rem; }
+  .driver-details { font-size: 0.8rem; color: var(--text2); }
+  .loading { text-align: center; color: var(--text2); font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🚀 PUFF ZONE — Gestion des Livreurs</h1>
+  </div>
+
+  <!-- Formulaire d'ajout -->
+  <div class="card">
+    <h2>➕ Ajouter un livreur</h2>
+    <form id="addDriverForm">
+      <div class="form-row">
+        <input type="text" id="driverName" placeholder="Nom du livreur (ex: KaPuff, Matheo...)" required>
+        <input type="password" id="driverPassword" placeholder="Mot de passe" required>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="driverPhone" checked style="accent-color: var(--purple); width: 18px; height: 18px;">
+        <label for="driverPhone">👁️ Autoriser ce profil à voir le WhatsApp des clients</label>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">Créer le profil</button>
+    </form>
+  </div>
+
+  <!-- Liste des livreurs -->
+  <div class="card">
+    <h2>👥 Liste des livreurs</h2>
+    <div id="driverList" class="loading">Chargement...</div>
+  </div>
+</div>
+
+<script>
+  const API_URL = 'http://localhost:5000/api/livreurs';
+
+  // Charger la liste des livreurs
+  async function loadDrivers() {
+    try {
+      const res = await fetch(API_URL);
+      const drivers = await res.json();
+      const listEl = document.getElementById('driverList');
+      
+      if (drivers.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; color:#94A3B8; padding: 20px;">Aucun livreur enregistré. Ajoute-en un ci-dessus !</div>';
+        return;
+      }
+
+      listEl.classList.remove('loading');
+      listEl.innerHTML = drivers.map(d => `
+        <div class="driver-card">
+          <div class="driver-info">
+            <span class="driver-name">🛵 ${d.name}</span>
+            <span class="driver-details">Voir n° clients : ${d.see_client_phone ? '✅ Oui' : '❌ Non'} · Statut : ${d.active ? '🟢 Actif' : '🔴 Inactif'}</span>
+          </div>
+          <button class="btn btn-danger" onclick="deleteDriver(${d.id})">🗑️ Supprimer</button>
+        </div>
+      `).join('');
+    } catch (err) {
+      document.getElementById('driverList').innerHTML = '<div style="color: #EF4444; text-align:center;">Erreur de connexion à l\'API. Vérifie que le serveur backend (node server.js) est bien lancé.</div>';
+    }
+  }
+
+  // Ajouter un livreur
+  document.getElementById('addDriverForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = '⏳ Création...';
+    btn.disabled = true;
+
+    const name = document.getElementById('driverName').value;
+    const password = document.getElementById('driverPassword').value;
+    const see_client_phone = document.getElementById('driverPhone').checked;
+
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, password, see_client_phone })
+      });
+      document.getElementById('addDriverForm').reset();
+      loadDrivers();
+    } catch (err) {
+      alert('Erreur lors de la création : ' + err.message);
+    } finally {
+      btn.textContent = 'Créer le profil';
+      btn.disabled = false;
+    }
+  });
+
+  // Supprimer un livreur
+  async function deleteDriver(id) {
+    if (!confirm('Supprimer ce livreur ?')) return;
+    try {
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      loadDrivers();
+    } catch (err) {
+      alert('Erreur lors de la suppression : ' + err.message);
+    }
+  }
+
+  // Initialisation
+  loadDrivers();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - PUFF ZONE</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="space" aria-hidden="true"></div>
+  <div class="stars" aria-hidden="true"></div>
+
+  <div class="container">
+    <div class="admin-header">
+      <div class="brand">🔧 Admin PUFF<span>ZONE</span></div>
+      <nav><a href="index.html">← Retour au site</a></nav>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="active" onclick="switchTab('products', this)">📦 Articles & Stocks</button>
+      <button onclick="switchTab('sales', this)">💰 Ventes</button>
+    </div>
+
+    <div id="tab-products" class="dashboard-grid">
+      <!-- Formulaire de création -->
+      <div class="panel">
+        <h2>Créer un article</h2>
+        <form id="add-form">
+          <div class="form-group"><input type="text" id="name" placeholder="Nom (ex: FALCON 18K)" required></div>
+          <div class="form-group"><input type="number" id="price" placeholder="Prix (€)" required></div>
+          <div class="form-group"><input type="number" id="stock" placeholder="Stock manuel (ex: 50)" required></div>
+          <div class="form-group"><input type="text" id="category" placeholder="Catégorie (ex: 10K)"></div>
+          <div class="form-group"><input type="text" id="packs" placeholder="Prix dégressifs (ex: 5 pces = 65€)"></div>
+          <div class="form-group"><textarea id="flavors" rows="2" placeholder="Saveurs (séparées par des virgules)" required></textarea></div>
+          <button type="submit" class="btn-save">➕ Ajouter au catalogue</button>
+        </form>
+      </div>
+
+      <!-- Gestion des stocks -->
+      <div class="panel">
+        <h2>Gérer les Stocks</h2>
+        <table id="stock-table">
+          <thead><tr><th>Article</th><th>Stock</th><th>Action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Onglet Ventes -->
+    <div id="tab-sales" class="panel" style="display:none;">
+      <h2>Historique des commandes</h2>
+      <table id="sales-table">
+        <thead><tr><th>Date</th><th>Client</th><th>Article</th><th>Saveur</th><th>Prix</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let products = [];
+
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.admin-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-products').style.display = tab === 'products' ? 'grid' : 'none';
+      document.getElementById('tab-sales').style.display = tab === 'sales' ? 'block' : 'none';
+      if (tab === 'sales') loadSales();
+    }
+
+    async function loadProducts() {
+      const res = await fetch('/api/products');
+      products = await res.json();
+      const tbody = document.querySelector('#stock-table tbody');
+      tbody.innerHTML = '';
+      products.forEach((p, i) => {
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight:bold; color:var(--cyan);">${p.name}</td>
+            <td><strong>${p.stock || 0}</strong></td>
+            <td>
+              <input type="number" id="stock-${i}" value="${p.stock || 0}" class="stock-input">
+              <button class="btn-small" onclick="updateStock(${i})">OK</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function updateStock(index) {
+      products[index].stock = parseInt(document.getElementById(`stock-${index}`).value) || 0;
+      await fetch('/api/admin/products', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(products)
+      });
+      alert('Stock mis à jour !');
+      loadProducts();
+    }
+
+    document.getElementById('add-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newProd = {
+        id: Date.now().toString(),
+        name: document.getElementById('name').value,
+        price: parseFloat(document.getElementById('price').value),
+        stock: parseInt(document.getElementById('stock').value) || 0,
+        category: document.getElementById('category').value,
+        packs: document.getElementById('packs').value,
+        flavors: document.getElementById('flavors').value.split(',').map(s => s.trim()).filter(Boolean)
+      };
+      products.push(newProd);
+      await fetch('/api/admin/products', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(products)
+      });
+      e.target.reset();
+      loadProducts();
+      alert('Article créé !');
+    });
+
+    async function loadSales() {
+      const res = await fetch('/api/admin/orders');
+      const orders = await res.json();
+      const tbody = document.querySelector('#sales-table tbody');
+      tbody.innerHTML = '';
+      if(orders.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#aaa;">Aucune vente pour le moment.</td></tr>';
+      
+      orders.reverse().forEach(o => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${new Date(o.date).toLocaleDateString()}</td>
+            <td>${o.clientName} <br><small style="color:#aaa;">${o.phone}</small></td>
+            <td style="color:var(--cyan); font-weight:bold;">${o.product}</td>
+            <td>${o.flavor}</td>
+            <td style="color:var(--orange); font-weight:bold;">${o.price}€</td>
+          </tr>
+        `;
+      });
+    }
+    loadProducts();
+  </script>
+</body>
+</html>

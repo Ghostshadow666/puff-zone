@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>PUFF ZONE - Boutique</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="space" aria-hidden="true"></div>
+  <div class="stars" aria-hidden="true"></div>
+
+  <!-- LE SITE EST CACHÉ TANT QU'ON N'EST PAS CONNECTÉ -->
+  <div class="container" id="main-site" style="display: none;">
+    <header>
+      <div class="brand">✦ PUFF<span>ZONE</span></div>
+      <nav>
+        <span id="user-greeting" style="color:var(--cyan); font-size:14px; font-weight:bold;"></span>
+        <a onclick="logout()">Déconnexion</a>
+        <a href="admin.html" style="color:var(--violet);">🔧 Admin</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot"></span> Boutique en ligne</p>
+        <h1>EXPLORE<br>LA NOUVELLE<br><span>DIMENSION.</span></h1>
+        <p>Découvre notre catalogue premium.<br>Du néon, de l’énergie et des saveurs inédites.</p>
+      </div>
+      <div class="emblem">
+        <span class="emblem-star">✦</span>
+        <strong>PUFF<br>ZONE</strong>
+        <small>BEYOND THE ORDINARY</small>
+      </div>
+    </section>
+
+    <section class="worlds">
+      <div class="section-heading">
+        <h2>Le catalogue. <span>Nouvelles vibrations.</span></h2>
+      </div>
+      <div id="product-list" class="product-grid"></div>
+    </section>
+  </div>
+
+  <!-- ECRAN DE CONNEXION OBLIGATOIRE -->
+  <div id="login-overlay">
+    <div class="login-box">
+      <div class="emblem" style="transform: scale(0.5); margin: -30px 0; pointer-events:none;">
+        <strong>PUFF<br>ZONE</strong>
+      </div>
+      <h2 style="color:var(--cyan); margin-bottom: 10px;">Bienvenue</h2>
+      <p style="font-size:14px; color:#aaa; margin-bottom: 25px;">Connectez-vous ou créez un compte avec votre numéro.</p>
+      
+      <div id="step-phone">
+        <input type="text" id="phone-input" placeholder="Numéro de téléphone" style="text-align:center;">
+        <button class="btn-save" onclick="checkPhone()">Continuer</button>
+      </div>
+
+      <div id="step-info" style="display:none;">
+        <p style="font-size:12px; color:var(--orange); margin-bottom:15px;">Première visite ! Renseignez vos infos de livraison.</p>
+        <input type="text" id="name-input" placeholder="Prénom / Pseudo">
+        <input type="text" id="address-input" placeholder="Adresse de livraison">
+        <button class="btn-save" onclick="saveProfile()">Accéder à la boutique</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

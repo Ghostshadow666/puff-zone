@@ -1,0 +1,32 @@
+﻿[
+  {
+    "id": "1",
+    "name": "FALCON 18K",
+    "price": 14,
+    "category": "Best-Seller",
+    "color": "violet",
+    "puffs": "50 000 puffs",
+    "flavors": ["Apple pear", "Banana Ice", "Berry Burst", "Black Ice", "Blue Cherry Explosion"],
+    "packs": "1 pce = 14€ | 5 pces = 65€ | 10 pces = 120€"
+  },
+  {
+    "id": "2",
+    "name": "JNR ALIEN X",
+    "price": 15,
+    "category": "Nouveauté",
+    "color": "cyan",
+    "puffs": "50 000 puffs",
+    "flavors": ["Blue Razz Cherry", "Black Ice", "Cherry Explosion"],
+    "packs": "1 pce = 15€ | 5 pces = 70€"
+  },
+  {
+    "id": "3",
+    "name": "MOLLY CTA 47K",
+    "price": 15,
+    "category": "Best-Seller",
+    "color": "pink",
+    "puffs": "47 000 puffs",
+    "flavors": ["Mint", "Strawberry"],
+    "packs": "1 pce = 15€"
+  }
+]

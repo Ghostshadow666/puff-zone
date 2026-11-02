@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUFF ZONE - Espace Livreur</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; position: relative; z-index: 10; }
+        .login-box { background: var(--card); padding: 40px; border-radius: 10px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.1); backdrop-filter: blur(15px); }
+        .login-box h2 { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-top: 0; letter-spacing: 2px; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; font-size: 16px; outline: none; }
+        .login-box input:focus { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        .error { color: #ff4444; font-weight: bold; margin-bottom: 15px; display: none; text-transform: uppercase; font-size: 12px;}
+    </style>
+</head>
+<body>
+    <div class="nebula-bg"></div>
+    <div class="overlay-dark"></div>
+    <div class="stars"></div>
+
+    <div class="login-container">
+        <div class="login-box">
+            <h2>ESPACE LIVREUR</h2>
+            <p style="color: #888; font-size: 14px; margin-bottom: 25px; text-transform: uppercase;">Identification requise</p>
+            
+            <div id="error-msg" class="error">Identifiants incorrects</div>
+            
+            <input type="text" id="driverName" placeholder="Nom de livreur" required>
+            <input type="password" id="driverPassword" placeholder="Mot de passe" required>
+            
+            <button onclick="loginLivreur()" class="btn-ajouter" style="margin-top: 10px;">Connexion</button>
+            
+            <div style="margin-top: 25px;">
+                <a href="/" style="color: var(--neon-cyan); text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">← Retour au site</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loginLivreur() {
+            const name = document.getElementById('driverName').value;
+            const password = document.getElementById('driverPassword').value;
+            const errorMsg = document.getElementById('error-msg');
+            
+            if (!name || !password) return alert("Remplis tous les champs !");
+
+            try {
+                const res = await fetch('/api/login-livreur', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    localStorage.setItem('puff_livreur', JSON.stringify(data.livreur));
+                    window.location.href = '/dashboard-livreur.html';
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                alert("Erreur de connexion au serveur.");
+            }
+        }
+    </script>
+</body>
+</html>
+
+

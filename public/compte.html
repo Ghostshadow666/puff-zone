@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUFF ZONE - Mon Compte</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .account-container { max-width: 800px; margin: 40px auto; padding: 20px; position: relative; z-index: 10; }
+        .account-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 30px; backdrop-filter: blur(15px); box-shadow: 0 0 30px rgba(0, 243, 255, 0.05); margin-bottom: 20px; }
+        .account-card h2 { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-top: 0; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 5px; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; outline: none; }
+        input:focus { border-color: var(--neon-cyan); }
+        .order-item { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="nebula-bg"></div>
+    <div class="overlay-dark"></div>
+    <div class="stars"></div>
+
+    <header class="header">
+        <div class="logo">PUFF <span>ZONE</span></div>
+        <div class="header-actions">
+            <a href="/" class="btn-header">← Retour Boutique</a>
+            <button onclick="logout()" class="btn-panier" style="border-color: #ff4444; color: #ff4444;">Déconnexion</button>
+        </div>
+    </header>
+
+    <div class="account-container">
+        <div class="account-card">
+            <h2>👤 Mes Informations</h2>
+            <input type="text" id="editNom" placeholder="Nom complet">
+            <input type="text" id="editTel" placeholder="Téléphone (Non modifiable)" disabled style="opacity: 0.5;">
+            <input type="text" id="editAdresse" placeholder="Adresse de livraison">
+            <input type="text" id="editWhatsapp" placeholder="Numéro WhatsApp (Optionnel)">
+            <button onclick="updateProfile()" class="btn-ajouter">Enregistrer les modifications</button>
+        </div>
+
+        <div class="account-card">
+            <h2>📦 Mes Commandes</h2>
+            <div id="mesCommandes">Chargement...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let currentUser = JSON.parse(localStorage.getItem('puff_client'));
+
+        if (!currentUser || !currentUser.id) {
+            alert("Votre session a expiré. Veuillez vous reconnecter.");
+            window.location.href = '/';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('editNom').value = currentUser.nom || '';
+            document.getElementById('editTel').value = currentUser.telephone || '';
+            document.getElementById('editAdresse').value = currentUser.adresse || '';
+            document.getElementById('editWhatsapp').value = currentUser.whatsapp || '';
+            loadMesCommandes();
+        });
+
+        async function updateProfile() {
+            const nom = document.getElementById('editNom').value;
+            const adresse = document.getElementById('editAdresse').value;
+            const whatsapp = document.getElementById('editWhatsapp').value;
+
+            if (!nom || !adresse) return alert("Le nom et l'adresse sont obligatoires.");
+
+            try {
+                const res = await fetch(`${API_URL}/clients/${currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nom, adresse, whatsapp })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('puff_client', JSON.stringify(data.client));
+                    alert("✅ Profil mis à jour !");
+                    window.location.reload();
+                }
+            } catch (e) { alert("Erreur de connexion."); }
+        }
+
+        async function loadMesCommandes() {
+            try {
+                const res = await fetch(`${API_URL}/commandes`);
+                const cmds = await res.json();
+                const mesCmds = cmds.filter(c => c.client_id === currentUser.id);
+                const container = document.getElementById('mesCommandes');
+
+                if (mesCmds.length === 0) {
+                    container.innerHTML = '<p style="color:#aaa;">Aucune commande pour le moment.</p>';
+                    return;
+                }
+
+                container.innerHTML = mesCmds.map(c => {
+                    let statutBadge = '';
+                    if (c.statut === 'en_attente') statutBadge = '<span style="color:#F59E0B;">⏳ En attente</span>';
+                    else if (c.statut === 'preparation') statutBadge = '<span style="color:#3B82F6;">📦 En préparation</span>';
+                    else if (c.statut === 'livraison') statutBadge = '<span style="color:#A855F7;">🛵 En cours de livraison</span>';
+                    else if (c.statut === 'livre') statutBadge = '<span style="color:#22C55E;">✅ Livré</span>';
+
+                    return `
+                        <div class="order-item">
+                            <div>
+                                <div style="font-weight: bold; color: white;">Commande #${c.id}</div>
+                                <div style="font-size: 12px; color: #aaa;">${new Date(c.date_commande).toLocaleString('fr-FR')}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold; color: var(--neon-cyan);">${c.total} €</div>
+                                <div style="font-size: 12px;">${statutBadge}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) { document.getElementById('mesCommandes').innerHTML = 'Erreur de chargement.'; }
+        }
+
+        function logout() {
+            localStorage.removeItem('puff_client');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
+

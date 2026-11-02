@@ -1,0 +1,184 @@
+﻿:root {
+    --bg-dark: #02040a;
+    --neon-cyan: #00f3ff;
+    --neon-magenta: #ff00ea;
+    --violet: #7000ff;
+    --text-light: #e0e0e0;
+    --card: rgba(5, 8, 20, 0.65);
+    --border: rgba(0, 243, 255, 0.2);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Rajdhani', 'Nunito', sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* --- FOND NÉBULEUSE ANIMÉ (L'image que tu as montrée) --- */
+.nebula-bg {
+    position: fixed; top: -5%; left: -5%; width: 110%; height: 110%;
+    /* Image de nébuleuse spatiale haute résolution */
+    background: url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2048&auto=format&fit=crop') no-repeat center center;
+    background-size: cover;
+    z-index: -3;
+    animation: nebulaMotion 25s infinite alternate ease-in-out;
+    opacity: 0.8;
+}
+@keyframes nebulaMotion {
+    0% { transform: scale(1) rotate(0deg); }
+    100% { transform: scale(1.15) rotate(2deg); }
+}
+
+/* Voile sombre pour que le texte reste lisible */
+.overlay-dark {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(2, 4, 10, 0.4) 0%, rgba(2, 4, 10, 0.9) 100%);
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* Particules flottantes */
+.stars {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #00f3ff, rgba(0,0,0,0)),
+        radial-gradient(2px 2px at 40px 70px, #ff00ea, rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0));
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: starsAnim 50s linear infinite;
+    z-index: -1;
+    opacity: 0.4;
+}
+@keyframes starsAnim {
+    from { background-position: 0 0; }
+    to { background-position: -500px 500px; }
+}
+
+/* --- HEADER --- */
+.header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 40px; background: rgba(2, 4, 10, 0.5);
+    border-bottom: 1px solid var(--border); backdrop-filter: blur(15px);
+    position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 15px;
+}
+.logo {
+    font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900;
+    letter-spacing: 4px; color: white; text-transform: uppercase;
+    text-shadow: 0 0 15px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+}
+.logo span { color: var(--neon-cyan); }
+
+.header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.btn-header {
+    color: var(--neon-cyan); text-decoration: none; font-weight: 700; font-size: 13px;
+    border: 1px solid var(--border); padding: 8px 15px; border-radius: 4px;
+    transition: all 0.3s; background: rgba(0, 243, 255, 0.05); text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.btn-header:hover { background: var(--neon-cyan); color: black; box-shadow: 0 0 20px var(--neon-cyan); }
+
+.btn-panier {
+    background: transparent; color: var(--neon-magenta); border: 1px solid var(--neon-magenta);
+    padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 900;
+    transition: all 0.3s; text-transform: uppercase;
+}
+.btn-panier:hover { background: var(--neon-magenta); color: black; box-shadow: 0 0 20px var(--neon-magenta); }
+.btn-panier:active { transform: scale(0.95); }
+
+/* --- LAYOUT --- */
+.layout-principal {
+    display: flex; gap: 30px; padding: 30px; max-width: 1400px; margin: 0 auto;
+    position: relative; z-index: 10;
+}
+
+/* --- NOUVELLES COLONNES --- */
+.category-column {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column;
+    transition: all 0.3s;
+}
+.category-column:hover { border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0,243,255,0.2); }
+
+.category-header {
+    background: linear-gradient(180deg, rgba(0,243,255,0.1) 0%, transparent 100%);
+    padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.category-header img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+.category-header h2 { margin: 0; color: white; font-family: 'Orbitron', sans-serif; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px;}
+.price-badge { display: inline-block; margin-top: 10px; background: rgba(255, 0, 234, 0.2); color: var(--neon-magenta); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+
+.flavor-list { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 10px; }
+.flavor-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s; }
+.flavor-row:hover { background: rgba(0,243,255,0.05); border-color: rgba(0,243,255,0.3); }
+.flavor-info { display: flex; flex-direction: column; }
+.flavor-name { color: white; font-weight: bold; font-size: 1rem; }
+.flavor-stock { font-size: 0.75rem; color: #22C55E; text-transform: uppercase; font-weight: bold; }
+.flavor-stock.out { color: #EF4444; }
+
+.btn-mini {
+    background: var(--neon-cyan); color: black; border: none; width: 30px; height: 30px; border-radius: 5px;
+    font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+}
+.btn-mini:hover { background: var(--neon-magenta); color: white; transform: scale(1.1); box-shadow: 0 0 15px var(--neon-magenta); }
+.btn-mini:active { transform: scale(0.9); }
+.btn-mini:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; transform: none; }
+
+/* --- BOUTON AJOUTER (PANIER) --- */
+.btn-ajouter {
+    background: rgba(0, 243, 255, 0.05); color: var(--neon-cyan); border: 1px solid var(--neon-cyan);
+    padding: 12px 15px; border-radius: 5px; cursor: pointer;
+    font-weight: 900; width: 100%; text-transform: uppercase; letter-spacing: 2px;
+    transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-ajouter:hover { background: var(--neon-cyan); color: black; box-shadow: 0 0 20px var(--neon-cyan); }
+.btn-ajouter:active { transform: scale(0.95); background: var(--neon-magenta); border-color: var(--neon-magenta); box-shadow: 0 0 40px var(--neon-magenta); color: white; }
+.btn-ajouter:disabled { border-color: #333; color: #555; cursor: not-allowed; box-shadow: none; background: transparent; }
+.btn-ajouter {
+    background: rgba(0, 243, 255, 0.05); color: var(--neon-cyan); border: 1px solid var(--neon-cyan);
+    padding: 12px 15px; border-radius: 5px; cursor: pointer;
+    font-weight: 900; width: 100%; text-transform: uppercase; letter-spacing: 2px;
+    transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-ajouter:hover { 
+    background: var(--neon-cyan); 
+    color: black; 
+    box-shadow: 0 0 20px var(--neon-cyan); 
+}
+/* EFFET AU CLIC BOUTON */
+.btn-ajouter:active { 
+    transform: scale(0.95); 
+    background: var(--neon-magenta);
+    border-color: var(--neon-magenta);
+    box-shadow: 0 0 40px var(--neon-magenta); 
+    color: white;
+}
+.btn-ajouter:disabled { border-color: #333; color: #555; cursor: not-allowed; box-shadow: none; background: transparent; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .header { flex-direction: column; padding: 15px; text-align: center; }
+    .header-actions { justify-content: center; width: 100%; }
+    .layout-principal { flex-direction: column; padding: 15px; gap: 15px; }
+    .sidebar-categories {
+        flex-direction: row; width: 100%; position: static;
+        overflow-x: auto; padding-bottom: 10px; justify-content: flex-start; gap: 15px;
+    }
+    .sidebar-categories::-webkit-scrollbar { height: 3px; }
+    .sidebar-categories::-webkit-scrollbar-thumb { background: var(--neon-cyan); }
+    .cat-item .img-circle { width: 60px; height: 60px; }
+    .grille-produits { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+    .product-card img { height: 120px; }
+}
+
