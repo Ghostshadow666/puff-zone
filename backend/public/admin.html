@@ -283,7 +283,14 @@
         
         const el = document.getElementById('ventesList'); 
         
-        // On met à jour les totaux renvoyés par le serveur
+        // Sécurité anti-blocage
+        if (!data || data.error || typeof data.totalCA === 'undefined') {
+            el.innerHTML = 'Erreur de calcul des ventes (Base de données en cours de mise à jour).';
+            document.getElementById('totalCA').textContent = '0.00 €'; 
+            document.getElementById('totalMarge').textContent = '0.00 €'; 
+            return;
+        }
+        
         document.getElementById('totalCA').textContent = data.totalCA.toFixed(2) + ' €'; 
         document.getElementById('totalMarge').textContent = data.totalMarge.toFixed(2) + ' €'; 
         
@@ -307,7 +314,8 @@
         }).join(''); 
         
     } catch(e){
-        console.error("Erreur chargement ventes:", e);
+        console.error(e);
+        document.getElementById('ventesList').innerHTML = 'Erreur de connexion au serveur.';
     } 
 }
   async function deleteVente(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/ventes/${id}`, { method: 'DELETE' }); loadVentes(); } }

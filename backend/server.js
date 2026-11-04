@@ -30,10 +30,11 @@ const initDB = async () => {
       );
     `);
     
-    // Ajout de la colonne livreur_id (auto-réparation)
+    // Auto-réparation : On force l'ajout des colonnes manquantes
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
+    await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     
-    console.log("✅ Base de données vérifiée et à jour !");
+    console.log("✅ Base de données vérifiée, colonnes ajoutées !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
