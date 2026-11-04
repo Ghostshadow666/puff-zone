@@ -15,7 +15,7 @@ const pool = new Pool({
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- HEALTHCHECK ---
 app.get('/api/health', async (req, res) => {
@@ -32,7 +32,7 @@ app.post('/api/register', async (req, res) => {
     const { email, password, name } = req.body;
     try {
         const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        if (userExists.rows.length > 0) return res.status(400).json({ message: "Email déjà utilisé." });
+        if (userExists.rows.length > 0) return res.status(400).json({ message: "Email dÃƒÂ©jÃƒÂ  utilisÃƒÂ©." });
         const hashedPassword = await hashPassword(password);
         const newUser = await pool.query(
             'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
@@ -109,7 +109,7 @@ app.post('/api/commandes', async (req, res) => {
     const { client_id, cart, total } = req.body;
     try {
         const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING *', [client_id, total]);
-        // ... (suite de la logique commande inchangée)
+        // ... (suite de la logique commande inchangÃƒÂ©e)
         res.json(cmd.rows[0]);
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -121,7 +121,7 @@ app.post('/api/commandes', async (req, res) => {
 
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.listen(PORT, () => console.log(`Serveur PUFF ZONE démarré sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`Serveur PUFF ZONE dÃƒÂ©marrÃƒÂ© sur le port ${PORT}`));
