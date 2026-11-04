@@ -160,4 +160,26 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// --- ASSIGNATION LIVREUR ---
+app.put('/api/commandes/:id/assign', async (req, res) => {
+  const { livreur_id } = req.body;
+  try {
+    await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- COMMANDES POUR UN LIVREUR SPECIFIQUE ---
+app.get('/api/commandes/livreur/:id', async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT c.*, cl.nom as client_nom, cl.telephone, cl.whatsapp, cl.adresse
+      FROM commandes c 
+      LEFT JOIN clients cl ON c.client_id = cl.id
+      WHERE c.livreur_id = $1 AND c.statut != 'livre'
+      ORDER BY c.date_commande DESC
+    `, [req.params.id]);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));

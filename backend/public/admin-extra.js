@@ -1,26 +1,40 @@
-﻿const API_URL_EXTRA = '/api';
+const API_URL_EXTRA = '/api';
 
 // --- COMMANDES ---
 async function loadCommandes() {
   try {
-    const res = await fetch(`${API_URL_EXTRA}/commandes`);
-    const cmds = await res.json();
+    const [resCmds, resDrivers] = await Promise.all([
+      fetch(`${API_URL_EXTRA}/commandes`),
+      fetch(`${API_URL_EXTRA}/livreurs`)
+    ]);
+    const cmds = await resCmds.json();
+    const livreurs = await resDrivers.json();
+    
     const el = document.getElementById('commandesList');
     if(!el) return;
-    
+
     if(cmds.length === 0) { el.innerHTML = 'Aucune commande.'; return; }
-    
+
     el.innerHTML = cmds.map(c => {
       let statutColor = c.statut === 'en_attente' ? '#F59E0B' : (c.statut === 'preparation' ? '#3B82F6' : (c.statut === 'livraison' ? '#A855F7' : '#22C55E'));
-      let waLink = c.whatsapp ? `<a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}?text=Bonjour%20${c.client_nom},%20votre%20commande%20est%20en%20cours" target="_blank" class="btn" style="padding:5px 10px; font-size:0.7rem; background:#25D366; color:black;">💬 WhatsApp</a>` : '';
+      let waLink = c.whatsapp ? `<a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" class="btn" style="padding:5px 10px; font-size:0.7rem; background:#25D366; color:black;">💬 WhatsApp</a>` : '';
+      
+      // Menu déroulant pour choisir le livreur
+      let driverOptions = livreurs.map(l => `<option value="${l.id}" ${c.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('');
+      let assignSelect = `<select onchange="assignLivreur(${c.id}, this.value)" style="background:rgba(0,0,0,0.5); color:white; border:1px solid #A855F7; padding:5px; border-radius:5px; margin-right:10px;">
+          <option value="">-- Assigner un livreur --</option>
+          ${driverOptions}
+      </select>`;
+
       return `
         <div class="item-card" style="flex-direction:column; align-items:stretch; gap:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div>
               <span class="item-name">Commande #${c.id} - ${c.client_nom}</span>
               <div class="item-details">Total: ${c.total}€ | Tél: ${c.telephone}</div>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              ${assignSelect}
               ${waLink}
               <select onchange="updateStatut(${c.id}, this.value)" style="background:rgba(0,0,0,0.5); color:${statutColor}; border:1px solid ${statutColor}; padding:5px; border-radius:5px;">
                 <option value="en_attente" ${c.statut==='en_attente'?'selected':''}>⏳ En attente</option>
@@ -33,10 +47,19 @@ async function loadCommandes() {
         </div>
       `;
     }).join('');
-  } catch(e) { 
+  } catch(e) {
     console.error(e);
-    document.getElementById('commandesList').innerHTML = 'Erreur de chargement.'; 
+    document.getElementById('commandesList').innerHTML = 'Erreur de chargement.';
   }
+}
+
+async function assignLivreur(cmdId, livreurId) {
+  if (!livreurId) return;
+  await fetch(`${API_URL_EXTRA}/commandes/${cmdId}/assign`, { 
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ livreur_id: parseInt(livreurId) }) 
+  });
+  alert('✅ Livreur assigné à la commande !');
+  loadCommandes();
 }
 
 async function updateStatut(id, statut) {
