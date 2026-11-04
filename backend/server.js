@@ -30,11 +30,11 @@ const initDB = async () => {
       );
     `);
     
-    // Auto-réparation : On force l'ajout des colonnes manquantes
+    // Auto-réparation des colonnes manquantes
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     
-    console.log("✅ Base de données vérifiée, colonnes ajoutées !");
+    console.log("✅ Base de données vérifiée et à jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -85,16 +85,11 @@ app.get('/api/clients', async (req, res) => {
 app.post('/api/commandes', async (req, res) => {
   const { client_id, cart, total } = req.body;
   try {
-    // 1. Créer la commande
     const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING id', [client_id, total]);
     const cmdId = cmd.rows[0].id;
-    
-    // 2. Ajouter les items ET baisser le stock
     for (const item of cart) {
-      // Ajout de l'item
       await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, prix_achat) VALUES ($1,$2,$3,$4,$5)', [cmdId, item.nom, item.qty, item.prix, item.prix_achat || 0]);
-      
-      // Décrémentation du stock dans la table saveurs
+      // Déduction auto du stock
       await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]);
     }
     res.json({ success: true, commande_id: cmdId });
@@ -182,7 +177,7 @@ app.get('/api/saveurs', async (req, res) => { try { const r = await pool.query('
 app.post('/api/saveurs', async (req, res) => { const { categorie_id, nom, stock, prix_achat } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock,prix_achat) VALUES ($1,$2,$3,$4) RETURNING *', [categorie_id, nom, stock, prix_achat]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/saveurs/:id', async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- VENTES ---
+// --- VENTES (CALCULÉES DEPUIS LES COMMANDES) ---
 app.get('/api/ventes', async (req, res) => { 
   try { 
     const r = await pool.query(`
@@ -205,12 +200,6 @@ app.get('/api/ventes', async (req, res) => {
     res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
-
-    res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
-  } catch (e) { res.status(500).json({ error: e.message }); } 
-});
-app.post('/api/ventes', async (req, res) => { const { client_nom, categorie_nom, saveur_nom, quantite, prix_vente_total, prix_achat_total } = req.body; try { const r = await pool.query('INSERT INTO ventes (client_nom,categorie_nom,saveur_nom,quantite,prix_vente_total,prix_achat_total) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [client_nom, categorie_nom, saveur_nom, quantite, prix_vente_total, prix_achat_total]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/ventes/:id', async (req, res) => { try { await pool.query('DELETE FROM ventes WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => {
