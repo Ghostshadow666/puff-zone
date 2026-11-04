@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
 // --- SERT LES FICHIERS STATIQUES (public/) ---
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- HEALTHCHECK ---
 app.get('/api/health', async (req, res) => {
