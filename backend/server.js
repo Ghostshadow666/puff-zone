@@ -173,7 +173,9 @@ app.put('/api/commandes/:id/assign', async (req, res) => {
 app.get('/api/commandes/livreur/:id', async (req, res) => {
   try {
     const r = await pool.query(`
-      SELECT c.*, cl.nom as client_nom, cl.telephone, cl.whatsapp, cl.adresse
+      SELECT c.*, 
+             COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, 
+             cl.telephone, cl.whatsapp, cl.adresse
       FROM commandes c 
       LEFT JOIN clients cl ON c.client_id = cl.id
       WHERE c.livreur_id = $1 AND c.statut != 'livre'
@@ -181,5 +183,6 @@ app.get('/api/commandes/livreur/:id', async (req, res) => {
     `, [req.params.id]);
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
+}); }
 });
 app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));

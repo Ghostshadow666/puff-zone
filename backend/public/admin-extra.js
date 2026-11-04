@@ -30,7 +30,7 @@ async function loadCommandes() {
         <div class="item-card" style="flex-direction:column; align-items:stretch; gap:10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div>
-              <span class="item-name">Commande #${c.id} - ${c.client_nom}</span>
+              <span class="item-name">Commande #${c.id} - ${c.client_nom && c.client_nom !== " " ? c.client_nom : c.telephone}</span>
               <div class="item-details">Total: ${c.total}€ | Tél: ${c.telephone}</div>
             </div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">

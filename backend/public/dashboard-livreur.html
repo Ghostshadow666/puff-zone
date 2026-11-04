@@ -76,7 +76,7 @@
                         </div>
                     `;
                 }).join('');
-            } catch (e) { document.getElementById('ordersList').innerHTML = 'Erreur de chargement.'; }
+            } catch (e) { console.error(e); document.getElementById('ordersList').innerHTML = 'Erreur : ' + e.message; }
         }
 
         async function markAsDelivered(orderId) {
