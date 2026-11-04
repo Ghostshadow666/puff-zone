@@ -182,3 +182,56 @@ body {
     .product-card img { height: 120px; }
 }
 
+
+/* --- CORRECTION DE LA LARGEUR DU CATALOGUE --- */
+.grille-produits {
+    display: grid;
+    /* On force une largeur entre 320px et 380px max par carte */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 380px));
+    justify-content: center; /* On centre les cartes */
+    gap: 30px;
+    margin-top: 20px;
+    padding-bottom: 50px;
+}
+
+/* On s'assure que la colonne ne s'étire pas à l'infini */
+.category-column {
+    width: 100%;
+    max-width: 380px; 
+}
+
+/* --- LOGO ANIMÉ EN ARRIÈRE-PLAN --- */
+.bg-logo {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 15vw; /* Taille proportionnelle à l'écran */
+    font-weight: 900;
+    color: transparent;
+    -webkit-text-stroke: 2px rgba(34, 211, 238, 0.05); /* Contour très discret */
+    text-shadow: 0 0 50px rgba(168, 85, 247, 0.05); /* Lueur violette */
+    z-index: -1; /* Derrière tout le contenu */
+    pointer-events: none; /* Ne bloque pas les clics */
+    white-space: nowrap;
+    user-select: none;
+    animation: floatBgLogo 15s ease-in-out infinite alternate;
+}
+
+/* Animation du logo de fond */
+@keyframes floatBgLogo {
+    0% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); opacity: 0.5; }
+    50% { transform: translate(-50%, -53%) scale(1.02) rotate(0deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1) rotate(2deg); opacity: 0.5; }
+}
+
+/* Animation de la nébuleuse pour qu'elle "respire" */
+.nebula-bg {
+    animation: nebulaBreathe 30s ease-in-out infinite alternate !important;
+}
+
+@keyframes nebulaBreathe {
+    0% { transform: scale(1) translate(0, 0); }
+    100% { transform: scale(1.1) translate(-2%, 2%); }
+}
