@@ -207,6 +207,26 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // --- INTERCEPTEUR POUR AJOUTER LE TOKEN ---
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+        let [resource, config] = arguments;
+        const token = localStorage.getItem('token');
+        if (token) {
+            config = config || {};
+            config.headers = config.headers || {};
+            config.headers['Authorization'] = 'Bearer ' + token;
+        }
+        return originalFetch(resource, config).then(response => {
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('puff_staff');
+                window.location.href = 'admin-login.html';
+            }
+            return response;
+        });
+    };
+
     // SÉCURITÉ ADMIN
     const staff = JSON.parse(localStorage.getItem('puff_staff'));
     if (!staff || staff.role !== 'admin') { window.location.href = '/admin-login.html'; }
@@ -223,7 +243,11 @@
         if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
     }
 
-    function logoutAdmin() { localStorage.removeItem('puff_staff'); window.location.href = '/admin-login.html'; }
+    function logoutAdmin() { 
+        localStorage.removeItem('puff_staff'); 
+        localStorage.removeItem('token');
+        window.location.href = '/admin-login.html'; 
+    }
 
     // INITIALISATION
     document.addEventListener('DOMContentLoaded', () => {
