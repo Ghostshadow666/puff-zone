@@ -185,24 +185,26 @@ app.delete('/api/saveurs/:id', async (req, res) => { try { await pool.query('DEL
 // --- VENTES ---
 app.get('/api/ventes', async (req, res) => { 
   try { 
-    // On récupère les commandes livrées du jour
     const r = await pool.query(`
       SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente,
              COALESCE((SELECT SUM(prix_achat * quantite) FROM commande_items WHERE commande_id = c.id), 0) as prix_achat_total,
              COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom
       FROM commandes c 
       LEFT JOIN clients cl ON c.client_id = cl.id
-      WHERE c.statut = 'livre' AND c.date_commande::date = CURRENT_DATE
+      WHERE LOWER(c.statut) LIKE '%livr%'
       ORDER BY c.date_commande DESC
     `); 
     
-    // On calcule le total global côté serveur
     let totalCA = 0;
     let totalMarge = 0;
     r.rows.forEach(v => {
       totalCA += parseFloat(v.prix_vente_total);
       totalMarge += (parseFloat(v.prix_vente_total) - parseFloat(v.prix_achat_total));
     });
+
+    res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
+  } catch (e) { res.status(500).json({ error: e.message }); } 
+});
 
     res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
