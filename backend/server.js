@@ -29,20 +29,32 @@ app.get('/api/health', async (req, res) => {
 });
 
 // --- CLIENTS ---
-app.post('/api/clients/login', async (req, res) => {
+// --- INSCRIPTION CLIENT (Création) ---
+app.post('/api/clients/register', async (req, res) => {
   const { telephone, nom, adresse, whatsapp } = req.body;
   try {
     let r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
     if (r.rows.length === 0) {
       r = await pool.query('INSERT INTO clients (telephone, nom, adresse, whatsapp) VALUES ($1,$2,$3,$4) RETURNING *', [telephone, nom, adresse, whatsapp]);
     } else {
-      await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE telephone=$4', [nom, adresse, whatsapp, telephone]);
-      r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
+      // Si le client existe déjà (mise à jour de ses infos)
+      r = await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE telephone=$4 RETURNING *', [nom, adresse, whatsapp, telephone]);
     }
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- CONNEXION CLIENT (Vérification simple) ---
+app.post('/api/clients/login', async (req, res) => {
+  const { telephone } = req.body;
+  try {
+    const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
+    if (r.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Numéro non reconnu' });
+    }
+    res.json({ success: true, client: r.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 app.put('/api/clients/:id', async (req, res) => {
   const { nom, adresse, whatsapp } = req.body;
   try {

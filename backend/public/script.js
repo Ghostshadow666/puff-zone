@@ -43,18 +43,20 @@ async function checkPhone() {
     try {
         const res = await fetch(`${API_URL}/clients/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telephone: phone, nom: '', adresse: '', whatsapp: '' }) 
+            body: JSON.stringify({ telephone: phone }) 
         });
-        const data = await res.json();
         
-        if (data.success && data.client && data.client.nom) {
+        if (res.ok) {
+            const data = await res.json();
             currentUser = data.client; 
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
         } else {
             alert('Numéro non reconnu. Veuillez créer un compte.');
-            showRegisterForm();
+            showRegisterForm(); // On le redirige vers l'inscription
+            // On pré-remplit le numéro pour pas qu'il le retape
+            document.getElementById('phone-input-reg').value = phone; 
         }
     } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
@@ -69,7 +71,7 @@ async function saveProfile() {
     if(!phone || !nom || !adresse) return alert('Remplissez tous les champs obligatoires');
 
     try {
-        const res = await fetch(`${API_URL}/clients/login`, {
+        const res = await fetch(`${API_URL}/clients/register`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp })
         });
@@ -79,11 +81,10 @@ async function saveProfile() {
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
-            alert('Compte créé avec succès !');
+            alert('Compte créé / mis à jour avec succès !');
         }
     } catch(e) { alert('Erreur lors de la création du compte.'); }
 }
-
 function updateGreeting() {
     document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
 }
