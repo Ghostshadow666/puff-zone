@@ -134,7 +134,7 @@ app.delete('/api/ventes/:id', async (req, res) => { try { await pool.query('DELE
 
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
