@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUFF ZONE - Mes Tournées</title>
+    <title>PUFF ZONE - Mes TournÃ©es</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -26,19 +26,39 @@
         <div class="logo">PUFF <span>ZONE</span></div>
         <div class="header-actions">
             <a href="/" class="btn-header">Boutique</a>
-            <button class="btn-panier" onclick="logoutLivreur()" style="border-color: #ff4444; color: #ff4444;">Déconnexion</button>
+            <button class="btn-panier" onclick="logoutLivreur()" style="border-color: #ff4444; color: #ff4444;">DÃ©connexion</button>
         </div>
     </header>
 
     <div class="dashboard-container">
         <div class="dashboard-card">
-            <h1 id="welcome-msg">MES TOURNÉES</h1>
-            <p style="color: #aaa; text-transform: uppercase;">Commandes à livrer</p>
+            <h1 id="welcome-msg">MES TOURNÃ‰ES</h1>
+            <p style="color: #aaa; text-transform: uppercase;">Commandes Ã  livrer</p>
             <div id="ordersList" style="margin-top: 20px;">Chargement...</div>
         </div>
     </div>
 
     <script>
+// --- INTERCEPTEUR POUR AJOUTER LE TOKEN ---
+const originalFetch = window.fetch;
+window.fetch = function() {
+    let [resource, config] = arguments;
+    const token = localStorage.getItem('token');
+    if (token) {
+        config = config || {};
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = 'Bearer ' + token;
+    }
+    return originalFetch(resource, config).then(response => {
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('puff_livreur');
+            window.location.href = 'livreur.html';
+        }
+        return response;
+    });
+};
+
         const livreur = JSON.parse(localStorage.getItem('puff_livreur'));
         if (!livreur) { window.location.href = '/livreur.html'; } 
         else { document.getElementById('welcome-msg').textContent = `SALUT, ${livreur.name.toUpperCase()}`; }
@@ -50,7 +70,7 @@
                 const container = document.getElementById('ordersList');
 
                 if (orders.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; color:#aaa; font-style:italic;">Aucune tournée pour le moment.</p>';
+                    container.innerHTML = '<p style="text-align:center; color:#aaa; font-style:italic;">Aucune tournÃ©e pour le moment.</p>';
                     return;
                 }
 
@@ -62,17 +82,17 @@
                         <div class="order-item">
                             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                                 <div style="font-weight:bold; color:var(--neon-cyan); font-size:1.1rem;">${o.client_nom}</div>
-                                <div style="font-weight:bold; color:#22C55E;">${o.total}€</div>
+                                <div style="font-weight:bold; color:#22C55E;">${o.total}â‚¬</div>
                             </div>
-                            <div style="font-size:0.9rem; color:#ccc; margin-bottom:5px;">📍 ${o.adresse || 'Adresse non renseignée'}</div>
-                            <div style="font-size:0.9rem; color:#ccc; margin-bottom:15px;">📞 ${o.telephone}</div>
+                            <div style="font-size:0.9rem; color:#ccc; margin-bottom:5px;">ðŸ“ ${o.adresse || 'Adresse non renseignÃ©e'}</div>
+                            <div style="font-size:0.9rem; color:#ccc; margin-bottom:15px;">ðŸ“ž ${o.telephone}</div>
                             
                             <div style="display:flex; gap:10px; margin-bottom:10px;">
-                                ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="btn-action btn-wa" style="flex:1;">💬 WhatsApp</a>` : ''}
-                                ${o.adresse ? `<a href="${mapLink}" target="_blank" class="btn-action btn-maps" style="flex:1;">🗺️ Itinéraire</a>` : ''}
+                                ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="btn-action btn-wa" style="flex:1;">ðŸ’¬ WhatsApp</a>` : ''}
+                                ${o.adresse ? `<a href="${mapLink}" target="_blank" class="btn-action btn-maps" style="flex:1;">ðŸ—ºï¸ ItinÃ©raire</a>` : ''}
                             </div>
                             
-                            <button onclick="markAsDelivered(${o.id})" class="btn-action btn-done">✅ Marquer comme Livré</button>
+                            <button onclick="markAsDelivered(${o.id})" class="btn-action btn-done">âœ… Marquer comme LivrÃ©</button>
                         </div>
                     `;
                 }).join('');
@@ -80,7 +100,7 @@
         }
 
         async function markAsDelivered(orderId) {
-            if (!confirm('Confirmer que cette commande a été livrée ?')) return;
+            if (!confirm('Confirmer que cette commande a Ã©tÃ© livrÃ©e ?')) return;
             await fetch(`/api/commandes/${orderId}/statut`, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'livre' })
             });

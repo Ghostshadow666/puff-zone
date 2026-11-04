@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -56,6 +56,8 @@
                 const data = await res.json();
 
                 if (res.ok) {
+                    // ⚠️ LIGNE AJOUTÉE ICI :
+                    localStorage.setItem('token', data.token);
                     localStorage.setItem('puff_livreur', JSON.stringify(data.livreur));
                     window.location.href = '/dashboard-livreur.html';
                 } else {
@@ -68,6 +70,3 @@
     </script>
 </body>
 </html>
-
-
-
