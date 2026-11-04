@@ -45,24 +45,41 @@
     </main>
 
     <!-- MODALE DE CONNEXION -->
-    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
-        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:15px; border:1px solid var(--border); width:100%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(34, 211, 238, 0.2);">
-            <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif;">PUFF ZONE</h2>
-            <p style="color:#aaa; font-size:14px;">Connecte-toi pour ajouter au panier</p>
+    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:100%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);">
+            <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
             
-            <div id="step-phone">
-                <input type="text" id="phone-input" placeholder="Ton numéro de téléphone" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
-                <button onclick="checkPhone()" class="btn-ajouter">Continuer</button>
+            <!-- ÉCRAN 0 : CHOIX D'ACCUEIL -->
+            <div id="step-choice">
+                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue sur la boutique</p>
+                <button onclick="showLoginForm()" class="btn-ajouter" style="margin-bottom: 10px;">Se Connecter</button>
+                <button onclick="showRegisterForm()" class="btn-ajouter" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); margin-bottom: 20px;">Créer un compte</button>
+                
+                <div style="border-top: 1px solid #333; padding-top: 15px; margin-top: 10px;">
+                    <a href="/admin-login.html" style="color: #94A3B8; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: bold;">⚙️ Accès Staff / Admin</a>
+                </div>
             </div>
-            
+
+            <!-- ÉCRAN 1 : CONNEXION -->
+            <div id="step-phone" style="display: none;">
+                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Connexion</p>
+                <input type="text" id="phone-input" placeholder="Ton numéro de téléphone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <button onclick="checkPhone()" class="btn-ajouter" style="margin-bottom: 10px;">Continuer</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">← Retour</button>
+            </div>
+
+            <!-- ÉCRAN 2 : INSCRIPTION -->
             <div id="step-info" style="display:none;">
-                <input type="text" id="name-input" placeholder="Ton prénom/nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:8px; margin-bottom:10px; box-sizing:border-box;">
-                <input type="text" id="address-input" placeholder="Ton adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:8px; margin-bottom:10px; box-sizing:border-box;">
-                <input type="text" id="whatsapp-input" placeholder="Ton numéro WhatsApp" style="width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:8px; margin-bottom:15px; box-sizing:border-box;">
-                <button onclick="saveProfile()" class="btn-ajouter">Enregistrer</button>
+                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Inscription</p>
+                <input type="text" id="name-input" placeholder="Ton prénom/nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="phone-input-reg" placeholder="Ton numéro de téléphone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="address-input" placeholder="Ton adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="whatsapp-input" placeholder="Numéro WhatsApp" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <button onclick="saveProfile()" class="btn-ajouter" style="margin-bottom: 10px;">S'inscrire</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">← Retour</button>
             </div>
         </div>
-    </div>
+</div>
 
     <!-- TIROIR PANIER -->
     <div id="cart-drawer" style="position:fixed; top:0; right:-400px; width:350px; height:100%; background:var(--card); border-left:1px solid var(--border); z-index:10000; transition:right 0.3s; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; backdrop-filter: blur(10px);">

@@ -3,6 +3,77 @@ let allCategories = [];
 let allFlavors = [];
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
+// --- GESTION DE LA NAVIGATION DE LA MODALE ---
+function showLoginForm() {
+    document.getElementById('step-choice').style.display = 'none';
+    document.getElementById('step-phone').style.display = 'block';
+    document.getElementById('step-info').style.display = 'none';
+}
+
+function showRegisterForm() {
+    document.getElementById('step-choice').style.display = 'none';
+    document.getElementById('step-phone').style.display = 'none';
+    document.getElementById('step-info').style.display = 'block';
+}
+
+function backToChoice() {
+    document.getElementById('step-choice').style.display = 'block';
+    document.getElementById('step-phone').style.display = 'none';
+    document.getElementById('step-info').style.display = 'none';
+}
+
+// --- LOGIQUE DE CONNEXION (Client existant) ---
+async function checkPhone() {
+    const phone = document.getElementById('phone-input').value;
+    if(!phone || phone.length < 8) return alert('Numéro invalide');
+
+    try {
+        // On vérifie si le client existe dans la base
+        const res = await fetch(`${API_URL}/clients/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telephone: phone, nom: '', adresse: '', whatsapp: '' }) 
+        });
+        const data = await res.json();
+        
+        // Si le serveur trouve un client avec un nom, c'est qu'il existe
+        if (data.success && data.client && data.client.nom) {
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser));
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+        } else {
+            alert('Numéro non reconnu. Veuillez créer un compte.');
+            showRegisterForm(); // Si le numéro n'existe pas, on l'envoie vers l'inscription
+        }
+    } catch(e) { 
+        alert('Erreur de connexion au serveur.'); 
+    }
+}
+
+// --- LOGIQUE D'INSCRIPTION (Nouveau client) ---
+async function saveProfile() {
+    const phone = document.getElementById('phone-input-reg').value;
+    const nom = document.getElementById('name-input').value;
+    const adresse = document.getElementById('address-input').value;
+    const whatsapp = document.getElementById('whatsapp-input').value;
+
+    if(!phone || !nom || !adresse) return alert('Remplissez tous les champs obligatoires');
+
+    try {
+        const res = await fetch(`${API_URL}/clients/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp })
+        });
+        const data = await res.json();
+        if(data.success) {
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser));
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+            alert('Compte créé avec succès !');
+        }
+    } catch(e) { alert('Erreur lors de la création du compte.'); }
+}
 
 let authMode = 'login'; // 'login' ou 'register'
 
@@ -83,13 +154,7 @@ function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
 function toggleCart() { const drawer = document.getElementById('cart-drawer'); drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; }
 
 // LOGIN CLIENT
-async function checkPhone() {
-    const phone = document.getElementById('phone-input').value;
-    if(phone.length < 8) return alert('Numéro invalide');
-    
-    if (authMode === 'login') {
-        try {
-            const res = await fetch(`${API_URL}/clients/login`, {
+async /clients/login`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telephone: phone, nom: 'temp', adresse: 'temp', whatsapp: '' }) // Fake data to check
             });
@@ -112,15 +177,7 @@ async function checkPhone() {
     }
 }
 
-async function saveProfile() {
-    const phone = document.getElementById('phone-input').value;
-    const nom = document.getElementById('name-input').value;
-    const adresse = document.getElementById('address-input').value;
-    const whatsapp = document.getElementById('whatsapp-input').value;
-    if(!nom || !adresse) return alert('Remplissez vos infos');
-
-    try {
-        const res = await fetch(`${API_URL}/clients/login`, {
+async /clients/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp })
         });
