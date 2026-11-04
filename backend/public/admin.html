@@ -279,24 +279,24 @@
   async function loadVentes() { 
     try { 
         const r = await fetch(`${API_URL}/ventes`); 
-        const v = await r.json(); 
-        let ca=0, m=0; 
-        const el=document.getElementById('ventesList'); 
+        const data = await r.json(); 
         
-        if(v.length === 0){
+        const el = document.getElementById('ventesList'); 
+        
+        // On met à jour les totaux renvoyés par le serveur
+        document.getElementById('totalCA').textContent = data.totalCA.toFixed(2) + ' €'; 
+        document.getElementById('totalMarge').textContent = data.totalMarge.toFixed(2) + ' €'; 
+        
+        if(data.ventes.length === 0){
             el.innerHTML = 'Aucune vente validée aujourd\'hui.'; 
-            document.getElementById('totalCA').textContent = '0.00 €'; 
-            document.getElementById('totalMarge').textContent = '0.00 €'; 
             return;
         } 
         
-        el.innerHTML = v.map(x => { 
+        el.innerHTML = data.ventes.map(x => { 
             const mg = x.prix_vente_total - x.prix_achat_total; 
-            ca += parseFloat(x.prix_vente_total); 
-            m += mg; 
             return `<div class="item-card">
                 <div class="item-info">
-                    <span class="item-name">Commande #${x.id} - ${x.client_nom || 'Client'}</span>
+                    <span class="item-name">Commande #${x.id} - ${x.client_nom}</span>
                     <span class="item-details">Validée le ${new Date(x.date_vente).toLocaleString('fr-FR')}</span>
                 </div>
                 <div style="text-align:right">
@@ -306,10 +306,8 @@
             </div>`; 
         }).join(''); 
         
-        document.getElementById('totalCA').textContent=ca.toFixed(2)+' €'; 
-        document.getElementById('totalMarge').textContent=m.toFixed(2)+' €'; 
     } catch(e){
-        console.error(e);
+        console.error("Erreur chargement ventes:", e);
     } 
 }
   async function deleteVente(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/ventes/${id}`, { method: 'DELETE' }); loadVentes(); } }
