@@ -1,11 +1,8 @@
-cd C:\Users\Ghost\puff-zone\backend
-$serverJs = @'
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
-// Importation de nos fonctions de sécurité
 const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./auth');
 
 const app = express();
@@ -16,7 +13,6 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- INITIALISATION DE LA BASE DE DONNÉES ---
 const initDB = async () => {
   try {
     await pool.query(`
@@ -40,10 +36,31 @@ const initDB = async () => {
 };
 initDB();
 
-// --- ROUTE DE SANTÉ ---
 app.get('/api/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ status: 'ok', db: 'connected' }); } 
   catch (e) { res.status(500).json({ status: 'error', error: e.message }); }
+});
+
+// --- ROUTE DE DIAGNOSTIC ---
+app.get('/api/debug-login', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const r = await pool.query("SELECT name, password, role FROM utilisateurs WHERE name = 'Admin1'");
+    if (r.rows.length === 0) {
+      return res.json({ status: "ERREUR", message: "Admin1 n'existe pas dans la base." });
+    }
+    const user = r.rows[0];
+    const isMatch = await bcrypt.compare('admin123', user.password);
+    res.json({
+      status: "OK",
+      nom: user.name,
+      role: user.role,
+      mot_de_passe_correspond: isMatch,
+      debut_du_hash: user.password.substring(0, 15) + "..."
+    });
+  } catch (e) {
+    res.status(500).json({ status: "ERREUR_SERVEUR", error: e.message });
+  }
 });
 
 // --- CLIENTS (Public) ---
@@ -77,14 +94,12 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ ADMIN : Liste des clients
 app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM clients ORDER BY created_at DESC'); res.json(r.rows); } 
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- COMMANDES ---
-// Public : passage de commande par un client
 app.post('/api/commandes', async (req, res) => {
   const { client_id, cart, total } = req.body;
   try {
@@ -98,7 +113,6 @@ app.post('/api/commandes', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ ADMIN : Voir toutes les commandes
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`
@@ -110,14 +124,12 @@ app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ ADMIN : Changer le statut
 app.put('/api/commandes/:id/statut', authenticateToken, isAdmin, async (req, res) => {
   const { statut } = req.body;
   try { await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); res.json({ success: true }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ ADMIN : Assigner un livreur
 app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res) => {
   const { livreur_id } = req.body;
   try {
@@ -126,7 +138,6 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ LIVREUR/ADMIN : Commandes d'un livreur
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => {
   try {
     const r = await pool.query(`
@@ -139,7 +150,6 @@ app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PROTÉGÉ ADMIN : Stats
 app.get('/api/stats', authenticateToken, isAdmin, async (req, res) => {
   try {
     const top = await pool.query(`SELECT saveur_nom, SUM(quantite) as total_qte FROM commande_items GROUP BY saveur_nom ORDER BY total_qte DESC LIMIT 5`);
@@ -147,8 +157,7 @@ app.get('/api/stats', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- UTILISATEURS (STAFF) ---
-// PROTÉGÉ ADMIN : Gestion du personnel
+// --- UTILISATEURS ---
 app.get('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT id,name,role FROM utilisateurs'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => { 
   const { name, password, role } = req.body; 
@@ -160,7 +169,7 @@ app.post('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => {
 });
 app.delete('/api/utilisateurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM utilisateurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- LOGIN ADMIN (Modifié pour bcrypt + Token) ---
+// --- LOGIN ADMIN ---
 app.post('/api/login', async (req, res) => { 
   const { name, password } = req.body; 
   try { 
@@ -179,7 +188,6 @@ app.post('/api/login', async (req, res) => {
 // --- LIVREURS ---
 app.get('/api/livreurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query("SELECT * FROM utilisateurs WHERE role='livreur'"); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- LOGIN LIVREUR (Modifié pour bcrypt + Token) ---
 app.post('/api/login-livreur', async (req, res) => { 
   const { name, password } = req.body; 
   try { 
@@ -195,13 +203,12 @@ app.post('/api/login-livreur', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
 
-// --- ZONES (Admin) ---
+// --- ZONES ---
 app.get('/api/zones', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // --- CATEGORIES & SAVEURS ---
-// Public : le client doit voir le catalogue
 app.get('/api/catalogue', async (req, res) => {
   try {
     const [cats, savs] = await Promise.all([
@@ -212,7 +219,6 @@ app.get('/api/catalogue', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Admin : Gestion du catalogue
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
@@ -221,7 +227,7 @@ app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { 
 app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock, prix_achat } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock,prix_achat) VALUES ($1,$2,$3,$4) RETURNING *', [categorie_id, nom, stock, prix_achat]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- VENTES (Admin) ---
+// --- VENTES ---
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => { 
   try { 
     const r = await pool.query(`
@@ -242,35 +248,10 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
     res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
-// --- ROUTE DE DIAGNOSTIC TEMPORAIRE ---
-app.get('/api/debug-login', async (req, res) => {
-  try {
-    const bcrypt = require('bcryptjs');
-    const r = await pool.query("SELECT name, password, role FROM utilisateurs WHERE name = 'Admin1'");
-    if (r.rows.length === 0) {
-      return res.json({ status: "ERREUR", message: "L'utilisateur Admin1 n'existe pas du tout dans la base." });
-    }
-    const user = r.rows[0];
-    const isMatch = await bcrypt.compare('admin123', user.password);
-    res.json({
-      status: "OK",
-      utilisateur_trouve: user.name,
-      role: user.role,
-      mot_de_passe_correspond: isMatch, // true ou false
-      debut_du_hash: user.password.substring(0, 15) + "...",
-      longueur_du_hash: user.password.length
-    });
-  } catch (e) {
-    res.status(500).json({ status: "ERREUR_SERVEUR", error: e.message });
-  }
-});
-// --- FIN ROUTE DIAGNOSTIC ---
+
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
-'@
-[System.IO.File]::WriteAllText("$pwd\server.js", $serverJs, (New-Object System.Text.UTF8Encoding $false))
-Write-Host "✅ BLOC 1 OK - server.js réécrit avec toutes les routes et la sécurité" -ForegroundColor Green
