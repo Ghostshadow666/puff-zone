@@ -1,6 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
+    <script>
+        const staff = JSON.parse(localStorage.getItem('puff_staff'));
+        if (!staff || staff.role !== 'admin') {
+            window.location.href = '/admin-login.html';
+        }
+    </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PUFF ZONE — Admin</title>
@@ -55,7 +61,7 @@
     <button class="nav-tab" data-target="tab-stock" onclick="switchTab('tab-stock', this)">📦 Stock</button>
     <button class="nav-tab" data-target="tab-ventes" onclick="switchTab('tab-ventes', this)">🛒 Ventes</button>
   </div>
-  <button class="logout-btn" onclick="alert('Déconnexion à venir...')">Déconnexion</button>
+  <button class="logout-btn" onclick="logoutAdmin()">Déconnexion</button>
 </div>
 <div class="container">
   <div id="tab-livreurs" class="tab-content active">
@@ -217,6 +223,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const API_URL = '/api';
+  function logoutAdmin() {
+      localStorage.removeItem('puff_staff');
+      window.location.href = '/admin-login.html';
+  }
   let map = null, currentMarker = null, currentCircle = null, selectedCoords = null;
   let allCategories = [], allFlavors = [];
   let currentBase64Image = null;

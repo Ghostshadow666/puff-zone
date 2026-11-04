@@ -1,9 +1,24 @@
-﻿const API_URL = '/api';
+const API_URL = '/api';
 let allCategories = [];
 let allFlavors = [];
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 
+let authMode = 'login'; // 'login' ou 'register'
+
+function showLoginForm() {
+    authMode = 'login';
+    document.getElementById('step-choice').style.display = 'none';
+    document.getElementById('step-phone').style.display = 'block';
+}
+
+function showRegisterForm() {
+    authMode = 'register';
+    document.getElementById('step-choice').style.display = 'none';
+    // On saute directement au formulaire d'infos
+    document.getElementById('step-phone').style.display = 'none';
+    document.getElementById('step-info').style.display = 'block';
+}
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('main-site').style.display = 'grid';
     if (currentUser) {
@@ -71,8 +86,30 @@ function toggleCart() { const drawer = document.getElementById('cart-drawer'); d
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
     if(phone.length < 8) return alert('Numéro invalide');
-    document.getElementById('step-phone').style.display = 'none';
-    document.getElementById('step-info').style.display = 'block';
+    
+    if (authMode === 'login') {
+        try {
+            const res = await fetch(`${API_URL}/clients/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telephone: phone, nom: 'temp', adresse: 'temp', whatsapp: '' }) // Fake data to check
+            });
+            const data = await res.json();
+            if (data.success && data.client.nom !== 'temp') {
+                currentUser = data.client; 
+                localStorage.setItem('puff_client', JSON.stringify(currentUser));
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+                alert('Connexion réussie !');
+            } else {
+                alert('Numéro non reconnu. Veuillez vous inscrire.');
+                showRegisterForm(); // Switch to register
+            }
+        } catch(e) { alert('Erreur serveur'); }
+    } else {
+        // Mode inscription : on passe à l'étape info
+        document.getElementById('step-phone').style.display = 'none';
+        document.getElementById('step-info').style.display = 'block';
+    }
 }
 
 async function saveProfile() {

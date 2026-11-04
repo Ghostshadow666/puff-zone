@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUFF ZONE - Admin Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-dark: #030008; --neon-cyan: #22D3EE; --violet: #A855F7; --card: rgba(15, 15, 32, 0.8); --border: rgba(168, 85, 247, 0.4); }
+        body { background-color: var(--bg-dark); color: white; font-family: 'Rajdhani', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; background-image: radial-gradient(circle at 50% 50%, #1a0b2e 0%, #030008 100%); }
+        .login-box { background: var(--card); padding: 40px; border-radius: 15px; border: 1px solid var(--border); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(168, 85, 247, 0.2); backdrop-filter: blur(10px); }
+        h2 { font-family: 'Orbitron', sans-serif; color: var(--neon-cyan); margin-top: 0; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--neon-cyan); }
+        button { width: 100%; padding: 14px; background: linear-gradient(90deg, var(--violet), var(--neon-cyan)); color: white; border: none; border-radius: 8px; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+        button:hover { opacity: 0.8; box-shadow: 0 0 15px var(--violet); }
+        .error { color: #EF4444; font-weight: bold; margin-bottom: 15px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>⚙️ Admin PUFF ZONE</h2>
+        <p style="color: #94A3B8; font-size: 14px; margin-bottom: 25px;">Accès réservé au personnel</p>
+        <div id="error-msg" class="error">Identifiants incorrects.</div>
+        <input type="text" id="adminName" placeholder="Nom d'utilisateur" required>
+        <input type="password" id="adminPassword" placeholder="Mot de passe" required>
+        <button onclick="loginAdmin()">Se connecter</button>
+        <div style="margin-top: 20px;">
+            <a href="/" style="color: #94A3B8; text-decoration: none; font-size: 13px;">← Retour au site</a>
+        </div>
+    </div>
+
+    <script>
+        async function loginAdmin() {
+            const name = document.getElementById('adminName').value;
+            const password = document.getElementById('adminPassword').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            if (!name || !password) return alert("Remplis tous les champs !");
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.user.role === 'admin') {
+                    localStorage.setItem('puff_staff', JSON.stringify(data.user));
+                    window.location.href = '/admin.html';
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                alert("Erreur de connexion au serveur.");
+            }
+        }
+    </script>
+</body>
+</html>
