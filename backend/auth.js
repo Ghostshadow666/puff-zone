@@ -30,7 +30,7 @@ async function checkPassword(password, hashedPassword) {
 
 function generateToken(user) {
     return jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
+        { id: user.id, name: user.name, role: user.role },
         JWT_SECRET,
         { expiresIn: '24h' }
     );

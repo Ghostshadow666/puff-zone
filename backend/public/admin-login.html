@@ -47,7 +47,9 @@
 
                 const data = await res.json();
 
-                if (res.ok && data.user.role === 'admin') {
+                // On vérifie que le token existe bien
+                if (res.ok && data.user.role === 'admin' && data.token) {
+                    localStorage.setItem('token', data.token);
                     localStorage.setItem('puff_staff', JSON.stringify(data.user));
                     window.location.href = '/admin.html';
                 } else {

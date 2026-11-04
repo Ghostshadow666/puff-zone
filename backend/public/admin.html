@@ -60,7 +60,6 @@
 </div>
 
 <div class="container">
-    <!-- ONGLET LIVREURS -->
     <div id="tab-livreurs" class="tab-content active">
         <div class="card">
             <h2>➕ Ajouter un livreur</h2>
@@ -81,7 +80,6 @@
         </div>
     </div>
 
-    <!-- ONGLET ZONES -->
     <div id="tab-zones" class="tab-content">
         <div class="card">
             <h2>📍 Clique sur la carte pour placer une zone</h2>
@@ -101,7 +99,6 @@
         </div>
     </div>
 
-    <!-- ONGLET PERSONNEL -->
     <div id="tab-personnel" class="tab-content">
         <div class="card">
             <h2>➕ Créer un compte (Admin, Vendeur, Livreur)</h2>
@@ -120,7 +117,6 @@
         </div>
     </div>
 
-    <!-- ONGLETS EXTRA (Commandes, Clients, Stats) -->
     <div id="tab-commandes" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;"><h2>📦 Gestion des Commandes</h2><button class="btn" onclick="loadCommandes()" style="padding: 8px 15px; font-size: 0.8rem;">🔄 Actualiser</button></div>
@@ -142,7 +138,6 @@
         </div>
     </div>
 
-    <!-- ONGLET STOCK -->
     <div id="tab-stock" class="tab-content">
         <div class="card" id="categoryFormCard">
             <h2 id="catFormTitle">➕ Créer une Catégorie</h2>
@@ -167,7 +162,6 @@
         </div>
     </div>
 
-    <!-- ONGLET VENTES (SANS LE CASH-UP) -->
     <div id="tab-ventes" class="tab-content">
         <div class="card">
             <h2>📊 Récapitulatif Global des Ventes</h2>
@@ -187,7 +181,6 @@
 
 </div>
 
-<!-- MODAL SAVEUR -->
 <div id="flavorModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; align-items:center; justify-content:center;">
     <div class="card" style="width: 100%; max-width: 400px; margin: 20px;">
         <h2 id="flavorModalTitle" style="color: var(--purple);">➕ Ajouter une saveur</h2>
@@ -212,13 +205,17 @@
     window.fetch = function() {
         let [resource, config] = arguments;
         const token = localStorage.getItem('token');
-        if (token) {
+        
+        // On vérifie que le token existe et n'est pas "undefined"
+        if (token && token !== 'undefined' && token !== 'null') {
             config = config || {};
             config.headers = config.headers || {};
             config.headers['Authorization'] = 'Bearer ' + token;
         }
+        
         return originalFetch(resource, config).then(response => {
-            if (response.status === 401) {
+            // On attrape le 401 (non connecté) ET le 403 (token invalide)
+            if (response.status === 401 || response.status === 403) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('puff_staff');
                 window.location.href = 'admin-login.html';
@@ -227,7 +224,6 @@
         });
     };
 
-    // SÉCURITÉ ADMIN
     const staff = JSON.parse(localStorage.getItem('puff_staff'));
     if (!staff || staff.role !== 'admin') { window.location.href = '/admin-login.html'; }
 
@@ -249,13 +245,10 @@
         window.location.href = '/admin-login.html'; 
     }
 
-    // INITIALISATION
     document.addEventListener('DOMContentLoaded', () => {
         loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes();
-        // Les fonctions admin-extra (Commandes, Clients, Stats) sont appelées par le script externe
     });
 
-    // --- LIVREURS ---
     async function loadDrivers() {
         try { 
             const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); const el = document.getElementById('driverList'); 
@@ -270,7 +263,6 @@
     });
     async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
 
-    // --- ZONES ---
     function initMap() {
         map = L.map('map').setView([50.633, 5.567], 9); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         map.on('click', function(e) { selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(map); currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: 20000, color: '#A855F7', fillColor: '#A855F7', fillOpacity: 0.2 }).addTo(map); document.getElementById('submitZoneBtn').disabled = false; });
@@ -279,7 +271,6 @@
     document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords)return; await fetch(`${API_URL}/zones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon:parseInt(document.getElementById('zoneRayon').value)*1000, min_commande: parseInt(document.getElementById('zoneMin').value) }) }); document.getElementById('addZoneForm').reset(); document.getElementById('submitZoneBtn').disabled=true; map.removeLayer(currentMarker); map.removeLayer(currentCircle); selectedCoords=null; loadZones(); });
     async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); loadZones(); } }
 
-    // --- PERSONNEL ---
     async function loadUsers() {
         try {
             const res = await fetch(`${API_URL}/utilisateurs`); const users = await res.json(); const listEl = document.getElementById('userList');
@@ -300,7 +291,6 @@
     });
     async function deleteUser(id) { if(confirm('Supprimer ce compte ?')) { await fetch(`${API_URL}/utilisateurs/${id}`, { method: 'DELETE' }); loadUsers(); } }
 
-    // --- CATALOGUE ---
     async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
     function renderCatalogue() {
         const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
@@ -337,7 +327,6 @@
     async function saveFlavor() { const catId = document.getElementById('flavorCatId').value, editId = document.getElementById('editFlavorId').value; const data = { categorie_id: parseInt(catId), nom: document.getElementById('flavNom').value, stock: parseInt(document.getElementById('flavStock').value), prix_achat: parseFloat(document.getElementById('flavAchat').value) }; await fetch(editId ? `${API_URL}/saveurs/${editId}` : `${API_URL}/saveurs`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); document.getElementById('flavorModal').style.display = 'none'; loadCatalogue(); }
     async function deleteFlavor(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/saveurs/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
 
-    // --- VENTES (PROPRE) ---
     async function loadVentes() { 
         try { 
             const r = await fetch(`${API_URL}/ventes`); 
