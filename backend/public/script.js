@@ -145,7 +145,7 @@ function addToCart(flavId) {
     
     const existing = cart.find(item => item.id === flavId);
     if(existing) { existing.qty++; } 
-    else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); }
+    else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, prix_achat: flav.prix_achat, qty: 1 }); }
     
     updateCartUI(); 
     toggleCart();

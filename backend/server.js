@@ -87,7 +87,7 @@ app.post('/api/commandes', async (req, res) => {
     const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING id', [client_id, total]);
     const cmdId = cmd.rows[0].id;
     for (const item of cart) {
-      await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmdId, item.nom, item.qty, item.prix]);
+      await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, prix_achat) VALUES ($1,$2,$3,$4,$5)', [cmdId, item.nom, item.qty, item.prix, item.prix_achat || 0]);
     }
     res.json({ success: true, commande_id: cmdId });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -175,7 +175,20 @@ app.post('/api/saveurs', async (req, res) => { const { categorie_id, nom, stock,
 app.delete('/api/saveurs/:id', async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 // --- VENTES ---
-app.get('/api/ventes', async (req, res) => { try { const r = await pool.query("SELECT * FROM ventes WHERE date_vente::date = CURRENT_DATE ORDER BY date_vente DESC"); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/ventes', async (req, res) => { 
+  try { 
+    const r = await pool.query(`
+      SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente,
+             COALESCE((SELECT SUM(prix_achat * quantite) FROM commande_items WHERE commande_id = c.id), 0) as prix_achat_total,
+             cl.nom as client_nom, 'Client Boutique' as categorie_nom, 'Divers' as saveur_nom, 1 as quantite
+      FROM commandes c 
+      LEFT JOIN clients cl ON c.client_id = cl.id
+      WHERE c.statut = 'livre' AND c.date_commande::date = CURRENT_DATE
+      ORDER BY c.date_commande DESC
+    `); 
+    res.json(r.rows); 
+  } catch (e) { res.status(500).json({ error: e.message }); } 
+});
 app.post('/api/ventes', async (req, res) => { const { client_nom, categorie_nom, saveur_nom, quantite, prix_vente_total, prix_achat_total } = req.body; try { const r = await pool.query('INSERT INTO ventes (client_nom,categorie_nom,saveur_nom,quantite,prix_vente_total,prix_achat_total) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [client_nom, categorie_nom, saveur_nom, quantite, prix_vente_total, prix_achat_total]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/ventes/:id', async (req, res) => { try { await pool.query('DELETE FROM ventes WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 

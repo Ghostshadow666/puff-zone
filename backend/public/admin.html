@@ -170,22 +170,7 @@
     </div>
   </div>
   <div id="tab-ventes" class="tab-content">
-    <div class="card">
-      <h2>🛒 Ajouter une vente (Cash-up)</h2>
-      <form id="addVenteForm">
-        <div class="form-row">
-          <div class="input-group"><label>Client</label><input type="text" id="venteClient" placeholder="ex: Jean D." required></div>
-          <div class="input-group"><label>Catégorie</label><select id="venteCategorie" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px 14px; border-radius: 10px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; outline: none;"></select></div>
-          <div class="input-group"><label>Saveur</label><select id="venteSaveur" required style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px 14px; border-radius: 10px; font-family: 'Nunito',sans-serif; font-size: 0.9rem; outline: none;"></select></div>
-        </div>
-        <div class="form-row">
-          <div class="input-group"><label>Quantité</label><input type="number" id="venteQte" value="1" min="1" required></div>
-          <div class="input-group"><label>Prix de vente TOTAL (€)</label><input type="number" id="ventePrixVente" step="0.01" value="0" required></div>
-          <div class="input-group"><label>Prix d'achat TOTAL (€)</label><input type="number" id="ventePrixAchat" step="0.01" value="0" required></div>
-          <button type="submit" class="btn" id="submitVenteBtn">Ajouter</button>
-        </div>
-      </form>
-    </div>
+    
     <div class="card">
       <h2>📊 Récapitulatif de la journée</h2>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
@@ -291,7 +276,42 @@
   document.getElementById('venteSaveur').addEventListener('change', updateVentePA);
   document.getElementById('venteQte').addEventListener('input', updateVentePA);
   document.getElementById('addVenteForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/ventes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_nom: document.getElementById('venteClient').value, categorie_nom: document.getElementById('venteCategorie').value, saveur_nom: document.getElementById('venteSaveur').value, quantite: parseInt(document.getElementById('venteQte').value), prix_vente_total: parseFloat(document.getElementById('ventePrixVente').value), prix_achat_total: parseFloat(document.getElementById('ventePrixAchat').value) }) }); document.getElementById('addVenteForm').reset(); loadVentes(); });
-  async function loadVentes() { try { const r = await fetch(`${API_URL}/ventes`); const v = await r.json(); let ca=0, m=0; const el=document.getElementById('ventesList'); if(v.length===0){el.innerHTML='Aucune vente.'; document.getElementById('totalCA').textContent='0.00 €'; document.getElementById('totalMarge').textContent='0.00 €'; return;} el.innerHTML= v.map(x=>{ const mg = x.prix_vente_total - x.prix_achat_total; ca+=parseFloat(x.prix_vente_total); m+=mg; return `<div class="item-card"><div class="item-info"><span class="item-name">${x.client_nom}</span><span class="item-details">${x.categorie_nom} - ${x.saveur_nom} (x${x.quantite})</span></div><div style="text-align:right"><div style="color:var(--green);font-weight:900">${x.prix_vente_total}€</div><div style="font-size:0.75rem;color:var(--purple)">Marge: ${mg.toFixed(2)}€</div></div><button class="btn btn-danger" onclick="deleteVente(${x.id})">🗑️</button></div>`; }).join(''); document.getElementById('totalCA').textContent=ca.toFixed(2)+' €'; document.getElementById('totalMarge').textContent=m.toFixed(2)+' €'; } catch(e){} }
+  async function loadVentes() { 
+    try { 
+        const r = await fetch(`${API_URL}/ventes`); 
+        const v = await r.json(); 
+        let ca=0, m=0; 
+        const el=document.getElementById('ventesList'); 
+        
+        if(v.length === 0){
+            el.innerHTML = 'Aucune vente validée aujourd\'hui.'; 
+            document.getElementById('totalCA').textContent = '0.00 €'; 
+            document.getElementById('totalMarge').textContent = '0.00 €'; 
+            return;
+        } 
+        
+        el.innerHTML = v.map(x => { 
+            const mg = x.prix_vente_total - x.prix_achat_total; 
+            ca += parseFloat(x.prix_vente_total); 
+            m += mg; 
+            return `<div class="item-card">
+                <div class="item-info">
+                    <span class="item-name">Commande #${x.id} - ${x.client_nom || 'Client'}</span>
+                    <span class="item-details">Validée le ${new Date(x.date_vente).toLocaleString('fr-FR')}</span>
+                </div>
+                <div style="text-align:right">
+                    <div style="color:var(--green);font-weight:900">${x.prix_vente_total}€</div>
+                    <div style="font-size:0.75rem;color:var(--purple)">Marge: ${mg.toFixed(2)}€</div>
+                </div>
+            </div>`; 
+        }).join(''); 
+        
+        document.getElementById('totalCA').textContent=ca.toFixed(2)+' €'; 
+        document.getElementById('totalMarge').textContent=m.toFixed(2)+' €'; 
+    } catch(e){
+        console.error(e);
+    } 
+}
   async function deleteVente(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/ventes/${id}`, { method: 'DELETE' }); loadVentes(); } }
     // --- GESTION DU PERSONNEL ---
   async function loadUsers() {
