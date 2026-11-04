@@ -122,3 +122,4 @@ async function checkout() {
     } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
 
+
