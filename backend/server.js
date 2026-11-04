@@ -63,6 +63,19 @@ app.get('/api/debug-login', async (req, res) => {
   }
 });
 
+// --- ROUTE DE CREATION FORCEE ---
+app.get('/api/force-create-admin', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash('admin123', 10);
+    await pool.query("DELETE FROM utilisateurs WHERE name = 'Admin1'");
+    await pool.query("INSERT INTO utilisateurs (name, password, role) VALUES ('Admin1', $1, 'admin')", [hash]);
+    res.json({ status: "SUCCÈS", message: "Admin1 a été recréé avec le mot de passe admin123 !" });
+  } catch (e) {
+    res.status(500).json({ status: "ERREUR_SERVEUR", error: e.message });
+  }
+});
+
 // --- CLIENTS (Public) ---
 app.post('/api/clients/register', async (req, res) => {
   const { telephone, nom, adresse, whatsapp } = req.body;
