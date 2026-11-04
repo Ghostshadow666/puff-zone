@@ -269,13 +269,13 @@
   function editFlavor(id) { const f = allFlavors.find(x => x.id === id); if (f) openFlavorModal(f.categorie_id, f.id); }
   async function saveFlavor() { const catId = document.getElementById('flavorCatId').value, editId = document.getElementById('editFlavorId').value; const data = { categorie_id: parseInt(catId), nom: document.getElementById('flavNom').value, stock: parseInt(document.getElementById('flavStock').value), prix_achat: parseFloat(document.getElementById('flavAchat').value) }; await fetch(editId ? `${API_URL}/saveurs/${editId}` : `${API_URL}/saveurs`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); closeFlavorModal(); loadCatalogue(); }
   async function deleteFlavor(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/saveurs/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
-  function populateVenteSelects() { const sel = document.getElementById('venteCategorie'); sel.innerHTML = allCategories.map(c => `<option value="${c.nom}">${c.nom}</option>`).join(''); updateVenteSaveurs(); }
-  function updateVenteSaveurs() { const cn = document.getElementById('venteCategorie').value; const c = allCategories.find(x => x.nom === cn); const s = document.getElementById('venteSaveur'); if (!c) { s.innerHTML = ''; return; } s.innerHTML = allFlavors.filter(f => f.categorie_id === c.id).map(f => `<option value="${f.nom}" data-pa="${f.prix_achat}">${f.nom}</option>`).join(''); updateVentePA(); }
-  function updateVentePA() { const s = document.getElementById('venteSaveur'); const o = s.options[s.selectedIndex];if(o && o.dataset.pa) { document.getElementById('ventePrixAchat').value = (parseFloat(o.dataset.pa) * (parseInt(document.getElementById('venteQte').value)||1)).toFixed(2); } }
-  document.getElementById('venteCategorie').addEventListener('change', updateVenteSaveurs);
-  document.getElementById('venteSaveur').addEventListener('change', updateVentePA);
-  document.getElementById('venteQte').addEventListener('input', updateVentePA);
-  document.getElementById('addVenteForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/ventes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_nom: document.getElementById('venteClient').value, categorie_nom: document.getElementById('venteCategorie').value, saveur_nom: document.getElementById('venteSaveur').value, quantite: parseInt(document.getElementById('venteQte').value), prix_vente_total: parseFloat(document.getElementById('ventePrixVente').value), prix_achat_total: parseFloat(document.getElementById('ventePrixAchat').value) }) }); document.getElementById('addVenteForm').reset(); loadVentes(); });
+  ">${c.nom}</option>`).join(''); updateVenteSaveurs(); }
+   s.innerHTML = allFlavors.filter(f => f.categorie_id === c.id).map(f => `<option value="${f.nom}" data-pa="${f.prix_achat}">${f.nom}</option>`).join(''); updateVentePA(); }
+   }
+  
+  
+  
+   document.getElementById('addVenteForm').reset(); loadVentes(); });
   async function loadVentes() { 
     try { 
         const r = await fetch(`${API_URL}/ventes`); 
@@ -283,9 +283,8 @@
         
         const el = document.getElementById('ventesList'); 
         
-        // Sécurité anti-blocage
         if (!data || data.error || typeof data.totalCA === 'undefined') {
-            el.innerHTML = 'Erreur de calcul des ventes (Base de données en cours de mise à jour).';
+            el.innerHTML = 'Erreur de calcul des ventes (Base de données).';
             document.getElementById('totalCA').textContent = '0.00 €'; 
             document.getElementById('totalMarge').textContent = '0.00 €'; 
             return;
@@ -318,7 +317,7 @@
         document.getElementById('ventesList').innerHTML = 'Erreur de connexion au serveur.';
     } 
 }
-  async function deleteVente(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/ventes/${id}`, { method: 'DELETE' }); loadVentes(); } }
+  /ventes/${id}`, { method: 'DELETE' }); loadVentes(); } }
     // --- GESTION DU PERSONNEL ---
   async function loadUsers() {
     try {
