@@ -118,6 +118,17 @@ app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SE
 app.post('/api/zones', async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/zones/:id', async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
+// --- ROUTE OPTIMISÉE POUR LE CATALOGUE CLIENT ---
+app.get('/api/catalogue', async (req, res) => {
+  try {
+    const [cats, savs] = await Promise.all([
+      pool.query('SELECT * FROM categories ORDER BY nom ASC'),
+      pool.query('SELECT * FROM saveurs ORDER BY nom ASC')
+    ]);
+    res.json({ categories: cats.rows, saveurs: savs.rows });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // --- CATEGORIES & SAVEURS ---
 app.get('/api/categories', async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/categories', async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });

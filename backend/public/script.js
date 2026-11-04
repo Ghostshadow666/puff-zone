@@ -3,7 +3,20 @@ let allCategories = [];
 let allFlavors = [];
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
-// --- GESTION DE LA NAVIGATION DE LA MODALE ---
+
+// --- INITIALISATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('main-site').style.display = 'grid';
+    
+    if (currentUser) {
+        document.getElementById('login-modal').style.display = 'none';
+        updateGreeting();
+    }
+    
+    loadCatalogue();
+});
+
+// --- GESTION DE LA CONNEXION/INSCRIPTION (UI) ---
 function showLoginForm() {
     document.getElementById('step-choice').style.display = 'none';
     document.getElementById('step-phone').style.display = 'block';
@@ -22,35 +35,31 @@ function backToChoice() {
     document.getElementById('step-info').style.display = 'none';
 }
 
-// --- LOGIQUE DE CONNEXION (Client existant) ---
+// --- LOGIQUE DE CONNEXION ---
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
     if(!phone || phone.length < 8) return alert('Numéro invalide');
 
     try {
-        // On vérifie si le client existe dans la base
         const res = await fetch(`${API_URL}/clients/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ telephone: phone, nom: '', adresse: '', whatsapp: '' }) 
         });
         const data = await res.json();
         
-        // Si le serveur trouve un client avec un nom, c'est qu'il existe
         if (data.success && data.client && data.client.nom) {
             currentUser = data.client; 
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+            updateGreeting();
         } else {
             alert('Numéro non reconnu. Veuillez créer un compte.');
-            showRegisterForm(); // Si le numéro n'existe pas, on l'envoie vers l'inscription
+            showRegisterForm();
         }
-    } catch(e) { 
-        alert('Erreur de connexion au serveur.'); 
-    }
+    } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
 
-// --- LOGIQUE D'INSCRIPTION (Nouveau client) ---
+// --- LOGIQUE D'INSCRIPTION ---
 async function saveProfile() {
     const phone = document.getElementById('phone-input-reg').value;
     const nom = document.getElementById('name-input').value;
@@ -69,59 +78,55 @@ async function saveProfile() {
             currentUser = data.client; 
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+            updateGreeting();
             alert('Compte créé avec succès !');
         }
     } catch(e) { alert('Erreur lors de la création du compte.'); }
 }
 
-let authMode = 'login'; // 'login' ou 'register'
-
-function showLoginForm() {
-    authMode = 'login';
-    document.getElementById('step-choice').style.display = 'none';
-    document.getElementById('step-phone').style.display = 'block';
+function updateGreeting() {
+    document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
 }
 
-function showRegisterForm() {
-    authMode = 'register';
-    document.getElementById('step-choice').style.display = 'none';
-    // On saute directement au formulaire d'infos
-    document.getElementById('step-phone').style.display = 'none';
-    document.getElementById('step-info').style.display = 'block';
+function logout() { 
+    localStorage.removeItem('puff_client'); 
+    location.reload(); 
 }
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('main-site').style.display = 'grid';
-    if (currentUser) {
-        document.getElementById('login-modal').style.display = 'none';
-        document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
-    }
-    loadCatalogue();
-});
 
+// --- CHARGEMENT DU CATALOGUE (OPTIMISÉ) ---
 async function loadCatalogue() {
     try {
-        const [rc, rf] = await Promise.all([ fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`) ]);
-        allCategories = await rc.json(); allFlavors = await rf.json();
+        // Une seule requête au lieu de deux !
+        const res = await fetch(`${API_URL}/catalogue`);
+        const data = await res.json();
+        allCategories = data.categories;
+        allFlavors = data.saveurs;
         renderCatalogueInColumns();
-    } catch (e) { document.getElementById('product-list').innerHTML = '<p style="color:red;">Erreur de chargement.</p>'; }
+    } catch (e) { 
+        document.getElementById('product-list').innerHTML = '<p style="color:red;">Erreur de chargement du catalogue.</p>'; 
+    }
 }
 
 function renderCatalogueInColumns() {
     const container = document.getElementById('product-list');
-    container.style.display = 'grid'; container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))'; container.style.gap = '30px';
-
     let html = '';
+    
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
         const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
+        
         html += `
         <div class="category-column">
-            <div class="category-header"><img src="${img}"><h2>${cat.nom}</h2><span class="price-badge">Dès ${cat.prix_unite}€</span></div>
+            <div class="category-header">
+                <img src="${img}">
+                <h2>${cat.nom}</h2>
+                <span class="price-badge">Dès ${cat.prix_unite}€</span>
+            </div>
             <div class="flavor-list">
                 ${catFlavors.map(f => {
                     const isOut = f.stock <= 0;
-                    return `<div class="flavor-row"><div class="flavor-info"><span class="flavor-name">${f.nom}</span></div>
+                    return `<div class="flavor-row">
+                        <div class="flavor-info"><span class="flavor-name">${f.nom}</span></div>
                         ${isOut ? `<button disabled class="btn-mini">✕</button>` : `<button onclick="addToCart(${f.id})" class="btn-mini">+</button>`}
                     </div>`;
                 }).join('')}
@@ -131,75 +136,62 @@ function renderCatalogueInColumns() {
     container.innerHTML = html;
 }
 
+// --- PANIER ---
 function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
-    const flav = allFlavors.find(f => f.id === flavId); const cat = allCategories.find(c => c.id === flav.categorie_id);
+    const flav = allFlavors.find(f => f.id === flavId);
+    const cat = allCategories.find(c => c.id === flav.categorie_id);
+    
     const existing = cart.find(item => item.id === flavId);
-    if(existing) { existing.qty++; } else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); }
-    updateCartUI(); toggleCart();
+    if(existing) { existing.qty++; } 
+    else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); }
+    
+    updateCartUI(); 
+    toggleCart();
 }
 
 function updateCartUI() {
-    const count = cart.reduce((sum, item) => sum + item.qty, 0); document.getElementById('cart-count').textContent = count;
+    const count = cart.reduce((sum, item) => sum + item.qty, 0); 
+    document.getElementById('cart-count').textContent = count;
     const itemsContainer = document.getElementById('cart-items');
-    if(cart.length === 0) { itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; document.getElementById('cart-total-price').textContent = '0 €'; return; }
+    
+    if(cart.length === 0) { 
+        itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; 
+        document.getElementById('cart-total-price').textContent = '0 €'; 
+        return; 
+    }
+    
     let html = ''; let total = 0;
     cart.forEach((item, index) => {
         total += item.prix * item.qty;
-        html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #333;"><div><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}€</div></div><div style="display:flex; align-items:center; gap:10px;"><span style="color:var(--neon-cyan); font-weight:bold;">x${item.qty}</span><button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer;">✕</button></div></div>`;
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #333;">
+            <div><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}€</div></div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="color:var(--neon-cyan); font-weight:bold;">x${item.qty}</span>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer;">✕</button>
+            </div>
+        </div>`;
     });
-    itemsContainer.innerHTML = html; document.getElementById('cart-total-price').textContent = total.toFixed(2) + ' €';
+    
+    itemsContainer.innerHTML = html; 
+    document.getElementById('cart-total-price').textContent = total.toFixed(2) + ' €';
 }
+
 function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
-function toggleCart() { const drawer = document.getElementById('cart-drawer'); drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; }
 
-// LOGIN CLIENT
-async /clients/login`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telephone: phone, nom: 'temp', adresse: 'temp', whatsapp: '' }) // Fake data to check
-            });
-            const data = await res.json();
-            if (data.success && data.client.nom !== 'temp') {
-                currentUser = data.client; 
-                localStorage.setItem('puff_client', JSON.stringify(currentUser));
-                document.getElementById('login-modal').style.display = 'none';
-                document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
-                alert('Connexion réussie !');
-            } else {
-                alert('Numéro non reconnu. Veuillez vous inscrire.');
-                showRegisterForm(); // Switch to register
-            }
-        } catch(e) { alert('Erreur serveur'); }
-    } else {
-        // Mode inscription : on passe à l'étape info
-        document.getElementById('step-phone').style.display = 'none';
-        document.getElementById('step-info').style.display = 'block';
-    }
+function toggleCart() { 
+    const drawer = document.getElementById('cart-drawer'); 
+    drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; 
 }
 
-async /clients/login`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp })
-        });
-        const data = await res.json();
-        if(data.success) {
-            currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser));
-            document.getElementById('login-modal').style.display = 'none';
-            document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
-        }
-    } catch(e) { alert('Erreur serveur'); }
-}
-
-function logout() { localStorage.removeItem('puff_client'); location.reload(); }
-
+// --- VALIDATION COMMANDE ---
 async function checkout() {
     if(!currentUser || !currentUser.id) {
-        alert("Votre session a expiré, veuillez vous reconnecter.");
-        localStorage.removeItem('puff_client');
-        location.reload();
+        alert("Veuillez vous connecter pour valider.");
         return;
     }
     if(cart.length === 0) return alert('Panier vide');
+    
     const total = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
 
     try {
@@ -211,9 +203,7 @@ async function checkout() {
             alert('✅ Commande envoyée avec succès !');
             cart = []; updateCartUI(); toggleCart();
         } else {
-            alert('Erreur lors de la validation de la commande.');
+            alert('Erreur lors de la validation.');
         }
     } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
-
-
