@@ -1,7 +1,6 @@
 :root {
     --bg: #05050f;
     --card: rgba(15, 15, 32, 0.75);
-    /* NOUVELLE PALETTE ROUGE */
     --purple: #ff0033; 
     --neon-cyan: #ff1a40; 
     --text: #F1F5F9;
@@ -21,15 +20,19 @@ body {
     overflow-x: hidden;
 }
 
-/* FONDS ORIGINAUX */
-.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(255, 0, 51, 0.15), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(255, 26, 64, 0.1), transparent 55%); z-index: -3; }
-.overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: -2; }
+/* FONDS */
+.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(255, 0, 51, 0.1), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(255, 26, 64, 0.05), transparent 55%); z-index: -3; }
+.overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: -2; }
 
 /* CANVAS 3D */
 #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 
-/* PUFFS FLOTTANTES EN DECO */
-.floating-puff { position: fixed; bottom: 5%; width: 150px; z-index: 1; opacity: 0.4; filter: drop-shadow(0 0 20px #ff0033); pointer-events: none; animation: floatPuff 6s ease-in-out infinite; }
+/* PUFFS FLOTTANTES */
+.floating-puff { 
+    position: fixed; bottom: 5%; width: 150px; z-index: 1; opacity: 0.6; 
+    filter: drop-shadow(0 0 30px #ff0033); /* Lueur autour de la puff pour la faire ressortir */
+    pointer-events: none; animation: floatPuff 6s ease-in-out infinite; 
+}
 .floating-puff.left { left: 5%; }
 .floating-puff.right { right: 5%; animation-delay: -3s; transform: scaleX(-1); }
 @keyframes floatPuff { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
@@ -76,5 +79,5 @@ body {
     #cart-drawer { width: 100%; right: -100%; }
     .grille-produits { grid-template-columns: 1fr; }
     .logo { font-size: 1.3rem; }
-    .floating-puff { display: none; } /* On cache les puffs sur mobile pour la propreté */
+    .floating-puff { display: none; }
 }
