@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUFF ZONE - Explorez la nouvelle dimension</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -19,10 +19,10 @@
     <header class="header">
         <div class="logo">PUFF <span>ZONE</span></div>
         <div class="header-actions">
-            <a href="/livreur.html" class="btn-header">&#128757; Livreur</a>
-            <a href="/admin.html" class="btn-header">&#9881;&#65039; Admin</a>
-            <div id="user-greeting" style="font-weight: bold; color: var(--neon-cyan); font-size: 0.9rem;">&#128075; Visiteur</div>
-            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">&#128722; Panier (<span id="cart-count">0</span>)</button>
+            <a href="/livreur.html" class="btn-header">Livreur</a>
+            <a href="/admin.html" class="btn-header">Admin</a>
+            <div id="user-greeting" style="font-weight: 600; color: var(--white); font-size: 0.85rem;">&#128075; Visiteur</div>
+            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">Panier (<span id="cart-count">0</span>)</button>
         </div>
     </header>
 
@@ -35,62 +35,61 @@
     </main>
 
     <!-- MODALE DE CONNEXION -->
-    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
-        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);">
-            <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
+    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:8px; border:1px solid var(--border); width:90%; max-width:400px; text-align:center;">
+            <h2 style="color:var(--white); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
             <div id="step-choice">
-                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue</p>
-                <button onclick="showLoginForm()" class="btn-ajouter" style="margin-bottom: 10px;">Se Connecter</button>
-                <button onclick="showRegisterForm()" class="btn-ajouter" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); margin-bottom: 20px;">Cr&eacute;er un compte</button>
-                <div style="border-top: 1px solid #333; padding-top: 15px; margin-top: 10px;">
-                    <a href="/admin-login.html" style="color: #94A3B8; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: bold;">&#9881;&#65039; Acc&egrave;s Staff</a>
+                <p style="color:var(--text2); font-size:12px; text-transform: uppercase; margin-bottom: 20px; letter-spacing:1px;">Acc&egrave;s Syst&egrave;me</p>
+                <button onclick="showLoginForm()" class="btn-panier" style="width:100%; margin-bottom: 10px; padding: 12px;">Se Connecter</button>
+                <button onclick="showRegisterForm()" class="btn-header" style="width:100%; border-color:var(--border); margin-bottom: 20px; padding: 12px;">Cr&eacute;er un compte</button>
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 10px;">
+                    <a href="/admin-login.html" style="color: var(--text2); text-decoration: none; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing:1px;">Acc&egrave;s Staff</a>
                 </div>
             </div>
+            <!-- Étapes de connexion et inscription (gardées identiques pour la stabilité) -->
             <div id="step-phone" style="display: none;">
-                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Connexion</p>
-                <input type="text" id="phone-input" placeholder="Num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
-                <button onclick="checkPhone()" class="btn-ajouter" style="margin-bottom: 10px;">Continuer</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
+                <input type="text" id="phone-input" placeholder="Num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <button onclick="checkPhone()" class="btn-panier" style="width:100%; margin-bottom: 10px; padding: 12px;">Continuer</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:var(--text2); cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
             <div id="step-info" style="display:none;">
-                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Inscription</p>
-                <input type="text" id="name-input" placeholder="Pr&eacute;nom/Nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
-                <input type="text" id="phone-input-reg" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
-                <input type="text" id="address-input" placeholder="Adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
-                <input type="text" id="whatsapp-input" placeholder="WhatsApp (Optionnel)" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
-                <button onclick="saveProfile()" class="btn-ajouter" style="margin-bottom: 10px;">S'inscrire</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
+                <input type="text" id="name-input" placeholder="Pr&eacute;nom/Nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="phone-input-reg" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="address-input" placeholder="Adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="whatsapp-input" placeholder="WhatsApp (Optionnel)" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <button onclick="saveProfile()" class="btn-panier" style="width:100%; margin-bottom: 10px; padding: 12px;">S'inscrire</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:var(--text2); cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
         </div>
     </div>
 
     <!-- PANIER -->
     <div id="cart-drawer">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px;">
-            <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">&#128722; Ton Panier</h2>
-            <button onclick="toggleCart()" style="background:none; border:none; color:#ff6b6b; font-size:24px; cursor:pointer;">&times;</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:15px;">
+            <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.1rem; letter-spacing:1px;">PANIER</h2>
+            <button onclick="toggleCart()" style="background:none; border:none; color:var(--text2); font-size:20px; cursor:pointer;">&times;</button>
         </div>
         <div id="cart-items" style="flex-grow:1; overflow-y:auto; margin-top:20px;"></div>
-        <div style="border-top:1px solid #333; padding-top:15px;">
+        <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
             <div id="promo-section" style="margin-bottom: 15px;">
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="promo-input" placeholder="CODE PROMO" style="flex:1; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; outline:none; text-transform:uppercase; font-family:'Rajdhani',sans-serif; font-weight:bold;">
-                    <button onclick="applyPromo()" style="padding:10px 15px; background:var(--neon-cyan); color:black; border:none; border-radius:5px; font-weight:900; cursor:pointer; text-transform:uppercase;">OK</button>
+                    <input type="text" id="promo-input" placeholder="CODE PROMO" style="flex:1; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; outline:none; text-transform:uppercase; font-family:'Orbitron',sans-serif; font-size:0.8rem;">
+                    <button onclick="applyPromo()" style="padding:10px 15px; background:var(--neon-cyan); color:black; border:none; border-radius:4px; font-weight:900; cursor:pointer; text-transform:uppercase;">OK</button>
                 </div>
                 <div id="promo-msg" style="font-size:12px; margin-top:5px; font-weight:bold;"></div>
             </div>
             <div style="margin-bottom: 15px;">
-                <select id="zone-select" onchange="applyZone()" style="width:100%; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; outline:none; font-weight:bold;">
+                <select id="zone-select" onchange="applyZone()" style="width:100%; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:4px; outline:none; font-weight:bold; font-size:0.85rem;">
                     <option value="">-- Choisir votre zone --</option>
                 </select>
                 <div id="zone-msg" style="font-size:12px; margin-top:5px; font-weight:bold;"></div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
-                <span style="color:#aaa;">Total :</span>
-                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 &euro;</span>
+                <span style="color:var(--text2); font-size:0.9rem;">Total :</span>
+                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px; font-family:'Orbitron', sans-serif;">0 &euro;</span>
             </div>
-            <button id="checkout-btn" onclick="checkout()" class="btn-ajouter">Valider la commande</button>
-            <button onclick="logout()" style="width:100%; background:none; border:none; color:#ff6b6b; margin-top:15px; cursor:pointer; font-size:12px;">Se d&eacute;connecter</button>
+            <button id="checkout-btn" onclick="checkout()" class="btn-panier" style="width:100%; padding:12px; font-size:0.9rem;">Valider la commande</button>
+            <button onclick="logout()" style="width:100%; background:none; border:none; color:var(--red); margin-top:15px; cursor:pointer; font-size:11px; text-transform:uppercase; letter-spacing:1px;">Se d&eacute;connecter</button>
         </div>
     </div>
 
@@ -100,198 +99,133 @@
         async function applyPromo() {
             const code = document.getElementById('promo-input').value.trim();
             const msg = document.getElementById('promo-msg');
-            if (!code) { msg.textContent = "Veuillez entrer un code."; msg.style.color = "#EF4444"; return; }
+            if (!code) { msg.textContent = "Veuillez entrer un code."; msg.style.color = "#ef4444"; return; }
             msg.textContent = "V&eacute;rification..."; msg.style.color = "#aaa";
             try {
                 const res = await fetch('/api/promo/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) });
                 const data = await res.json();
                 if (data.success) {
                     window.appliedPromoCode = code; window.appliedPromoPct = data.pourcentage;
-                    msg.innerHTML = `&#9989; Code appliqu&eacute; : -${data.pourcentage}%`; msg.style.color = "#22C55E";
+                    msg.innerHTML = `&#9989; Code appliqu&eacute; : -${data.pourcentage}%`; msg.style.color = "#10b981";
                     if (typeof updateCartUI === "function") updateCartUI();
                 } else {
                     window.appliedPromoCode = null; window.appliedPromoPct = 0;
-                    msg.innerHTML = `&#10060; ${data.error || 'Code invalide'}`; msg.style.color = "#EF4444";
+                    msg.innerHTML = `&#10060; ${data.error || 'Code invalide'}`; msg.style.color = "#ef4444";
                     if (typeof updateCartUI === "function") updateCartUI();
                 }
-            } catch (e) { msg.textContent = "Erreur"; msg.style.color = "#EF4444"; }
+            } catch (e) { msg.textContent = "Erreur"; msg.style.color = "#ef4444"; }
         }
 
-        // --- PLANETE 3D COSMIQUE ---
+        // --- PLANETE 3D FUTURISTE (WIREFRAME + ANNEAU FIN) ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050508, 0.08);
+        scene.fog = new THREE.FogExp2(0x020204, 0.05);
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 7.5);
+        camera.position.set(0, 0, 8);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.9;
         container.appendChild(renderer.domElement);
 
-        function createPlanetTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 2048; canvas.height = 1024;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#05020a'; // Fond très sombre
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Étoiles/Texture rocheuse
-            for (let i = 0; i < 40000; i++) {
-                const x = Math.random() * canvas.width; const y = Math.random() * canvas.height;
-                const size = Math.random() * 2 + 0.5; const shade = Math.floor(Math.random() * 20 + 10);
-                ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 10})`;
-                ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-            }
-            
-            // Veines Multicolores (Cyan / Violet / Rose)
-            function drawVein(startX, startY, length, width, angle, color, glowColor) {
-                let currX = startX; let currY = startY;
-                ctx.beginPath(); ctx.moveTo(currX, currY);
-                for (let i = 0; i < length; i++) {
-                    angle += (Math.random() - 0.5) * 0.5;
-                    currX += Math.cos(angle) * 8; currY += Math.sin(angle) * 8;
-                    if (currX < 0) currX += canvas.width; if (currX > canvas.width) currX -= canvas.width;
-                    ctx.lineTo(currX, currY);
-                }
-                ctx.strokeStyle = color;
-                ctx.lineWidth = width; ctx.shadowColor = glowColor; ctx.shadowBlur = 15; ctx.stroke();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = width * 0.3; ctx.shadowBlur = 3; ctx.stroke();
-                ctx.shadowBlur = 0;
-            }
-
-            for (let i = 0; i < 15; i++) {
-                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#00e5ff', '#00e5ff'); // Cyan
-            }
-            for (let i = 0; i < 15; i++) {
-                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#b200ff', '#b200ff'); // Violet
-            }
-            for (let i = 0; i < 15; i++) {
-                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#ff00ea', '#ff00ea'); // Rose
-            }
-
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        const planetTexture = createPlanetTexture();
-        const planetMaterial = new THREE.MeshStandardMaterial({
-            map: planetTexture, bumpMap: planetTexture, bumpScale: 0.08,
-            roughness: 0.8, metalness: 0.5,
-            transparent: true, opacity: 0.3, // Très transparent
-            emissive: new THREE.Color(0x001133), emissiveIntensity: 0.2
+        // Sphère Wireframe (Grille 3D)
+        const sphereGeo = new THREE.SphereGeometry(2.2, 32, 32);
+        const sphereMat = new THREE.MeshBasicMaterial({ 
+            color: 0x00f0ff, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.15 
         });
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        sphere.position.set(2.5, 0, -1);
+        scene.add(sphere);
 
-        const planet = new THREE.Mesh(new THREE.SphereGeometry(2.2, 64, 64), planetMaterial);
-        planet.position.set(2.5, 0, -2);
-        scene.add(planet);
-
-        // Atmosphère douce (Cyan)
-        const atmosphereMaterial = new THREE.ShaderMaterial({
-            vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-            fragmentShader: `varying vec3 vNormal; void main() { float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 3.5); gl_FragColor = vec4(0.0, 0.9, 1.0, 1.0) * intensity * 0.5; }`,
-            blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true
+        // Noyau interne (Lueur douce)
+        const coreGeo = new THREE.SphereGeometry(2.0, 32, 32);
+        const coreMat = new THREE.MeshBasicMaterial({ 
+            color: 0x00f0ff, 
+            transparent: true, 
+            opacity: 0.05 
         });
-        planet.add(new THREE.Mesh(new THREE.SphereGeometry(2.3, 64, 64), atmosphereMaterial));
+        const core = new THREE.Mesh(coreGeo, coreMat);
+        sphere.add(core);
 
-        // --- LES ANNEAUX ---
-        
-        // 1. Anneau intérieur horizontal (discret)
-        const innerRingGeometry = new THREE.RingGeometry(2.5, 2.8, 64);
-        const innerRingMaterial = new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending });
-        const innerRing = new THREE.Mesh(innerRingGeometry, innerRingMaterial);
-        innerRing.rotation.x = Math.PI / 2;
-        planet.add(innerRing);
+        // --- ANNEAU ET TEXTE ---
+        const orbitGroup = new THREE.Group();
+        orbitGroup.rotation.x = Math.PI / 2.2; // Inclinaison de l'anneau
+        orbitGroup.rotation.z = -Math.PI / 16;
+        sphere.add(orbitGroup);
 
-        // 2. Anneau extérieur incliné (avec le texte)
-        const outerRingGroup = new THREE.Group();
-        outerRingGroup.rotation.x = Math.PI / 2.3;
-        outerRingGroup.rotation.y = -Math.PI / 8;
-        planet.add(outerRingGroup);
+        // Ligne de l'anneau (Fine et blanche)
+        const ringGeo = new THREE.RingGeometry(3.2, 3.25, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        orbitGroup.add(ring);
 
+        // Texture du Texte (Corrigée pour être lisible)
         function createTextTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2048; canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(0,0,0,0)'; ctx.fillRect(0, 0, 2048, 128);
+            ctx.clearRect(0, 0, 2048, 128);
             
-            // Dégradé de couleur pour le texte
-            const gradient = ctx.createLinearGradient(0, 0, 2048, 0);
-            gradient.addColorStop(0, '#00e5ff');
-            gradient.addColorStop(0.5, '#b200ff');
-            gradient.addColorStop(1, '#00e5ff');
+            ctx.font = '700 60px "Orbitron", sans-serif';
+            ctx.fillStyle = '#ffffff'; 
+            ctx.textAlign = 'center'; 
+            ctx.textBaseline = 'middle';
             
-            ctx.font = '900 80px "Orbitron", sans-serif';
-            ctx.fillStyle = gradient; 
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 20;
-            
-            // On écrit le texte 3 fois pour qu'il fasse le tour de l'anneau
-            for (let i = 0; i < 3; i++) { ctx.fillText("PUFF ZONE", 341 + (i * 682), 64); }
+            // On inverse le canvas pour compenser la vue de l'intérieur du cylindre Three.js
+            ctx.scale(-1, 1); 
+            ctx.translate(-2048, 0);
+
+            for (let i = 0; i < 4; i++) { 
+                ctx.fillText("PUFF ZONE", 256 + (i * 512), 64); 
+            }
             return new THREE.CanvasTexture(canvas);
         }
 
-        // On crée un cylindre fin pour le texte et on l'attache au groupe extérieur
-        const textRingGeometry = new THREE.CylinderGeometry(3.6, 3.6, 0.5, 64, 1, true);
-        const textRingMaterial = new THREE.MeshBasicMaterial({ map: createTextTexture(), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
-        const textRing = new THREE.Mesh(textRingGeometry, textRingMaterial);
-        textRing.rotation.x = Math.PI / 2; // Remettre droit par rapport à son groupe
-        outerRingGroup.add(textRing);
+        const textGeo = new THREE.CylinderGeometry(3.22, 3.22, 0.4, 64, 1, true);
+        const textMat = new THREE.MeshBasicMaterial({ map: createTextTexture(), transparent: true, side: THREE.DoubleSide, depthWrite: false });
+        const textRing = new THREE.Mesh(textGeo, textMat);
+        textRing.rotation.x = Math.PI / 2;
+        orbitGroup.add(textRing);
 
-        // Un petit anneau lumineux sous le texte pour faire joli
-        const outerRingLineGeometry = new THREE.RingGeometry(3.5, 3.7, 64);
-        const outerRingLineMaterial = new THREE.MeshBasicMaterial({ color: 0xb200ff, side: THREE.DoubleSide, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
-        const outerRingLine = new THREE.Mesh(outerRingLineGeometry, outerRingLineMaterial);
-        outerRingLine.rotation.x = Math.PI / 2;
-        outerRingGroup.add(outerRingLine);
-
-        // Particules
-        const pCount = 1200; const pGeo = new THREE.BufferGeometry(); const pPos = new Float32Array(pCount * 3);
-        for (let i = 0; i < pCount; i++) { pPos[i * 3] = (Math.random() - 0.5) * 25; pPos[i * 3 + 1] = (Math.random() - 0.5) * 25; pPos[i * 3 + 2] = (Math.random() - 0.5) * 25; }
+        // Particules d'étoiles
+        const pCount = 1500; const pGeo = new THREE.BufferGeometry(); const pPos = new Float32Array(pCount * 3);
+        for (let i = 0; i < pCount; i++) { pPos[i * 3] = (Math.random() - 0.5) * 30; pPos[i * 3 + 1] = (Math.random() - 0.5) * 30; pPos[i * 3 + 2] = (Math.random() - 0.5) * 30; }
         pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        const pCanvas = document.createElement('canvas'); pCanvas.width = 32; pCanvas.height = 32;
-        const pCtx = pCanvas.getContext('2d'); const pGrad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-        pGrad.addColorStop(0, 'rgba(255, 255, 255, 1)'); pGrad.addColorStop(0.4, 'rgba(0, 229, 255, 0.8)'); pGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        pCtx.fillStyle = pGrad; pCtx.fillRect(0, 0, 32, 32);
-        const starfield = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.15, map: new THREE.CanvasTexture(pCanvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        const starfield = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.6 }));
         scene.add(starfield);
 
-        // Lumières Multicolores
-        const mainLight = new THREE.DirectionalLight(0x00e5ff, 2.0); mainLight.position.set(6, 4, 5); scene.add(mainLight);
-        const backLight = new THREE.DirectionalLight(0xb200ff, 1.5); backLight.position.set(-6, -2, -4); scene.add(backLight);
-        scene.add(new THREE.AmbientLight(0x110022, 1.0));
-
+        // Parallaxe souris
         let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
-        document.addEventListener('mousemove', (e) => { mouseX = (e.clientX - window.innerWidth/2) * 0.0003; mouseY = (e.clientY - window.innerHeight/2) * 0.0003; });
+        document.addEventListener('mousemove', (e) => { mouseX = (e.clientX - window.innerWidth/2) * 0.0002; mouseY = (e.clientY - window.innerHeight/2) * 0.0002; });
 
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
             
-            planet.rotation.y = time * 0.05; // Planète tourne doucement
+            sphere.rotation.y = time * 0.02; // La sphère tourne très lentement
             
-            // L'anneau extérieur (et son texte) tourne de gauche à droite
-            outerRingGroup.rotation.z = time * 0.15; 
-            innerRing.rotation.z = time * 0.05;
+            // L'anneau et le texte tournent de gauche à droite
+            orbitGroup.rotation.y = time * 0.1; 
             
-            starfield.rotation.y = time * 0.01;
-
             targetX += (mouseX - targetX) * 0.05; targetY += (mouseY - targetY) * 0.05;
-            camera.position.x = targetX * 2; camera.position.y = -targetY * 2;
-            camera.lookAt(scene.position);
+            camera.position.x = targetX * 3; camera.position.y = -targetY * 3;
+            camera.lookAt(2.5, 0, -1); // On regarde vers la sphère décalée
+            
             renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            if (window.innerWidth < 768) { planet.position.set(0, -1.5, -2); } else { planet.position.set(2.5, 0, -2); }
+            if (window.innerWidth < 768) { sphere.position.set(0, -1, -2); camera.lookAt(0, -1, -2); } else { sphere.position.set(2.5, 0, -1); camera.lookAt(2.5, 0, -1); }
         });
 
-        if (window.innerWidth < 768) { planet.position.set(0, -1.5, -2); }
+        if (window.innerWidth < 768) { sphere.position.set(0, -1, -2); camera.lookAt(0, -1, -2); } else { sphere.position.set(2.5, 0, -1); }
         window.onload = () => { animate(); };
     </script>
 </body>
