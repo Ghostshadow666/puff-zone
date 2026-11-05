@@ -43,7 +43,7 @@
         .item-name { font-weight: 900; font-size: 1.1rem; }
         .item-details { font-size: 0.8rem; color: var(--text2); }
         #map { height: 400px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; z-index: 1;}
-        /* On a enlevé le filtre invert ici pour avoir une carte claire */
+        /* On a enlevÃ© le filtre invert ici pour avoir une carte claire */
     </style>
 </head>
 <body>
@@ -460,7 +460,7 @@
                 const values = data.ca7jours.map(d => parseFloat(d.ca));
                 const ctxCA = document.getElementById('chartCA7Jours').getContext('2d');
                 if (chartCA) chartCA.destroy();
-                chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } });
+                chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (â‚¬)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } });
             }
             if (data.topSaveurs && data.topSaveurs.length > 0) {
                 const labels = data.topSaveurs.map(d => d.saveur_nom);
@@ -545,7 +545,7 @@
             
             if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; }
 
-            // Tracé de toutes les zones existantes sur la carte
+            // TracÃ© de toutes les zones existantes sur la carte
             allZones.forEach(z => {
                 L.circle([z.lat, z.lng], { radius: z.rayon, color: '#A855F7', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map);
             });
@@ -584,7 +584,7 @@
         await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); 
         
         resetZoneForm(); 
-        // Recharger la carte entièrement pour éviter les doublons de cercles
+        // Recharger la carte entiÃ¨rement pour Ã©viter les doublons de cercles
         map.eachLayer((layer) => {
             if(layer instanceof L.Circle) { map.removeLayer(layer); }
         });
@@ -663,9 +663,9 @@
                 return;
             }
             
-            document.getElementById('totalCA').textContent = data.totalCA.toFixed(2) + ' &euro;';
+            document.getElementById('totalCA').innerHTML = data.totalCA.toFixed(2) + ' &euro;';
             const margeEl = document.getElementById('totalMarge');
-            margeEl.textContent = data.totalMarge.toFixed(2) + ' &euro;';
+            margeEl.innerHTML = data.totalMarge.toFixed(2) + ' &euro;';
             margeEl.style.color = data.totalMarge < 0 ? '#EF4444' : 'var(--purple)';
 
             if(data.ventes.length === 0){ el.innerHTML = 'Aucune vente valid&eacute;e.'; return; }
