@@ -31,7 +31,7 @@ const initDB = async () => {
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("✅ Base de données vérifiée et à jour !");
+    console.log("âœ… Base de donnÃ©es vÃ©rifiÃ©e et Ã  jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -59,7 +59,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Numéro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃ©ro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -72,7 +72,7 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MES COMMANDES (Côté Client - Public) ---
+// --- MES COMMANDES (CÃ´tÃ© Client - Public) ---
 app.get('/api/clients/:id/commandes', async (req, res) => {
   try {
     const r = await pool.query(`
@@ -254,6 +254,24 @@ app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { 
 app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock, prix_achat } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock,prix_achat) VALUES ($1,$2,$3,$4) RETURNING *', [categorie_id, nom, stock, prix_achat]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
+// --- ROUTES POUR MODIFIER (PUT) ---
+app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
+  const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body;
+  try {
+    await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => {
+  const { categorie_id, nom, stock, prix_achat } = req.body;
+  try {
+    await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3, prix_achat=$4 WHERE id=$5', [categorie_id, nom, stock, prix_achat, req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+// ----------------------------------
+
 // --- VENTES ---
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => { 
   try { 
@@ -280,7 +298,7 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
+    res.json({ success: true, message: "Commandes et Chiffre d'Affaires rÃ©initialisÃ©s." });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -289,4 +307,4 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`ðŸš€ Serveur PUFF ZONE dÃ©marrÃ© sur le port ${PORT}`));
