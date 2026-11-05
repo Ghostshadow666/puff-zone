@@ -8,13 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- LOGO DE FOND ANIMÃ‰ -->
+    <!-- LOGO DE FOND ANIMÃƒâ€° -->
     <div class="bg-watermark"></div>
     <div class="nebula-bg"></div>
     <div class="overlay-dark"></div>
     <div class="stars"></div>
 
-    <!-- EFFETS DE FOND ANIMÃ‰S -->
+    <!-- EFFETS DE FOND ANIMÃƒâ€°S -->
     <div class="space-bg"></div>
     <div class="stars"></div>
     <div class="smoke"></div>
@@ -32,16 +32,16 @@
 
     <!-- SITE PRINCIPAL -->
     <main id="main-site" class="layout-principal">
-        <!-- COLONNE GAUCHE : CATÃ‰GORIES -->
+        <!-- COLONNE GAUCHE : CATÃƒâ€°GORIES -->
         <aside class="sidebar-categories" id="categories-container">
-            <!-- InjectÃ© par script.js -->
+            <!-- InjectÃƒÂ© par script.js -->
         </aside>
 
         <!-- COLONNE DROITE : CATALOGUE -->
         <section class="contenu-catalogue">
             <h1>Le Catalogue</h1>
             <div class="grille-produits" id="product-list">
-                <!-- InjectÃ© par script.js -->
+                <!-- InjectÃƒÂ© par script.js -->
             </div>
         </section>
     </main>
@@ -51,7 +51,7 @@
         <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:100%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);">
             <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
             
-            <!-- Ã‰CRAN 0 : CHOIX D'ACCUEIL -->
+            <!-- Ãƒâ€°CRAN 0 : CHOIX D'ACCUEIL -->
             <div id="step-choice">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue sur la boutique</p>
                 <button onclick="showLoginForm()" class="btn-ajouter" style="margin-bottom: 10px;">Se Connecter</button>
@@ -62,7 +62,7 @@
                 </div>
             </div>
 
-            <!-- Ã‰CRAN 1 : CONNEXION -->
+            <!-- Ãƒâ€°CRAN 1 : CONNEXION -->
             <div id="step-phone" style="display: none;">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Connexion</p>
                 <input type="text" id="phone-input" placeholder="Ton num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
@@ -70,7 +70,7 @@
                 <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
 
-            <!-- Ã‰CRAN 2 : INSCRIPTION -->
+            <!-- Ãƒâ€°CRAN 2 : INSCRIPTION -->
             <div id="step-info" style="display:none;">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Inscription</p>
                 <input type="text" id="name-input" placeholder="Ton pr&eacute;nom/nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
@@ -106,7 +106,7 @@
                 <span style="color:#aaa;">Total :</span>
                 <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 &euro;</span>
             </div>
-            <button onclick="checkout()" class="btn-ajouter">Valider la commande</button>
+            <button id="checkout-btn" onclick="checkout()" class="btn-ajouter">Valider la commande</button>
             <button onclick="logout()" style="width:100%; background:none; border:none; color:#ff6b6b; margin-top:15px; cursor:pointer; font-size:12px;">Se d&eacute;connecter</button>
         </div>
     </div>
@@ -148,7 +148,7 @@
                         updateCartUI();
                     } else {
                         const totalEl = document.getElementById('cart-total-price');
-                        let currentTotal = parseFloat(totalEl.textContent.replace(' â‚¬', '').replace(',', '.'));
+                        let currentTotal = parseFloat(totalEl.textContent.replace(' Ã¢â€šÂ¬', '').replace(',', '.'));
                         let newTotal = currentTotal - (currentTotal * (data.pourcentage / 100));
                         totalEl.innerHTML = newTotal.toFixed(2).replace('.', ',') + ' &euro;';
                     }

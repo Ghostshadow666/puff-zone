@@ -1,12 +1,11 @@
 const API_URL = '/api';
 let allCategories = [];
 let allFlavors = [];
-let cart = [];
 let allZones = [];
-let selectedZoneFrais = 0;
+let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
+let selectedZone = null;
 
-// --- INITIALISATION ---
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('main-site').style.display = 'grid';
     
@@ -14,11 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('login-modal').style.display = 'none';
         updateGreeting();
     }
-    
-    loadCatalogue();`n    loadZones();
+    loadCatalogue();
+    loadZones();
 });
 
-// --- GESTION DE LA CONNEXION/INSCRIPTION (UI) ---
 function showLoginForm() {
     document.getElementById('step-choice').style.display = 'none';
     document.getElementById('step-phone').style.display = 'block';
@@ -37,17 +35,14 @@ function backToChoice() {
     document.getElementById('step-info').style.display = 'none';
 }
 
-// --- LOGIQUE DE CONNEXION ---
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
     if(!phone || phone.length < 8) return alert('Num\u00e9ro invalide');
-
     try {
         const res = await fetch(`${API_URL}/clients/login`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ telephone: phone }) 
         });
-        
         if (res.ok) {
             const data = await res.json();
             currentUser = data.client; 
@@ -62,7 +57,6 @@ async function checkPhone() {
     } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
 
-// --- LOGIQUE D'INSCRIPTION ---
 async function saveProfile() {
     const phone = document.getElementById('phone-input-reg').value;
     const nom = document.getElementById('name-input').value;
@@ -70,7 +64,6 @@ async function saveProfile() {
     const whatsapp = document.getElementById('whatsapp-input').value;
 
     if(!phone || !nom || !adresse) return alert('Remplissez tous les champs obligatoires');
-
     try {
         const res = await fetch(`${API_URL}/clients/register`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -90,13 +83,8 @@ async function saveProfile() {
 function updateGreeting() {
     document.getElementById('user-greeting').innerHTML = `&#128075; ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
 }
+function logout() { localStorage.removeItem('puff_client'); location.reload(); }
 
-function logout() { 
-    localStorage.removeItem('puff_client'); 
-    location.reload(); 
-}
-
-async function loadZones() {`n    try {`n        const res = await fetch(`${API_URL}/zones`);`n        allZones = await res.json();`n        const select = document.getElementById('zone-select');`n        select.innerHTML = '<option value="0">-- Choisir votre zone de livraison --</option>' + allZones.map(z => `<option value="${z.frais_livraison}">${z.nom} (${z.frais_livraison}€)</option>`).join(');`n    } catch (e) { console.error("Erreur zones", e); }`n}`n`nfunction applyZone() {`n    selectedZoneFrais = parseFloat(document.getElementById('zone-select').value) || 0;`n    updateCartUI();`n}`n`n// --- CHARGEMENT DU CATALOGUE ---
 async function loadCatalogue() {
     try {
         const res = await fetch(`${API_URL}/catalogue`);
@@ -104,19 +92,33 @@ async function loadCatalogue() {
         allCategories = data.categories;
         allFlavors = data.saveurs;
         renderCatalogueInColumns();
-    } catch (e) { 
-        document.getElementById('product-list').innerHTML = '<p style="color:red;">Erreur de chargement du catalogue.</p>'; 
-    }
+    } catch (e) { document.getElementById('product-list').innerHTML = '<p style="color:red;">Erreur.</p>'; }
+}
+
+async function loadZones() {
+    try {
+        const res = await fetch(`${API_URL}/zones`);
+        allZones = await res.json();
+        const select = document.getElementById('zone-select');
+        if(select) {
+            select.innerHTML = '<option value="">-- Choisir votre zone (Obligatoire) --</option>' + 
+                allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}&euro;)</option>`).join('');
+        }
+    } catch (e) { console.error(e); }
+}
+
+function applyZone() {
+    const zoneId = document.getElementById('zone-select').value;
+    selectedZone = allZones.find(z => z.id == zoneId) || null;
+    updateCartUI();
 }
 
 function renderCatalogueInColumns() {
     const container = document.getElementById('product-list');
     let html = '';
-    
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
         const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">&#128168;</text></svg>';
-        
         html += `
         <div class="category-column">
             <div class="category-header">
@@ -130,12 +132,8 @@ function renderCatalogueInColumns() {
                     const stockHtml = isOut 
                         ? `<span style="color: #EF4444; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Rupture)</span>` 
                         : `<span style="color: #22C55E; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Stock: ${f.stock})</span>`;
-
                     return `<div class="flavor-row">
-                        <div class="flavor-info">
-                            <span class="flavor-name">${f.nom}</span>
-                            ${stockHtml}
-                        </div>
+                        <div class="flavor-info"><span class="flavor-name">${f.nom}</span>${stockHtml}</div>
                         ${isOut ? `<button disabled class="btn-mini">&times;</button>` : `<button onclick="addToCart(${f.id})" class="btn-mini">+</button>`}
                     </div>`;
                 }).join('')}
@@ -145,46 +143,31 @@ function renderCatalogueInColumns() {
     container.innerHTML = html;
 }
 
-// --- PANIER ---
 function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
-    
     const flav = allFlavors.find(f => f.id === flavId);
     if (!flav || flav.stock <= 0) return;
-
     const cat = allCategories.find(c => c.id === flav.categorie_id);
     const existing = cart.find(item => item.id === flavId);
     
     if(existing) { 
-        if (existing.qty >= flav.stock) {
-            alert(`Stock maximum atteint pour cette saveur (${flav.stock} disponible).`);
-            return;
-        }
+        if (existing.qty >= flav.stock) { alert(`Stock maximum atteint (${flav.stock} dispo).`); return; }
         existing.qty++; 
-    } 
-    else { 
+    } else { 
         cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, prix_achat: flav.prix_achat, qty: 1 }); 
     }
-    
-    updateCartUI(); 
-    toggleCart();
+    updateCartUI(); toggleCart();
 }
 
 function updateQty(index, change) {
     const item = cart[index];
     const flav = allFlavors.find(f => f.id === item.id);
-
     if (change > 0) {
-        if (flav && item.qty >= flav.stock) {
-            alert(`Stock maximum atteint (${flav.stock} disponible).`);
-            return;
-        }
+        if (flav && item.qty >= flav.stock) { alert(`Stock maximum atteint (${flav.stock} dispo).`); return; }
         item.qty++;
     } else {
         item.qty--;
-        if (item.qty <= 0) {
-            cart.splice(index, 1);
-        }
+        if (item.qty <= 0) cart.splice(index, 1);
     }
     updateCartUI();
 }
@@ -197,12 +180,10 @@ function updateCartUI() {
     if(cart.length === 0) { 
         itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; 
         document.getElementById('cart-total-price').innerHTML = '0 &euro;'; 
-        
-        window.appliedPromoCode = null;
-        window.appliedPromoPct = 0;
+        window.appliedPromoCode = null; window.appliedPromoPct = 0;
         if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
         if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
-        
+        document.getElementById('checkout-btn').disabled = false;
         return; 
     }
     
@@ -225,31 +206,42 @@ function updateCartUI() {
     
     itemsContainer.innerHTML = html; 
     
-    let finalTotal = total + selectedZoneFrais;
+    let finalTotal = total;
     if (window.appliedPromoPct > 0) {
-        finalTotal = total - (total * (window.appliedPromoPct / 100));`n        finalTotal += selectedZoneFrais;
+        finalTotal = total - (total * (window.appliedPromoPct / 100));
     }
     
     document.getElementById('cart-total-price').innerHTML = finalTotal.toFixed(2) + ' &euro;';
+
+    // --- VERIFICATION DU MINIMUM DE COMMANDE ---
+    const checkoutBtn = document.getElementById('checkout-btn');
+    const zoneMsg = document.getElementById('zone-msg');
+
+    if (!selectedZone) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.style.opacity = '0.5';
+        if(zoneMsg) { zoneMsg.innerHTML = "&#9888;&#65039; Veuillez choisir votre zone."; zoneMsg.style.color = "#EF4444"; }
+    } else if (finalTotal < selectedZone.min_commande) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.style.opacity = '0.5';
+        if(zoneMsg) { zoneMsg.innerHTML = `&#9888;&#65039; Minimum de ${selectedZone.min_commande}&euro; pour la zone ${selectedZone.nom}.`; zoneMsg.style.color = "#EF4444"; }
+    } else {
+        checkoutBtn.disabled = false;
+        checkoutBtn.style.opacity = '1';
+        if(zoneMsg) { zoneMsg.innerHTML = ""; }
+    }
 }
 
-function removeFromCart(index) { 
-    cart.splice(index, 1); 
-    updateCartUI(); 
-}
-
+function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
 function toggleCart() { 
     const drawer = document.getElementById('cart-drawer'); 
     drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; 
 }
 
-// --- VALIDATION COMMANDE ---
 async function checkout() {
-    if(!currentUser || !currentUser.id) {
-        alert("Veuillez vous connecter pour valider.");
-        return;
-    }
+    if(!currentUser || !currentUser.id) return alert("Veuillez vous connecter.");
     if(cart.length === 0) return alert('Panier vide');
+    if(!selectedZone) return alert('Veuillez choisir une zone de livraison.');
     
     const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
     const promoCode = window.appliedPromoCode || null;
@@ -262,26 +254,17 @@ async function checkout() {
                 cart: cart, 
                 total: totalOriginal, 
                 promo_code: promoCode,
-                valide_par: currentUser.nom,`n                frais_livraison: selectedZoneFrais 
+                valide_par: currentUser.nom 
             })
         });
-        
         const data = await res.json();
-        
         if(res.ok && data.success) {
             alert('\u2705 Commande envoy\u00e9e avec succ\u00e8s !');
             cart = []; 
-            
-            window.appliedPromoCode = null;
-            window.appliedPromoPct = 0;
+            window.appliedPromoCode = null; window.appliedPromoPct = 0;
             if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
             if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
-            
-            updateCartUI(); 
-            toggleCart();
-            window.location.reload(); 
-        } else {
-            alert('Erreur : ' + (data.error || 'lors de la validation.'));
-        }
-    } catch(e) { alert('Erreur de connexion au serveur.'); }
+            updateCartUI(); toggleCart(); window.location.reload(); 
+        } else { alert('Erreur : ' + (data.error || 'inconnue')); }
+    } catch(e) { alert('Erreur de connexion.'); }
 }
