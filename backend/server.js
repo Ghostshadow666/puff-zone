@@ -33,6 +33,7 @@ const initDB = async () => {
       );
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
+    await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     console.log("✅ Base de données vérifiée et à jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
@@ -124,25 +125,18 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 
 // --- COMMANDES ---
 app.post('/api/commandes', async (req, res) => {
-  const { client_id, cart, total, promo_code } = req.body;
+  const { client_id, cart, total, promo_code, valide_par } = req.body;
   try {
-    // === 1. VÉRIFICATION DU STOCK ===
+    // 1. VÉRIFICATION DU STOCK
     for (const item of cart) {
       const stockCheck = await pool.query('SELECT stock FROM saveurs WHERE nom = $1', [item.nom]);
-      if (stockCheck.rows.length === 0) {
-        return res.status(400).json({ error: `La saveur "${item.nom}" n'existe plus.`, saveur: item.nom });
-      }
-      const stockDispo = stockCheck.rows[0].stock;
-      if (item.qty > stockDispo) {
-        return res.status(400).json({
-          error: `Stock insuffisant pour "${item.nom}". Disponible : ${stockDispo}, demandé : ${item.qty}.`,
-          saveur: item.nom,
-          stockDisponible: stockDispo
-        });
+      if (stockCheck.rows.length === 0) return res.status(400).json({ error: `La saveur "${item.nom}" n'existe plus.` });
+      if (item.qty > stockCheck.rows[0].stock) {
+        return res.status(400).json({ error: `Stock insuffisant pour "${item.nom}". Dispo : ${stockCheck.rows[0].stock}` });
       }
     }
 
-    // === 2. APPLICATION DU CODE PROMO ===
+    // 2. APPLICATION PROMO
     let finalTotal = parseFloat(total);
     if (promo_code) {
       const promo = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [promo_code]);
@@ -152,8 +146,8 @@ app.post('/api/commandes', async (req, res) => {
       }
     }
 
-    // === 3. INSERTION COMMANDE ===
-    const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING id', [client_id, finalTotal]);
+    // 3. INSERTION (Ajout de valide_par)
+    const cmd = await pool.query('INSERT INTO commandes (client_id, total, valide_par) VALUES ($1,$2,$3) RETURNING id', [client_id, finalTotal, valide_par || 'Client']);
     const cmdId = cmd.rows[0].id;
 
     for (const item of cart) {
@@ -328,9 +322,11 @@ app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => {
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`
-      SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente,
+      SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente, c.valide_par,
              COALESCE((SELECT SUM(prix_achat * quantite) FROM commande_items WHERE commande_id = c.id), 0) as prix_achat_total,
-             COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom
+             COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom,
+             (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix, 'prix_achat', ci.prix_achat)) 
+              FROM commande_items ci WHERE ci.commande_id = c.id) as items
       FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id
       WHERE LOWER(c.statut) LIKE '%livr%' ORDER BY c.date_commande DESC
     `);
@@ -347,8 +343,6 @@ app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, r
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- FALLBACK SPA & GESTION ERREUR GLOBALE ---
+// --- FALLBACK SPA ---
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.use((err, req, res, next) => { console.error("💥 ERREUR SERVEUR:", err); res.status(500).json({ error: "Une erreur interne est survenue." }); });
-
 app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));

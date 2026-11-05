@@ -38,7 +38,7 @@ function backToChoice() {
 // --- LOGIQUE DE CONNEXION ---
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
-    if(!phone || phone.length < 8) return alert('Numéro invalide');
+    if(!phone || phone.length < 8) return alert('NumÃ©ro invalide');
 
     try {
         const res = await fetch(`${API_URL}/clients/login`, {
@@ -53,7 +53,7 @@ async function checkPhone() {
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
         } else {
-            alert('Numéro non reconnu. Veuillez créer un compte.');
+            alert('NumÃ©ro non reconnu. Veuillez crÃ©er un compte.');
             showRegisterForm();
             document.getElementById('phone-input-reg').value = phone; 
         }
@@ -80,13 +80,13 @@ async function saveProfile() {
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
-            alert('Compte créé / mis à jour avec succès !');
+            alert('Compte crÃ©Ã© / mis Ã  jour avec succÃ¨s !');
         }
-    } catch(e) { alert('Erreur lors de la création du compte.'); }
+    } catch(e) { alert('Erreur lors de la crÃ©ation du compte.'); }
 }
 
 function updateGreeting() {
-    document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
+    document.getElementById('user-greeting').innerHTML = `ðŸ‘‹ ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
 }
 
 function logout() { 
@@ -113,14 +113,14 @@ function renderCatalogueInColumns() {
     
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
-        const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
+        const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">ðŸ’¨</text></svg>';
         
         html += `
         <div class="category-column">
             <div class="category-header">
                 <img src="${img}">
                 <h2>${cat.nom}</h2>
-                <span class="price-badge">Dès ${cat.prix_unite}€</span>
+                <span class="price-badge">DÃ¨s ${cat.prix_unite}â‚¬</span>
             </div>
             <div class="flavor-list">
                 ${catFlavors.map(f => {
@@ -135,7 +135,7 @@ function renderCatalogueInColumns() {
                             <span class="flavor-name">${f.nom}</span>
                             ${stockHtml}
                         </div>
-                        ${isOut ? `<button disabled class="btn-mini">✕</button>` : `<button onclick="addToCart(${f.id})" class="btn-mini">+</button>`}
+                        ${isOut ? `<button disabled class="btn-mini">âœ•</button>` : `<button onclick="addToCart(${f.id})" class="btn-mini">+</button>`}
                     </div>`;
                 }).join('')}
             </div>
@@ -151,7 +151,7 @@ function addToCart(flavId) {
     const flav = allFlavors.find(f => f.id === flavId);
     if (!flav) return;
     
-    // VÉRIFICATION DU STOCK
+    // VÃ‰RIFICATION DU STOCK
     if (flav.stock <= 0) {
         alert("Cette saveur est en rupture de stock.");
         return;
@@ -161,7 +161,7 @@ function addToCart(flavId) {
     
     const existing = cart.find(item => item.id === flavId);
     if(existing) { 
-        // BLOQUER SI ON DÉPASSE LE STOCK
+        // BLOQUER SI ON DÃ‰PASSE LE STOCK
         if (existing.qty >= flav.stock) {
             alert(`Stock maximum atteint pour cette saveur (${flav.stock} disponible).`);
             return;
@@ -183,7 +183,7 @@ function updateCartUI() {
     
     if(cart.length === 0) { 
         itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; 
-        document.getElementById('cart-total-price').textContent = '0 €'; 
+        document.getElementById('cart-total-price').textContent = '0 â‚¬'; 
         
         // On reset le code promo quand le panier est vide
         window.appliedPromoCode = null;
@@ -198,23 +198,23 @@ function updateCartUI() {
     cart.forEach((item, index) => {
         total += item.prix * item.qty;
         html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #333;">
-            <div><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}€</div></div>
+            <div><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}â‚¬</div></div>
             <div style="display:flex; align-items:center; gap:10px;">
                 <span style="color:var(--neon-cyan); font-weight:bold;">x${item.qty}</span>
-                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer;">✕</button>
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer;">âœ•</button>
             </div>
         </div>`;
     });
     
     itemsContainer.innerHTML = html; 
     
-    // APPLICATION DE LA RÉDUCTION POUR L'AFFICHAGE
+    // APPLICATION DE LA RÃ‰DUCTION POUR L'AFFICHAGE
     let finalTotal = total;
     if (window.appliedPromoPct > 0) {
         finalTotal = total - (total * (window.appliedPromoPct / 100));
     }
     
-    document.getElementById('cart-total-price').textContent = finalTotal.toFixed(2) + ' €';
+    document.getElementById('cart-total-price').textContent = finalTotal.toFixed(2) + ' â‚¬';
 }
 
 function removeFromCart(index) { 
@@ -245,14 +245,15 @@ async function checkout() {
                 client_id: currentUser.id, 
                 cart: cart, 
                 total: totalOriginal, 
-                promo_code: promoCode 
+                promo_code: promoCode,
+                valide_par: currentUser.nom // <-- ON ENVOIE LE NOM DU CLIENT ICI
             })
         });
         
         const data = await res.json();
         
         if(res.ok && data.success) {
-            alert('✅ Commande envoyée avec succès !');
+            alert('âœ… Commande envoyÃ©e avec succÃ¨s !');
             cart = []; 
             
             // Reset du code promo
