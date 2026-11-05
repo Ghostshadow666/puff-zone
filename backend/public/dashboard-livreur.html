@@ -41,17 +41,19 @@
     </style>
 </head>
 <body>
+    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;"></canvas>
+
     <div class="dash-container">
         <div class="nav-livreur">
-            <h1>ðŸ›µ Espace Livreur</h1>
-            <button class="btn-deco" onclick="logout()">DÃ©connexion</button>
+            <h1>&#128757; Espace Livreur</h1>
+            <button class="btn-deco" onclick="logout()">D&eacute;connexion</button>
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('tab-commandes', this)">ðŸ“¦ En cours</button>
-            <button class="tab-btn" onclick="switchTab('tab-historique', this)">âœ… Historique</button>
-            <button class="tab-btn" onclick="switchTab('tab-stats', this)">ðŸ“Š Mes Stats</button>
-            <button class="tab-btn" onclick="switchTab('tab-zones', this)">ðŸ—ºï¸ Zones</button>
+            <button class="tab-btn active" onclick="switchTab('tab-commandes', this)">&#128230; En cours</button>
+            <button class="tab-btn" onclick="switchTab('tab-historique', this)">&#9989; Historique</button>
+            <button class="tab-btn" onclick="switchTab('tab-stats', this)">&#128202; Mes Stats</button>
+            <button class="tab-btn" onclick="switchTab('tab-zones', this)">&#128506;&#65039; Zones</button>
         </div>
 
         <div id="tab-commandes" class="tab-content">
@@ -66,11 +68,11 @@
             <div class="stats-box">
                 <div class="stat-card">
                     <div class="stat-val" id="statLivraisons">0</div>
-                    <div class="stat-label">Livraisons terminÃ©es</div>
+                    <div class="stat-label">Livraisons termin&eacute;es</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-val" id="statCA">0 â‚¬</div>
-                    <div class="stat-label">Chiffre d'Affaires gÃ©nÃ©rÃ©</div>
+                    <div class="stat-val" id="statCA">0 &euro;</div>
+                    <div class="stat-label">Chiffre d'Affaires g&eacute;n&eacute;r&eacute;</div>
                 </div>
             </div>
         </div>
@@ -81,14 +83,20 @@
         </div>
     </div>
 
+    <script src="bg-animation.js"></script>
     <script>
+        // Intercepteur sécurisé : ne déconnecte que si le token est invalide (401)
         const originalFetch = window.fetch;
         window.fetch = function() {
             let [resource, config] = arguments;
             const token = localStorage.getItem('token');
             if (token) { config = config || {}; config.headers = config.headers || {}; config.headers['Authorization'] = 'Bearer ' + token; }
-            return originalFetch(resource, config).then(response => { if (response.status === 401) logout(); return response; });
+            return originalFetch(resource, config).then(response => { 
+                if (response.status === 401) logout(); 
+                return response; 
+            });
         };
+        
         const livreur = JSON.parse(localStorage.getItem('puff_livreur'));
         if (!livreur || livreur.role !== 'livreur') { window.location.href = '/livreur.html'; }
         const API_URL = '/api';
@@ -100,27 +108,60 @@
             btn.classList.add('active');
             if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
         }
-        function logout() { localStorage.removeItem('token'); localStorage.removeItem('puff_livreur'); window.location.href = '/livreur.html'; }
+        
+        function logout() { 
+            localStorage.removeItem('token'); 
+            localStorage.removeItem('puff_livreur'); 
+            window.location.href = '/livreur.html'; 
+        }
 
         async function loadCommandes() {
             try {
                 const res = await fetch(`${API_URL}/commandes/livreur/${livreur.id}`);
                 const commandes = await res.json();
                 const container = document.getElementById('commandesList');
-                if (commandes.length === 0) { container.innerHTML = '<div class="card-livreur" style="text-align:center; color:var(--text2);">Aucune commande en cours. ðŸŽ‰</div>'; return; }
+                
+                if (commandes.length === 0) { 
+                    container.innerHTML = '<div class="card-livreur" style="text-align:center; color:var(--text2);">Aucune commande en cours. &#127881;</div>'; 
+                    return; 
+                }
+                
                 container.innerHTML = commandes.map(cmd => {
                     const tel = cmd.telephone || cmd.whatsapp || '';
                     const numTel = tel.replace(/\D/g,'');
                     const adresseEncodee = encodeURIComponent(cmd.adresse || '');
-                    return `<div class="card-livreur"><div class="commande-header"><span class="commande-title">Commande #${cmd.id}</span><span style="color: var(--neon-cyan); font-weight: 800; font-size:1.2rem;">${parseFloat(cmd.total).toFixed(2)} â‚¬</span></div><div class="commande-info">ðŸ‘¤ Client : <strong>${cmd.client_nom}</strong></div><div class="commande-info">ðŸ“ž TÃ©lÃ©phone : <strong>${tel}</strong></div><div class="commande-info">ðŸ“ Adresse : <strong>${cmd.adresse || 'Non renseignÃ©e'}</strong></div><div style="display: flex; gap: 15px; margin-top: 20px;">${numTel ? `<a href="https://wa.me/${numTel}" target="_blank" style="flex:1; padding:12px; background:#25D366; color:white; text-align:center; text-decoration:none; border-radius:10px; font-weight:bold;">WhatsApp</a>` : ''}${cmd.adresse ? `<a href="https://www.google.com/maps/search/?api=1&query=${adresseEncodee}" target="_blank" style="flex:1; padding:12px; background:#3B82F6; color:white; text-align:center; text-decoration:none; border-radius:10px; font-weight:bold;">Maps</a>` : ''}</div><button class="btn-livrer" onclick="marquerLivre(${cmd.id})">Marquer comme livrÃ©e âœ…</button></div>`;
+                    return `
+                    <div class="card-livreur">
+                        <div class="commande-header">
+                            <span class="commande-title">Commande #${cmd.id}</span>
+                            <span style="color: var(--neon-cyan); font-weight: 800; font-size:1.2rem;">${parseFloat(cmd.total).toFixed(2)} &euro;</span>
+                        </div>
+                        <div class="commande-info">&#128100; Client : <strong>${cmd.client_nom}</strong></div>
+                        <div class="commande-info">&#128222; T&eacute;l&eacute;phone : <strong>${tel}</strong></div>
+                        <div class="commande-info">&#128205; Adresse : <strong>${cmd.adresse || 'Non renseign&eacute;e'}</strong></div>
+                        <div style="display: flex; gap: 15px; margin-top: 20px;">
+                            ${numTel ? `<a href="https://wa.me/${numTel}" target="_blank" style="flex:1; padding:12px; background:#25D366; color:white; text-align:center; text-decoration:none; border-radius:10px; font-weight:bold;">WhatsApp</a>` : ''}
+                            ${cmd.adresse ? `<a href="https://www.google.com/maps/search/?api=1&query=${adresseEncodee}" target="_blank" style="flex:1; padding:12px; background:#3B82F6; color:white; text-align:center; text-decoration:none; border-radius:10px; font-weight:bold;">Maps</a>` : ''}
+                        </div>
+                        <button class="btn-livrer" onclick="marquerLivre(${cmd.id})">Marquer comme livr&eacute;e &#9989;</button>
+                    </div>`;
                 }).join('');
             } catch (e) { document.getElementById('commandesList').innerHTML = 'Erreur de chargement.'; }
         }
 
         async function marquerLivre(id) {
             if (!confirm("Confirmer la livraison ?")) return;
-            await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'livre' }) });
-            loadCommandes(); loadStats(); loadHistorique();
+            try {
+                const res = await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'livre' }) });
+                if (res.ok) {
+                    loadCommandes(); 
+                    loadStats(); 
+                    loadHistorique();
+                } else {
+                    const data = await res.json();
+                    alert("Erreur : " + data.error);
+                }
+            } catch (e) { alert("Erreur de connexion."); }
         }
 
         async function loadHistorique() {
@@ -128,8 +169,8 @@
                 const res = await fetch(`${API_URL}/commandes/livreur/${livreur.id}/historique`);
                 const hist = await res.json();
                 const container = document.getElementById('historiqueList');
-                if (hist.length === 0) { container.innerHTML = '<div class="card-livreur" style="text-align:center; color:var(--text2);">Aucune livraison terminÃ©e.</div>'; return; }
-                container.innerHTML = hist.map(cmd => `<div class="card-livreur" style="opacity: 0.8;"><div class="commande-header"><span class="commande-title">Commande #${cmd.id}</span><span style="color: var(--green); font-weight:800;">${parseFloat(cmd.total).toFixed(2)} â‚¬</span></div><div class="commande-info">ðŸ‘¤ ${cmd.client_nom}</div><div class="commande-info" style="font-size: 0.85rem;">LivrÃ© le ${new Date(cmd.date_commande).toLocaleString('fr-FR')}</div></div>`).join('');
+                if (hist.length === 0) { container.innerHTML = '<div class="card-livreur" style="text-align:center; color:var(--text2);">Aucune livraison termin&eacute;e.</div>'; return; }
+                container.innerHTML = hist.map(cmd => `<div class="card-livreur" style="opacity: 0.8;"><div class="commande-header"><span class="commande-title">Commande #${cmd.id}</span><span style="color: var(--green); font-weight:800;">${parseFloat(cmd.total).toFixed(2)} &euro;</span></div><div class="commande-info">&#128100; ${cmd.client_nom}</div><div class="commande-info" style="font-size: 0.85rem;">Livr&eacute; le ${new Date(cmd.date_commande).toLocaleString('fr-FR')}</div></div>`).join('');
             } catch (e) {}
         }
 
@@ -138,7 +179,7 @@
                 const res = await fetch(`${API_URL}/livreur/${livreur.id}/stats`);
                 const stats = await res.json();
                 document.getElementById('statLivraisons').textContent = stats.total_livraisons;
-                document.getElementById('statCA').textContent = parseFloat(stats.total_ca).toFixed(2) + ' â‚¬';
+                document.getElementById('statCA').textContent = parseFloat(stats.total_ca).toFixed(2) + ' &euro;';
             } catch (e) {}
         }
 
@@ -152,7 +193,7 @@
                 const container = document.getElementById('zonesList');
                 if (zones.length === 0) { container.innerHTML = '<div class="card-livreur" style="text-align:center;">Aucune zone.</div>'; return; }
                 container.innerHTML = zones.map(z => `<div class="zone-item"><strong style="color: var(--neon-cyan);">${z.nom}</strong> (Rayon: ${z.rayon/1000}km)</div>`).join('');
-                zones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map).bindPopup(`<b>${z.nom}</b><br>Min: ${z.min_commande}â‚¬`); });
+                zones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map).bindPopup(`<b>${z.nom}</b><br>Min: ${z.min_commande}&euro;`); });
             } catch (e) {}
         }
 
