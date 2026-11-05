@@ -64,66 +64,66 @@
 </head>
 <body>
 <div class="topbar">
-    <div class="topbar-logo">✦ <span>PUFF ZONE</span> Admin</div>
+    <div class="topbar-logo">âœ¦ <span>PUFF ZONE</span> Admin</div>
     <div class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('tab-livreurs', this)">🛵 Livreurs</button>
-        <button class="nav-tab" onclick="switchTab('tab-zones', this)">🗺️ Zones</button>
-        <button class="nav-tab" onclick="switchTab('tab-personnel', this)">👥 Personnel</button>
-        <button class="nav-tab" onclick="switchTab('tab-commandes', this)">📦 Commandes <span id="notif-badge" class="notif-badge">0</span></button>
-        <button class="nav-tab" onclick="switchTab('tab-clients', this)">🔒 Clients</button>
-        <button class="nav-tab" onclick="switchTab('tab-promo', this)">🏷️ Promos</button>
-        <button class="nav-tab" onclick="switchTab('tab-stats', this)">📊 Stats</button>
-        <button class="nav-tab" onclick="switchTab('tab-stock', this)">📦 Stock</button>
-        <button class="nav-tab" onclick="switchTab('tab-ventes', this)">💳 Ventes</button>
+        <button class="nav-tab active" onclick="switchTab('tab-livreurs', this)">ðŸ›µ Livreurs</button>
+        <button class="nav-tab" onclick="switchTab('tab-zones', this)">ðŸ—ºï¸ Zones</button>
+        <button class="nav-tab" onclick="switchTab('tab-personnel', this)">ðŸ‘¥ Personnel</button>
+        <button class="nav-tab" onclick="switchTab('tab-commandes', this)">ðŸ“¦ Commandes <span id="notif-badge" class="notif-badge">0</span></button>
+        <button class="nav-tab" onclick="switchTab('tab-clients', this)">ðŸ”’ Clients</button>
+        <button class="nav-tab" onclick="switchTab('tab-promo', this)">ðŸ·ï¸ Promos</button>
+        <button class="nav-tab" onclick="switchTab('tab-stats', this)">ðŸ“Š Stats</button>
+        <button class="nav-tab" onclick="switchTab('tab-stock', this)">ðŸ“¦ Stock</button>
+        <button class="nav-tab" onclick="switchTab('tab-ventes', this)">ðŸ’³ Ventes</button>
     </div>
-    <button class="logout-btn" onclick="logoutAdmin()">Déconnexion</button>
+    <button class="logout-btn" onclick="logoutAdmin()">DÃ©connexion</button>
 </div>
 
 <div class="container">
     <div id="tab-livreurs" class="tab-content active">
         <div class="card">
-            <h2>👥 Liste des livreurs</h2>
+            <h2>ðŸ‘¥ Liste des livreurs</h2>
             <div id="driverList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-zones" class="tab-content">
         <div class="card">
-            <h2>📍 Zones de livraison</h2>
+            <h2>ðŸ“ Zones de livraison</h2>
             <div id="map"></div>
             <form id="addZoneForm">
                 <div class="form-row">
-                    <div class="input-group"><label>Nom de la zone</label><input type="text" id="zoneName" placeholder="ex: Liège centre" required></div>
-                    <div class="input-group"><label>Minimum (€)</label><input type="number" id="zoneMin" value="50" required></div>
+                    <div class="input-group"><label>Nom de la zone</label><input type="text" id="zoneName" placeholder="ex: LiÃ¨ge centre" required></div>
+                    <div class="input-group"><label>Minimum (â‚¬)</label><input type="number" id="zoneMin" value="50" required></div>
                     <div class="input-group" style="flex: 2;">
                         <label>Rayon : <span id="rayonValue" style="color: var(--neon-cyan); font-weight: bold;">3</span> KM</label>
                         <input type="range" id="zoneRayon" min="1" max="50" value="3" oninput="document.getElementById('rayonValue').textContent = this.value; updateCircleRadius(this.value)">
                     </div>
-                    <button type="submit" class="btn" id="submitZoneBtn" disabled>➕ Ajouter la zone</button>
+                    <button type="submit" class="btn" id="submitZoneBtn" disabled>âž• Ajouter la zone</button>
                     <button type="button" class="btn btn-danger" id="cancelZoneBtn" onclick="resetZoneForm()" style="display:none;">Annuler</button>
                 </div>
             </form>
         </div>
         <div class="card">
-            <h2>📋 Zones enregistrées</h2>
+            <h2>ðŸ“‹ Zones enregistrÃ©es</h2>
             <div id="zoneList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-personnel" class="tab-content">
         <div class="card">
-            <h2>➕ Créer un compte</h2>
+            <h2>âž• CrÃ©er un compte</h2>
             <form id="addUserForm">
                 <div class="form-row">
                     <div class="input-group"><label>Nom d'utilisateur</label><input type="text" id="userName" required></div>
                     <div class="input-group"><label>Mot de passe</label><input type="password" id="userPassword" required></div>
-                    <div class="input-group"><label>Rôle</label><select id="userRole"><option value="vendeur">Vendeur</option><option value="admin">Admin</option><option value="livreur">Livreur</option></select></div>
-                    <button type="submit" class="btn" id="submitUserBtn">Créer</button>
+                    <div class="input-group"><label>RÃ´le</label><select id="userRole"><option value="vendeur">Vendeur</option><option value="admin">Admin</option><option value="livreur">Livreur</option></select></div>
+                    <button type="submit" class="btn" id="submitUserBtn">CrÃ©er</button>
                 </div>
             </form>
         </div>
         <div class="card">
-            <h2>👥 Liste du personnel</h2>
+            <h2>ðŸ‘¥ Liste du personnel</h2>
             <div id="userList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
         </div>
     </div>
@@ -131,55 +131,55 @@
     <div id="tab-commandes" class="tab-content">
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                <h2>🟢 Commandes en cours</h2>
-                <button class="btn" onclick="loadCommandes()" style="padding: 8px 15px; font-size: 0.85rem;">🔄 Actualiser</button>
+                <h2>ðŸŸ¢ Commandes en cours</h2>
+                <button class="btn" onclick="loadCommandes()" style="padding: 8px 15px; font-size: 0.85rem;">ðŸ”„ Actualiser</button>
             </div>
             <div id="commandesEnCours" style="text-align:center; color:var(--text2);">Chargement...</div>
         </div>
         <div class="card">
-            <h2>✅ Historique (Commandes terminées)</h2>
+            <h2>âœ… Historique (Commandes terminÃ©es)</h2>
             <div id="commandesTerminees" style="text-align:center; color:var(--text2);">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-clients" class="tab-content">
         <div class="card">
-            <h2>🔒 Base de données Clients</h2>
+            <h2>ðŸ”’ Base de donnÃ©es Clients</h2>
             <div id="clientsList" style="text-align:center; color:var(--text2);">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-promo" class="tab-content">
         <div class="card">
-            <h2>➕ Créer un Code Promo</h2>
+            <h2>âž• CrÃ©er un Code Promo</h2>
             <form id="addPromoForm">
                 <div class="form-row">
                     <div class="input-group"><label>Code (ex: PUFF10)</label><input type="text" id="promoCode" required></div>
-                    <div class="input-group"><label>Réduction (%)</label><input type="number" id="promoPct" min="1" max="100" required></div>
-                    <button type="submit" class="btn" id="submitPromoBtn">Créer</button>
+                    <div class="input-group"><label>RÃ©duction (%)</label><input type="number" id="promoPct" min="1" max="100" required></div>
+                    <button type="submit" class="btn" id="submitPromoBtn">CrÃ©er</button>
                 </div>
             </form>
         </div>
         <div class="card">
-            <h2>🏷️ Codes actifs</h2>
+            <h2>ðŸ·ï¸ Codes actifs</h2>
             <div id="promoList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-stats" class="tab-content">
         <div class="card" style="margin-bottom: 20px;">
-            <h2>📈 Chiffre d'Affaires (7 derniers jours)</h2>
+            <h2>ðŸ“ˆ Chiffre d'Affaires (7 derniers jours)</h2>
             <canvas id="chartCA7Jours" height="100"></canvas>
         </div>
         <div class="card">
-            <h2>📊 Top des Saveurs Vendues</h2>
+            <h2>ðŸ“Š Top des Saveurs Vendues</h2>
             <canvas id="chartTopSaveurs" height="100"></canvas>
         </div>
     </div>
 
     <div id="tab-stock" class="tab-content">
         <div class="card" id="categoryFormCard">
-            <h2 id="catFormTitle">➕ Créer une Catégorie</h2>
+            <h2 id="catFormTitle">âž• CrÃ©er une CatÃ©gorie</h2>
             <input type="hidden" id="editCatId">
             <form id="addCategoryForm">
                 <div class="form-row">
@@ -187,30 +187,30 @@
                     <div class="input-group"><label>Photo (PC)</label><input type="file" id="catImage" accept="image/*" style="color: white; padding-top: 8px;"></div>
                 </div>
                 <div class="form-row">
-                    <div class="input-group"><label>Prix unité (€) *</label><input type="number" id="catPrix1" step="0.01" value="0" required></div>
-                    <div class="input-group"><label>Lot 5 (€)</label><input type="number" id="catPrix5" step="0.01" placeholder="Optionnel"></div>
-                    <div class="input-group"><label>Lot 10 (€)</label><input type="number" id="catPrix10" step="0.01" placeholder="Optionnel"></div>
+                    <div class="input-group"><label>Prix unitÃ© (â‚¬) *</label><input type="number" id="catPrix1" step="0.01" value="0" required></div>
+                    <div class="input-group"><label>Lot 5 (â‚¬)</label><input type="number" id="catPrix5" step="0.01" placeholder="Optionnel"></div>
+                    <div class="input-group"><label>Lot 10 (â‚¬)</label><input type="number" id="catPrix10" step="0.01" placeholder="Optionnel"></div>
                     <button type="submit" class="btn" id="submitCatBtn">Enregistrer</button>
                     <button type="button" class="btn btn-danger" id="cancelCatBtn" onclick="resetCategoryForm()" style="display:none;">Annuler</button>
                 </div>
             </form>
         </div>
         <div class="card">
-            <h2>📁 Catalogue</h2>
+            <h2>ðŸ“ Catalogue</h2>
             <div id="catalogueList" style="margin-top: 15px;">Chargement...</div>
         </div>
     </div>
 
     <div id="tab-ventes" class="tab-content">
         <div class="card">
-            <h2>📊 Ventes</h2>
+            <h2>ðŸ“Š Ventes</h2>
             <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); border-radius: 15px;padding: 20px; text-align: center; margin-bottom: 25px;">
                 <div style="font-size: 0.9rem; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Chiffre d'Affaires Total</div>
                 <div id="totalCA" style="font-size: 2.5rem; font-weight: 800; color: var(--green); margin-top: 5px;">0.00 &euro;</div>
             </div>
             <div id="ventesList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
             <div style="margin-top: 30px; text-align: right; border-top: 1px solid var(--card-border); padding-top: 25px;">
-                <button class="btn btn-danger" onclick="resetVentes()" style="padding: 12px 25px; font-size: 0.95rem;">⚠️ Réinitialiser</button>
+                <button class="btn btn-danger" onclick="resetVentes()" style="padding: 12px 25px; font-size: 0.95rem;">âš ï¸ RÃ©initialiser</button>
             </div>
         </div>
     </div>
@@ -218,7 +218,7 @@
 
 <div id="flavorModal" style="display:none; position:fixed; inset:0; background:rgba(2, 1, 8, 0.85); z-index:99999; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
     <div class="card" style="width: 90%; max-width: 400px; margin: 20px; border-color: var(--neon-cyan);">
-        <h2 id="flavorModalTitle" style="color: var(--neon-cyan);">➕ Saveur</h2>
+        <h2 id="flavorModalTitle" style="color: var(--neon-cyan);">âž• Saveur</h2>
         <input type="hidden" id="flavorCatId">
         <input type="hidden" id="editFlavorId">
         <div class="form-row"><div class="input-group"><label>Nom</label><input type="text" id="flavNom" required></div></div>
@@ -278,7 +278,7 @@
         try {
             const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); allLivreurs = d; const el = document.getElementById('driverList');
             if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; }
-            el.innerHTML = d.map(x => `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="item-info"><span class="item-name">🛵 ${x.name}</span></div><button class="btn btn-danger" onclick="deleteDriver(${x.id})">Supprimer</button></div><div style="display: flex; gap: 20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius:10px; font-size: 0.9rem;"><div>📦 <strong>Livraisons :</strong> <span style="color: var(--neon-cyan); font-weight:bold;">${x.total_livraisons}</span></div><div>💰 <strong>CA généré :</strong> <span style="color: var(--green); font-weight:bold;">${parseFloat(x.total_ca).toFixed(2)} &euro;</span></div></div></div>`).join('');
+            el.innerHTML = d.map(x => `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="item-info"><span class="item-name">ðŸ›µ ${x.name}</span></div><button class="btn btn-danger" onclick="deleteDriver(${x.id})">Supprimer</button></div><div style="display: flex; gap: 20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius:10px; font-size: 0.9rem;"><div>ðŸ“¦ <strong>Livraisons :</strong> <span style="color: var(--neon-cyan); font-weight:bold;">${x.total_livraisons}</span></div><div>ðŸ’° <strong>CA gÃ©nÃ©rÃ© :</strong> <span style="color: var(--green); font-weight:bold;">${parseFloat(x.total_ca).toFixed(2)} &euro;</span></div></div></div>`).join('');
         } catch(e) { console.error(e); }
     }
     async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
@@ -288,22 +288,22 @@
             const res = await fetch(`${API_URL}/commandes`); const commandes = await res.json();
             const enCours = commandes.filter(c => c.statut !== 'livre'); const terminees = commandes.filter(c => c.statut === 'livre');
             document.getElementById('commandesEnCours').innerHTML = enCours.length === 0 ? 'Aucune commande en cours.' : enCours.map(cmd => renderCommandeCard(cmd, false)).join('');
-            document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? 'Aucune commande terminée.' : terminees.map(cmd => renderCommandeCard(cmd, true)).join('');
+            document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? 'Aucune commande terminÃ©e.' : terminees.map(cmd => renderCommandeCard(cmd, true)).join('');
         } catch (e) { document.getElementById('commandesEnCours').innerHTML = 'Erreur de chargement.'; }
     }
     function renderCommandeCard(cmd, isTerminee) {
-        const statuts = { 'en_attente': '⏳ En attente', 'en_preparation': '👨‍🍳 Préparation', 'en_livraison': '🛵 En livraison', 'livre': '✅ Livré' };
-        if (isTerminee) return `<div class="item-card" style="border-color: rgba(34, 197, 94, 0.2);"><div class="item-info"><span class="item-name">Commande #${cmd.id} - ${cmd.client_nom}</span><span class="item-details">📞 ${cmd.telephone} | 📍 ${cmd.adresse || 'Non renseignée'} | ✅ Livré</span><span class="item-details" style="color: var(--neon-cyan);">👤 Validé par : <strong>${cmd.valide_par || 'Client'}</strong></span></div><div style="font-size: 1.3rem; font-weight: 800; color: var(--green);">${parseFloat(cmd.total).toFixed(2)} &euro;</div></div>`;
+        const statuts = { 'en_attente': 'â³ En attente', 'en_preparation': 'ðŸ‘¨â€ðŸ³ PrÃ©paration', 'en_livraison': 'ðŸ›µ En livraison', 'livre': 'âœ… LivrÃ©' };
+        if (isTerminee) return `<div class="item-card" style="border-color: rgba(34, 197, 94, 0.2);"><div class="item-info"><span class="item-name">Commande #${cmd.id} - ${cmd.client_nom}</span><span class="item-details">ðŸ“ž ${cmd.telephone} | ðŸ“ ${cmd.adresse || 'Non renseignÃ©e'} | âœ… LivrÃ©</span><span class="item-details" style="color: var(--neon-cyan);">ðŸ‘¤ ValidÃ© par : <strong>${cmd.valide_par || 'Client'}</strong></span></div><div style="font-size: 1.3rem; font-weight: 800; color: var(--green);">${parseFloat(cmd.total).toFixed(2)} &euro;</div></div>`;
         let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
         let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('');
-        return `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="item-info"><span class="item-name">Commande #${cmd.id} - ${cmd.client_nom}</span><span class="item-details">📞 ${cmd.telephone} | 📍 ${cmd.adresse || 'Non renseignée'}</span><span class="item-details" style="color: var(--neon-cyan);">👤 Validé par : <strong>${cmd.valide_par || 'Client'}</strong></span></div><div style="font-size: 1.3rem; font-weight: 800; color: var(--neon-cyan);">${parseFloat(cmd.total).toFixed(2)} &euro;</div></div><div style="display: flex; gap: 10px; flex-wrap: wrap;"><select onchange="updateStatut(${cmd.id}, this.value)" style="flex:1; min-width: 120px;">${optionsStatut}</select><select onchange="assignLivreur(${cmd.id}, this.value)" style="flex:1; min-width: 120px;">${optionsLivreur}</select><a href="https://wa.me/${(cmd.whatsapp || cmd.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; display:flex; align-items:center; justify-content:center; border-radius:10px;">WhatsApp</a></div></div>`;
+        return `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: center;"><div class="item-info"><span class="item-name">Commande #${cmd.id} - ${cmd.client_nom}</span><span class="item-details">ðŸ“ž ${cmd.telephone} | ðŸ“ ${cmd.adresse || 'Non renseignÃ©e'}</span><span class="item-details" style="color: var(--neon-cyan);">ðŸ‘¤ ValidÃ© par : <strong>${cmd.valide_par || 'Client'}</strong></span></div><div style="font-size: 1.3rem; font-weight: 800; color: var(--neon-cyan);">${parseFloat(cmd.total).toFixed(2)} &euro;</div></div><div style="display: flex; gap: 10px; flex-wrap: wrap;"><select onchange="updateStatut(${cmd.id}, this.value)" style="flex:1; min-width: 120px;">${optionsStatut}</select><select onchange="assignLivreur(${cmd.id}, this.value)" style="flex:1; min-width: 120px;">${optionsLivreur}</select><a href="https://wa.me/${(cmd.whatsapp || cmd.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; display:flex; align-items:center; justify-content:center; border-radius:10px;">WhatsApp</a></div></div>`;
     }
     async function updateStatut(id, statut) { try { const res = await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); if (res.status === 403) { const data = await res.json(); return alert(data.error); } loadCommandes(); } catch (e) { alert('Erreur.'); } }
-    async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { const res = await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id }) }); if (res.status === 403) { const data = await res.json(); return alert(data.error); } alert('✅ Livreur assigné !'); } catch (e) { alert('Erreur.'); } }
+    async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { const res = await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id }) }); if (res.status === 403) { const data = await res.json(); return alert(data.error); } alert('âœ… Livreur assignÃ© !'); } catch (e) { alert('Erreur.'); } }
 
-    async function loadClients() { try { const res = await fetch(`${API_URL}/clients`); const clients = await res.json(); const container = document.getElementById('clientsList'); if (clients.length === 0) { container.innerHTML = 'Aucun client.'; return; } container.innerHTML = clients.map(c => `<div class="item-card"><div class="item-info"><span class="item-name">👤 ${c.nom || 'Inconnu'} (${c.telephone})</span><span class="item-details">📍 ${c.adresse || 'Pas d adresse'}</span></div><a href="https://wa.me/${(c.whatsapp || c.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; padding: 8px 15px; font-size:0.85rem; border-radius:10px;">WhatsApp</a></div>`).join(''); } catch (e) { document.getElementById('clientsList').innerHTML = 'Erreur.'; } }
+    async function loadClients() { try { const res = await fetch(`${API_URL}/clients`); const clients = await res.json(); const container = document.getElementById('clientsList'); if (clients.length === 0) { container.innerHTML = 'Aucun client.'; return; } container.innerHTML = clients.map(c => `<div class="item-card"><div class="item-info"><span class="item-name">ðŸ‘¤ ${c.nom || 'Inconnu'} (${c.telephone})</span><span class="item-details">ðŸ“ ${c.adresse || 'Pas d adresse'}</span></div><a href="https://wa.me/${(c.whatsapp || c.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; padding: 8px 15px; font-size:0.85rem; border-radius:10px;">WhatsApp</a></div>`).join(''); } catch (e) { document.getElementById('clientsList').innerHTML = 'Erreur.'; } }
 
-    async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); const container = document.getElementById('promoList'); if (promos.length === 0) { container.innerHTML = 'Aucun code promo actif.'; return; } container.innerHTML = promos.map(p => `<div class="item-card"><div class="item-info"><span class="item-name">🏷️ ${p.code}</span><span class="item-details">Réduction : ${p.pourcentage}%</span></div><button class="btn btn-danger" onclick="deletePromo(${p.id})">Supprimer</button></div>`).join(''); } catch (e) { document.getElementById('promoList').innerHTML = 'Erreur.'; } }
+    async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); const container = document.getElementById('promoList'); if (promos.length === 0) { container.innerHTML = 'Aucun code promo actif.'; return; } container.innerHTML = promos.map(p => `<div class="item-card"><div class="item-info"><span class="item-name">ðŸ·ï¸ ${p.code}</span><span class="item-details">RÃ©duction : ${p.pourcentage}%</span></div><button class="btn btn-danger" onclick="deletePromo(${p.id})">Supprimer</button></div>`).join(''); } catch (e) { document.getElementById('promoList').innerHTML = 'Erreur.'; } }
     document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); const code = document.getElementById('promoCode').value; const pourcentage = parseInt(document.getElementById('promoPct').value); try { await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code, pourcentage }) }); document.getElementById('addPromoForm').reset(); loadPromos(); } catch (err) { alert('Erreur.'); } });
     async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
 
@@ -311,8 +311,8 @@
     async function loadStats() {
         try {
             const res = await fetch(`${API_URL}/stats`); const data = await res.json();
-            if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
-            if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantités', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
+            if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (â‚¬)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
+            if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'QuantitÃ©s', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
         } catch (e) {}
     }
 
@@ -320,8 +320,8 @@
     function updateCircleRadius(km) { if (currentCircle) currentCircle.setRadius(km * 1000); }
     function centerMap(lat, lng) { map.setView([lat, lng], 12); }
     function editZone(id) { const z = allZones.find(x => x.id === id); if (!z) return; editingZoneId = z.id; document.getElementById('zoneName').value = z.nom; document.getElementById('zoneMin').value = z.min_commande; document.getElementById('zoneRayon').value = z.rayon / 1000; document.getElementById('rayonValue').textContent = z.rayon / 1000; document.getElementById('submitZoneBtn').textContent = 'Enregistrer'; document.getElementById('submitZoneBtn').disabled = false; document.getElementById('cancelZoneBtn').style.display = 'block'; selectedCoords = { lat: z.lat, lng: z.lng }; centerMap(z.lat, z.lng); if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([z.lat, z.lng]).addTo(map); currentCircle = L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map); }
-    function resetZoneForm() { editingZoneId = null; document.getElementById('addZoneForm').reset(); document.getElementById('rayonValue').textContent = '3'; document.getElementById('submitZoneBtn').textContent = '➕ Ajouter'; document.getElementById('submitZoneBtn').disabled = true; document.getElementById('cancelZoneBtn').style.display = 'none'; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); selectedCoords = null; }
-    async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const el = document.getElementById('zoneList'); if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; } allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map); }); el.innerHTML = allZones.map(x => `<div class="item-card" style="flex-direction: row; justify-content: space-between;"><div class="item-info"><span class="item-name">📍 ${x.nom}</span><span class="item-details">dès ${x.min_commande} &euro; &middot; ${(x.rayon/1000).toFixed(1)} km</span></div><div style="display:flex; gap:8px;"><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editZone(${x.id})">✏️</button><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="centerMap(${x.lat}, ${x.lng})">🎯</button><button class="btn btn-danger" style="padding: 8px 12px;" onclick="deleteZone(${x.id})">🗑️</button></div></div>`).join(''); } catch(e){} }
+    function resetZoneForm() { editingZoneId = null; document.getElementById('addZoneForm').reset(); document.getElementById('rayonValue').textContent = '3'; document.getElementById('submitZoneBtn').textContent = 'âž• Ajouter'; document.getElementById('submitZoneBtn').disabled = true; document.getElementById('cancelZoneBtn').style.display = 'none'; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); selectedCoords = null; }
+    async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const el = document.getElementById('zoneList'); if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; } allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map); }); el.innerHTML = allZones.map(x => `<div class="item-card" style="flex-direction: row; justify-content: space-between;"><div class="item-info"><span class="item-name">ðŸ“ ${x.nom}</span><span class="item-details">dÃ¨s ${x.min_commande} &euro; &middot; ${(x.rayon/1000).toFixed(1)} km</span></div><div style="display:flex; gap:8px;"><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editZone(${x.id})">âœï¸</button><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="centerMap(${x.lat}, ${x.lng})">ðŸŽ¯</button><button class="btn btn-danger" style="padding: 8px 12px;" onclick="deleteZone(${x.id})">ðŸ—‘ï¸</button></div></div>`).join(''); } catch(e){} }
     document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords) return alert("Cliquez sur la carte."); const data = { nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, min_commande: parseInt(document.getElementById('zoneMin').value) }; const method = editingZoneId ? 'PUT' : 'POST'; const url = editingZoneId ? `${API_URL}/zones/${editingZoneId}` : `${API_URL}/zones`; await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); resetZoneForm(); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); loadZones(); });
     async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); loadZones(); } }
 
@@ -331,19 +331,19 @@
 
     async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
     function renderCatalogue() {
-        const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
+        const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catÃ©gorie.';return;}
         el.innerHTML = allCategories.map(cat => {
             const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
-            const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60"height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">📦</text></svg>';
-            return `<div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; overflow: hidden;"><div style="background: rgba(0,0,0,0.2); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;"><img src="${img}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;"><div style="flex: 1;"><div style="font-weight: 600; font-size: 1.2rem; color: var(--text);">${cat.nom}</div><div style="font-size: 0.85rem; color: var(--text2); margin-top:5px;">U: ${cat.prix_unite}&euro; ${cat.prix_lot_5 ? '&middot; Lot 5: '+cat.prix_lot_5+'&euro;' : ''} ${cat.prix_lot_10 ? '&middot; Lot 10: '+cat.prix_lot_10+'&euro;' : ''}</div></div><div style="display: flex; gap: 10px;"><button class="btn" style="padding: 8px 15px; font-size: 0.85rem;" onclick="openFlavorModal(${cat.id})">➕ Saveur</button><button class="btn" style="padding: 8px 15px; font-size: 0.85rem; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editCategory(${cat.id})">✏️</button><button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.85rem;" onclick="deleteCategory(${cat.id})">🗑️</button></div></div><div style="padding: 15px 20px;">${flavs.map(f=>`<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);"><div><div style="font-weight:600;">${f.nom}</div></div><div style="display:flex; align-items:center; gap:15px;"><span style="font-size:0.85rem; font-weight:700; color:var(--green);">(${f.stock})</span><button class="btn" style="padding:6px 10px; font-size:0.75rem; background:rgba(255,255,255,0.1); box-shadow:none;" onclick="editFlavor(${f.id})">✏️</button><button class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem;" onclick="deleteFlavor(${f.id})">🗑️</button></div></div>`).join('')}</div></div>`;
+            const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60"height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">ðŸ“¦</text></svg>';
+            return `<div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; overflow: hidden;"><div style="background: rgba(0,0,0,0.2); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;"><img src="${img}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;"><div style="flex: 1;"><div style="font-weight: 600; font-size: 1.2rem; color: var(--text);">${cat.nom}</div><div style="font-size: 0.85rem; color: var(--text2); margin-top:5px;">U: ${cat.prix_unite}&euro; ${cat.prix_lot_5 ? '&middot; Lot 5: '+cat.prix_lot_5+'&euro;' : ''} ${cat.prix_lot_10 ? '&middot; Lot 10: '+cat.prix_lot_10+'&euro;' : ''}</div></div><div style="display: flex; gap: 10px;"><button class="btn" style="padding: 8px 15px; font-size: 0.85rem;" onclick="openFlavorModal(${cat.id})">âž• Saveur</button><button class="btn" style="padding: 8px 15px; font-size: 0.85rem; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editCategory(${cat.id})">âœï¸</button><button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.85rem;" onclick="deleteCategory(${cat.id})">ðŸ—‘ï¸</button></div></div><div style="padding: 15px 20px;">${flavs.map(f=>`<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);"><div><div style="font-weight:600;">${f.nom}</div></div><div style="display:flex; align-items:center; gap:15px;"><span style="font-size:0.85rem; font-weight:700; color:var(--green);">(${f.stock})</span><button class="btn" style="padding:6px 10px; font-size:0.75rem; background:rgba(255,255,255,0.1); box-shadow:none;" onclick="editFlavor(${f.id})">âœï¸</button><button class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem;" onclick="deleteFlavor(${f.id})">ðŸ—‘ï¸</button></div></div>`).join('')}</div></div>`;
         }).join('');
     }
     document.getElementById('catImage').addEventListener('change', function(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(evt) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const MAX_WIDTH = 400; const scale = MAX_WIDTH / img.width;canvas.width = MAX_WIDTH; canvas.height = img.height * scale; canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); currentBase64Image = canvas.toDataURL('image/jpeg', 0.7); }; img.src = evt.target.result; }; reader.readAsDataURL(file); });
     document.getElementById('addCategoryForm').addEventListener('submit', async (e) => { e.preventDefault(); const editId = document.getElementById('editCatId').value; const data = { nom: document.getElementById('catNom').value, prix_unite: parseFloat(document.getElementById('catPrix1').value), prix_lot_5: document.getElementById('catPrix5').value ? parseFloat(document.getElementById('catPrix5').value) : null, prix_lot_10: document.getElementById('catPrix10').value ? parseFloat(document.getElementById('catPrix10').value) : null }; if (currentBase64Image) data.image_url = currentBase64Image; await fetch(editId ? `${API_URL}/categories/${editId}` : `${API_URL}/categories`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); resetCategoryForm(); loadCatalogue(); });
-    function editCategory(id) { const cat = allCategories.find(c => c.id === id); if(!cat) return; document.getElementById('catFormTitle').textContent = '✏️ Modifier'; document.getElementById('editCatId').value = cat.id; document.getElementById('catNom').value = cat.nom; document.getElementById('catPrix1').value = cat.prix_unite; document.getElementById('catPrix5').value = cat.prix_lot_5 || ''; document.getElementById('catPrix10').value = cat.prix_lot_10 || ''; currentBase64Image = cat.image_url; document.getElementById('submitCatBtn').textContent = '💾 Mettre à jour'; document.getElementById('cancelCatBtn').style.display = 'block'; document.getElementById('categoryFormCard').scrollIntoView({ behavior: 'smooth' }); }
-    function resetCategoryForm() { document.getElementById('addCategoryForm').reset(); document.getElementById('catFormTitle').textContent = '➕ Créer une Catégorie'; document.getElementById('editCatId').value = ''; document.getElementById('submitCatBtn').textContent = 'Enregistrer'; document.getElementById('cancelCatBtn').style.display = 'none'; currentBase64Image = null; }
+    function editCategory(id) { const cat = allCategories.find(c => c.id === id); if(!cat) return; document.getElementById('catFormTitle').textContent = 'âœï¸ Modifier'; document.getElementById('editCatId').value = cat.id; document.getElementById('catNom').value = cat.nom; document.getElementById('catPrix1').value = cat.prix_unite; document.getElementById('catPrix5').value = cat.prix_lot_5 || ''; document.getElementById('catPrix10').value = cat.prix_lot_10 || ''; currentBase64Image = cat.image_url; document.getElementById('submitCatBtn').textContent = 'ðŸ’¾ Mettre Ã  jour'; document.getElementById('cancelCatBtn').style.display = 'block'; document.getElementById('categoryFormCard').scrollIntoView({ behavior: 'smooth' }); }
+    function resetCategoryForm() { document.getElementById('addCategoryForm').reset(); document.getElementById('catFormTitle').textContent = 'âž• CrÃ©er une CatÃ©gorie'; document.getElementById('editCatId').value = ''; document.getElementById('submitCatBtn').textContent = 'Enregistrer'; document.getElementById('cancelCatBtn').style.display = 'none'; currentBase64Image = null; }
     async function deleteCategory(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
-    function openFlavorModal(catId, flavId = null) { document.getElementById('flavorCatId').value = catId; document.getElementById('editFlavorId').value = flavId|| ''; document.getElementById('flavorModal').style.display = 'flex'; if (flavId) { const f = allFlavors.find(x => x.id === flavId); document.getElementById('flavorModalTitle').textContent = '✏️ Modifier'; document.getElementById('flavNom').value = f.nom; document.getElementById('flavStock').value= f.stock; } else { document.getElementById('flavorModalTitle').textContent = '➕ Ajouter'; document.getElementById('flavNom').value = ''; document.getElementById('flavStock').value = '0'; } }
+    function openFlavorModal(catId, flavId = null) { document.getElementById('flavorCatId').value = catId; document.getElementById('editFlavorId').value = flavId|| ''; document.getElementById('flavorModal').style.display = 'flex'; if (flavId) { const f = allFlavors.find(x => x.id === flavId); document.getElementById('flavorModalTitle').textContent = 'âœï¸ Modifier'; document.getElementById('flavNom').value = f.nom; document.getElementById('flavStock').value= f.stock; } else { document.getElementById('flavorModalTitle').textContent = 'âž• Ajouter'; document.getElementById('flavNom').value = ''; document.getElementById('flavStock').value = '0'; } }
     function editFlavor(id) { const f = allFlavors.find(x => x.id === id); if (f) openFlavorModal(f.categorie_id, f.id); }
     async function saveFlavor() { const catId = document.getElementById('flavorCatId').value, editId = document.getElementById('editFlavorId').value; const data = { categorie_id: parseInt(catId), nom: document.getElementById('flavNom').value, stock: parseInt(document.getElementById('flavStock').value) }; await fetch(editId ? `${API_URL}/saveurs/${editId}` : `${API_URL}/saveurs`, { method: editId ? 'PUT' :'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); document.getElementById('flavorModal').style.display = 'none'; loadCatalogue(); }
     async function deleteFlavor(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/saveurs/${id}`, { method:'DELETE' }); loadCatalogue(); } }
@@ -356,11 +356,11 @@
             if(data.ventes.length === 0){ el.innerHTML = 'Aucune vente.'; return; }
             el.innerHTML = data.ventes.map(x => {
                 const itemsHtml = (x.items || []).map(item => `<div style="font-size: 0.85rem; color: #aaa; margin-top: 8px; border-left: 2px solid rgba(34,211,238,0.3); padding-left: 10px;">${item.qte}x ${item.nom} (${item.prix}&euro;)</div>`).join('');
-                return `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: flex-start;"><div><span class="item-name">Commande #${x.id} - ${x.client_nom}</span><span class="item-details">Validée le ${new Date(x.date_vente).toLocaleString('fr-FR')}</span><span class="item-details" style="color: var(--neon-cyan); display: block;">✅ Validé par : <strong>${x.valide_par || 'Client'}</strong></span>${x.promo_code ? `<span class="item-details" style="color: var(--neon-purple); display: block;">🏷️ Code promo : <strong>${x.promo_code}</strong></span>` : ''}</div><div style="text-align:right"><div style="color:var(--green);font-weight:800; font-size: 1.3rem;">${parseFloat(x.prix_vente_total).toFixed(2)}&euro;</div></div></div><div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 5px;"><div style="font-size: 0.75rem; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: bold;">Détail :</div>${itemsHtml}</div></div>`;
+                return `<div class="item-card" style="flex-direction: column; align-items: stretch; gap: 15px;"><div style="display: flex; justify-content: space-between; align-items: flex-start;"><div><span class="item-name">Commande #${x.id} - ${x.client_nom}</span><span class="item-details">ValidÃ©e le ${new Date(x.date_vente).toLocaleString('fr-FR')}</span><span class="item-details" style="color: var(--neon-cyan); display: block;">âœ… ValidÃ© par : <strong>${x.valide_par || 'Client'}</strong></span>${x.promo_code ? `<span class="item-details" style="color: var(--neon-purple); display: block;">ðŸ·ï¸ Code promo : <strong>${x.promo_code}</strong></span>` : ''}</div><div style="text-align:right"><div style="color:var(--green);font-weight:800; font-size: 1.3rem;">${parseFloat(x.prix_vente_total).toFixed(2)}&euro;</div></div></div><div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 5px;"><div style="font-size: 0.75rem; text-transform: uppercase; color: #888; margin-bottom: 5px; font-weight: bold;">DÃ©tail :</div>${itemsHtml}</div></div>`;
             }).join('');
         } catch(e){ document.getElementById('ventesList').innerHTML = 'Erreur.'; }
     }
-    async function resetVentes() { if (!confirm("⚠️ Cette action va TOUT supprimer. Confirmer ?")) return; try { const res = await fetch(`${API_URL}/admin/reset-commandes`, { method: 'POST' }); const data = await res.json(); if (data.success) { alert("✅ Réinitialisé !"); loadVentes(); } } catch (e) { alert("Erreur."); } }
+    async function resetVentes() { if (!confirm("âš ï¸ Cette action va TOUT supprimer. Confirmer ?")) return; try { const res = await fetch(`${API_URL}/admin/reset-commandes`, { method: 'POST' }); const data = await res.json(); if (data.success) { alert("âœ… RÃ©initialisÃ© !"); loadVentes(); } } catch (e) { alert("Erreur."); } }
 </script>
 </body>
 </html>

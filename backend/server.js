@@ -34,16 +34,23 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS zones (
         id SERIAL PRIMARY KEY, nom VARCHAR(100), lat DECIMAL(10,8), lng DECIMAL(11,8), rayon INTEGER, min_commande INTEGER
       );
+      -- NOUVELLE TABLE DE BACKUP
+      CREATE TABLE IF NOT EXISTS backup_commandes (
+        id SERIAL PRIMARY KEY, 
+        date_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        data JSONB
+      );
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("✅ Base de données vérifiée et à jour !");
+    console.log("✅ Base de données vérifiée et à jour (Table backup incluse) !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
 
+// ... (Routes clients, commandes, zones, etc. inchangées) ...
 app.get('/api/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ status: 'ok', db: 'connected' }); }
   catch (e) { res.status(500).json({ status: 'error', error: e.message }); }
@@ -152,10 +159,7 @@ app.post('/api/commandes', async (req, res) => {
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const r = await pool.query(`
-      SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse
-      FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC
-    `);
+    const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -182,20 +186,14 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
 
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => {
   try {
-    const r = await pool.query(`
-      SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse
-      FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC
-    `, [req.params.id]);
+    const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]);
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/commandes/livreur/:id/historique', authenticateToken, async (req, res) => {
   try {
-    const r = await pool.query(`
-      SELECT c.id, c.total, c.date_commande, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom
-      FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut = 'livre' ORDER BY c.date_commande DESC
-    `, [req.params.id]);
+    const r = await pool.query(`SELECT c.id, c.total, c.date_commande, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut = 'livre' ORDER BY c.date_commande DESC`, [req.params.id]);
     res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -281,6 +279,7 @@ app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const
 app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
+// --- VENTES ---
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`
@@ -295,10 +294,43 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- EXPORT DES DONNÉES ---
+app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const commandes = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`);
+    const items = await pool.query('SELECT * FROM commande_items');
+    const exportData = {
+      export_date: new Date().toISOString(),
+      commandes: commandes.rows,
+      items: items.rows
+    };
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="puffzone_export_commandes.json"');
+    res.json(exportData);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- RESET AVEC BACKUP AUTOMATIQUE ---
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
+    // 1. Récupération de toutes les données actuelles
+    const commandes = await pool.query('SELECT * FROM commandes');
+    const items = await pool.query('SELECT * FROM commande_items');
+    
+    // 2. Création de l'objet de sauvegarde
+    const backupData = {
+      date_backup: new Date().toISOString(),
+      commandes: commandes.rows,
+      items: items.rows
+    };
+
+    // 3. Insertion dans la table de backup
+    await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [backupData]);
+
+    // 4. On vide les tables d'origine
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
+    
+    res.json({ success: true, message: "Commandes sauvegardées puis réinitialisées avec succès." });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
