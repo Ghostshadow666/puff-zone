@@ -1,11 +1,13 @@
 :root {
     --bg: #05050f;
     --card: rgba(15, 15, 32, 0.75);
-    --purple: #ff0033; 
-    --neon-cyan: #ff1a40; 
+    /* NOUVELLE PALETTE COSMIQUE */
+    --purple: #b200ff; 
+    --neon-cyan: #00e5ff; 
+    --pink: #ff00ea;
     --text: #F1F5F9;
     --text2: #94A3B8;
-    --border: rgba(255, 0, 51, 0.3);
+    --border: rgba(0, 229, 255, 0.3);
     --red: #EF4444;
     --green: #22C55E;
 }
@@ -20,9 +22,9 @@ body {
     overflow-x: hidden;
 }
 
-/* FONDS */
-.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(255, 0, 51, 0.1), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(255, 26, 64, 0.05), transparent 55%); z-index: -3; }
-.overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: -2; }
+/* FONDS ORIGINAUX */
+.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(178, 0, 255, 0.15), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(0, 229, 255, 0.1), transparent 55%); z-index: -3; }
+.overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: -2; }
 
 /* CANVAS 3D */
 #canvas-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
@@ -30,7 +32,7 @@ body {
 /* PUFFS FLOTTANTES */
 .floating-puff { 
     position: fixed; bottom: 5%; width: 150px; z-index: 1; opacity: 0.6; 
-    filter: drop-shadow(0 0 30px #ff0033); /* Lueur autour de la puff pour la faire ressortir */
+    filter: drop-shadow(0 0 30px var(--neon-cyan)); 
     pointer-events: none; animation: floatPuff 6s ease-in-out infinite; 
 }
 .floating-puff.left { left: 5%; }
@@ -43,9 +45,9 @@ body {
 .logo span { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
 .header-actions { display: flex; align-items: center; gap: 15px; }
 .btn-header { color: var(--text); text-decoration: none; font-size: 0.85rem; font-weight: bold; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; transition: 0.3s; }
-.btn-header:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px rgba(255,0,51,0.3); }
+.btn-header:hover { border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,229,255,0.3); }
 .btn-panier { background: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-.btn-panier:hover { background: rgba(255, 0, 51, 0.1); box-shadow: 0 0 10px var(--neon-cyan); }
+.btn-panier:hover { background: rgba(0, 229, 255, 0.1); box-shadow: 0 0 10px var(--neon-cyan); }
 
 /* LAYOUT */
 .layout-principal { display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
@@ -55,11 +57,11 @@ body {
 
 /* PRODUITS */
 .category-column { background: var(--card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; backdrop-filter: blur(10px); transition: 0.3s; }
-.category-column:hover { border-color: var(--purple); box-shadow: 0 0 15px rgba(255, 0, 51, 0.2); }
+.category-column:hover { border-color: var(--purple); box-shadow: 0 0 15px rgba(178, 0, 255, 0.2); }
 .category-header { padding: 15px; text-align: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3); }
 .category-header img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
 .category-header h2 { font-size: 1.2rem; margin: 0 0 5px 0; color: var(--neon-cyan); font-family: 'Orbitron', sans-serif; }
-.price-badge { background: rgba(255, 0, 51, 0.2); color: var(--neon-cyan); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+.price-badge { background: rgba(178, 0, 255, 0.2); color: var(--purple); padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
 .flavor-list { padding: 10px; }
 .flavor-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .flavor-row:last-child { border-bottom: none; }
@@ -68,7 +70,7 @@ body {
 .btn-mini:hover { transform: scale(1.1); box-shadow: 0 0 10px var(--neon-cyan); }
 
 /* PANIER */
-#cart-drawer { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: var(--card); border-left: 1px solid var(--border); z-index: 10000; transition: right 0.3s; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; backdrop-filter: blur(15px); box-shadow: -10px 0 30px rgba(255,0,51,0.2); }
+#cart-drawer { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: var(--card); border-left: 1px solid var(--border); z-index: 10000; transition: right 0.3s; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; backdrop-filter: blur(15px); box-shadow: -10px 0 30px rgba(178,0,255,0.2); }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {

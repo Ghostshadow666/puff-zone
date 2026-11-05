@@ -13,7 +13,6 @@
     <div class="overlay-dark"></div>
     <div id="canvas-container"></div>
 
-    <!-- ELEMENTS DE DECO PUFF -->
     <img src="puff.png" class="floating-puff left" alt="Puff" onerror="this.style.display='none'">
     <img src="puff.png" class="floating-puff right" alt="Puff" onerror="this.style.display='none'">
 
@@ -37,7 +36,7 @@
 
     <!-- MODALE DE CONNEXION -->
     <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
-        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(255, 0, 51, 0.2);">
+        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);">
             <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
             <div id="step-choice">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue</p>
@@ -118,7 +117,7 @@
             } catch (e) { msg.textContent = "Erreur"; msg.style.color = "#EF4444"; }
         }
 
-        // --- PLANETE 3D ---
+        // --- PLANETE 3D COSMIQUE ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x050508, 0.08);
@@ -129,22 +128,26 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.8; // Exposition réduite
+        renderer.toneMappingExposure = 0.9;
         container.appendChild(renderer.domElement);
 
         function createPlanetTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2048; canvas.height = 1024;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#08060a';
+            ctx.fillStyle = '#05020a'; // Fond très sombre
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Étoiles/Texture rocheuse
             for (let i = 0; i < 40000; i++) {
                 const x = Math.random() * canvas.width; const y = Math.random() * canvas.height;
-                const size = Math.random() * 2 + 0.5; const shade = Math.floor(Math.random() * 25 + 10);
-                ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 5})`;
+                const size = Math.random() * 2 + 0.5; const shade = Math.floor(Math.random() * 20 + 10);
+                ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade + 10})`;
                 ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
             }
-            function drawVein(startX, startY, length, width, angle) {
+            
+            // Veines Multicolores (Cyan / Violet / Rose)
+            function drawVein(startX, startY, length, width, angle, color, glowColor) {
                 let currX = startX; let currY = startY;
                 ctx.beginPath(); ctx.moveTo(currX, currY);
                 for (let i = 0; i < length; i++) {
@@ -153,15 +156,23 @@
                     if (currX < 0) currX += canvas.width; if (currX > canvas.width) currX -= canvas.width;
                     ctx.lineTo(currX, currY);
                 }
-                ctx.strokeStyle = '#ff0033';
-                ctx.lineWidth = width; ctx.shadowColor = '#ff0033'; ctx.shadowBlur = 10; ctx.stroke();
-                ctx.strokeStyle = '#ff8888';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width; ctx.shadowColor = glowColor; ctx.shadowBlur = 15; ctx.stroke();
+                ctx.strokeStyle = '#ffffff';
                 ctx.lineWidth = width * 0.3; ctx.shadowBlur = 3; ctx.stroke();
                 ctx.shadowBlur = 0;
             }
-            for (let i = 0; i < 45; i++) {
-                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2);
+
+            for (let i = 0; i < 15; i++) {
+                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#00e5ff', '#00e5ff'); // Cyan
             }
+            for (let i = 0; i < 15; i++) {
+                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#b200ff', '#b200ff'); // Violet
+            }
+            for (let i = 0; i < 15; i++) {
+                drawVein(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 30 + 20, Math.random() * 3 + 1.5, Math.random() * Math.PI * 2, '#ff00ea', '#ff00ea'); // Rose
+            }
+
             return new THREE.CanvasTexture(canvas);
         }
 
@@ -169,64 +180,72 @@
         const planetMaterial = new THREE.MeshStandardMaterial({
             map: planetTexture, bumpMap: planetTexture, bumpScale: 0.08,
             roughness: 0.8, metalness: 0.5,
-            transparent: true, opacity: 0.25, // Encore plus transparent
-            emissive: new THREE.Color(0x220000), emissiveIntensity: 0.1
+            transparent: true, opacity: 0.3, // Très transparent
+            emissive: new THREE.Color(0x001133), emissiveIntensity: 0.2
         });
 
         const planet = new THREE.Mesh(new THREE.SphereGeometry(2.2, 64, 64), planetMaterial);
         planet.position.set(2.5, 0, -2);
         scene.add(planet);
 
-        // Halo BEAUCOUP moins intense
+        // Atmosphère douce (Cyan)
         const atmosphereMaterial = new THREE.ShaderMaterial({
             vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-            fragmentShader: `varying vec3 vNormal; void main() { float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 3.5); gl_FragColor = vec4(1.0, 0.0, 0.2, 1.0) * intensity * 0.3; }`,
+            fragmentShader: `varying vec3 vNormal; void main() { float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 3.5); gl_FragColor = vec4(0.0, 0.9, 1.0, 1.0) * intensity * 0.5; }`,
             blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true
         });
         planet.add(new THREE.Mesh(new THREE.SphereGeometry(2.3, 64, 64), atmosphereMaterial));
 
-        // Anneaux discrets
-        const ringGeometry = new THREE.RingGeometry(3.0, 4.4, 64);
-        const pos = ringGeometry.attributes.position; const v3 = new THREE.Vector3();
-        for (let i = 0; i < pos.count; i++) { v3.fromBufferAttribute(pos, i); ringGeometry.attributes.uv.setXY(i, v3.length() < 3.7 ? 0 : 1, 1); }
-        const ringCanvas = document.createElement('canvas'); ringCanvas.width = 512; ringCanvas.height = 1;
-        const rCtx = ringCanvas.getContext('2d'); const grad = rCtx.createLinearGradient(0, 0, 512, 0);
-        grad.addColorStop(0.0, 'rgba(0,0,0,0)'); grad.addColorStop(0.4, 'rgba(255, 0, 51, 0.2)');
-        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)'); grad.addColorStop(0.6, 'rgba(136, 0, 17, 0.1)'); grad.addColorStop(1.0, 'rgba(0,0,0,0)');
-        rCtx.fillStyle = grad; rCtx.fillRect(0, 0, 512, 1);
-        const ring = new THREE.Mesh(ringGeometry, new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(ringCanvas), side: THREE.DoubleSide, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending }));
-        ring.rotation.x = Math.PI / 2.3; ring.rotation.y = -Math.PI / 8;
-        planet.add(ring);
+        // --- LES ANNEAUX ---
+        
+        // 1. Anneau intérieur horizontal (discret)
+        const innerRingGeometry = new THREE.RingGeometry(2.5, 2.8, 64);
+        const innerRingMaterial = new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending });
+        const innerRing = new THREE.Mesh(innerRingGeometry, innerRingMaterial);
+        innerRing.rotation.x = Math.PI / 2;
+        planet.add(innerRing);
 
-        // --- TEXTE EN ORBITE HORIZONTALE ---
+        // 2. Anneau extérieur incliné (avec le texte)
+        const outerRingGroup = new THREE.Group();
+        outerRingGroup.rotation.x = Math.PI / 2.3;
+        outerRingGroup.rotation.y = -Math.PI / 8;
+        planet.add(outerRingGroup);
+
         function createTextTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2048; canvas.height = 128;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = 'rgba(0,0,0,0)'; ctx.fillRect(0, 0, 2048, 128);
-            ctx.font = '900 80px "Orbitron", sans-serif';
-            ctx.fillStyle = '#ff1a40'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ff0033'; ctx.shadowBlur = 15;
             
-            // Pas besoin de scale(-1,1) car le cylindre sera orienté différemment
-            for (let i = 0; i < 4; i++) { ctx.fillText("PUFF ZONE", 256 + (i * 512), 64); }
+            // Dégradé de couleur pour le texte
+            const gradient = ctx.createLinearGradient(0, 0, 2048, 0);
+            gradient.addColorStop(0, '#00e5ff');
+            gradient.addColorStop(0.5, '#b200ff');
+            gradient.addColorStop(1, '#00e5ff');
+            
+            ctx.font = '900 80px "Orbitron", sans-serif';
+            ctx.fillStyle = gradient; 
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 20;
+            
+            // On écrit le texte 3 fois pour qu'il fasse le tour de l'anneau
+            for (let i = 0; i < 3; i++) { ctx.fillText("PUFF ZONE", 341 + (i * 682), 64); }
             return new THREE.CanvasTexture(canvas);
         }
-        
-        // Création d'un groupe pour contenir le texte et le faire tourner à l'horizontale
-        const textGroup = new THREE.Group();
-        const textRingGeometry = new THREE.CylinderGeometry(3.5, 3.5, 0.4, 64, 1, true);
+
+        // On crée un cylindre fin pour le texte et on l'attache au groupe extérieur
+        const textRingGeometry = new THREE.CylinderGeometry(3.6, 3.6, 0.5, 64, 1, true);
         const textRingMaterial = new THREE.MeshBasicMaterial({ map: createTextTexture(), transparent: true, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
         const textRing = new THREE.Mesh(textRingGeometry, textRingMaterial);
-        
-        // On couche le cylindre pour qu'il forme un anneau horizontal
-        textRing.rotation.x = Math.PI / 2; 
-        textGroup.add(textRing);
-        
-        // On incline légèrement le groupe pour donner du style
-        textGroup.rotation.z = Math.PI / 12; 
-        
-        planet.add(textGroup);
+        textRing.rotation.x = Math.PI / 2; // Remettre droit par rapport à son groupe
+        outerRingGroup.add(textRing);
+
+        // Un petit anneau lumineux sous le texte pour faire joli
+        const outerRingLineGeometry = new THREE.RingGeometry(3.5, 3.7, 64);
+        const outerRingLineMaterial = new THREE.MeshBasicMaterial({ color: 0xb200ff, side: THREE.DoubleSide, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+        const outerRingLine = new THREE.Mesh(outerRingLineGeometry, outerRingLineMaterial);
+        outerRingLine.rotation.x = Math.PI / 2;
+        outerRingGroup.add(outerRingLine);
 
         // Particules
         const pCount = 1200; const pGeo = new THREE.BufferGeometry(); const pPos = new Float32Array(pCount * 3);
@@ -234,14 +253,15 @@
         pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
         const pCanvas = document.createElement('canvas'); pCanvas.width = 32; pCanvas.height = 32;
         const pCtx = pCanvas.getContext('2d'); const pGrad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-        pGrad.addColorStop(0, 'rgba(255, 255, 255, 1)'); pGrad.addColorStop(0.4, 'rgba(255, 0, 51, 0.8)'); pGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        pGrad.addColorStop(0, 'rgba(255, 255, 255, 1)'); pGrad.addColorStop(0.4, 'rgba(0, 229, 255, 0.8)'); pGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
         pCtx.fillStyle = pGrad; pCtx.fillRect(0, 0, 32, 32);
-        const starfield = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.12, map: new THREE.CanvasTexture(pCanvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        const starfield = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.15, map: new THREE.CanvasTexture(pCanvas), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
         scene.add(starfield);
 
-        const mainLight = new THREE.DirectionalLight(0xff1a40, 1.5); mainLight.position.set(6, 4, 5); scene.add(mainLight);
-        const backLight = new THREE.DirectionalLight(0x880011, 1.0); backLight.position.set(-6, -2, -4); scene.add(backLight);
-        scene.add(new THREE.AmbientLight(0x110000, 0.8));
+        // Lumières Multicolores
+        const mainLight = new THREE.DirectionalLight(0x00e5ff, 2.0); mainLight.position.set(6, 4, 5); scene.add(mainLight);
+        const backLight = new THREE.DirectionalLight(0xb200ff, 1.5); backLight.position.set(-6, -2, -4); scene.add(backLight);
+        scene.add(new THREE.AmbientLight(0x110022, 1.0));
 
         let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
         document.addEventListener('mousemove', (e) => { mouseX = (e.clientX - window.innerWidth/2) * 0.0003; mouseY = (e.clientY - window.innerHeight/2) * 0.0003; });
@@ -251,9 +271,12 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
             
-            planet.rotation.y = time * 0.05;
-            textGroup.rotation.y = time * -0.15; // Tourne de gauche à droite
-            ring.rotation.z = time * 0.02;
+            planet.rotation.y = time * 0.05; // Planète tourne doucement
+            
+            // L'anneau extérieur (et son texte) tourne de gauche à droite
+            outerRingGroup.rotation.z = time * 0.15; 
+            innerRing.rotation.z = time * 0.05;
+            
             starfield.rotation.y = time * 0.01;
 
             targetX += (mouseX - targetX) * 0.05; targetY += (mouseY - targetY) * 0.05;
