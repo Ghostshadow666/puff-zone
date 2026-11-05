@@ -125,7 +125,6 @@ function renderCatalogueInColumns() {
             <div class="flavor-list">
                 ${catFlavors.map(f => {
                     const isOut = f.stock <= 0;
-                    // AFFICHAGE DU STOCK ICI
                     const stockHtml = isOut 
                         ? `<span style="color: #EF4444; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Rupture)</span>` 
                         : `<span style="color: #22C55E; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Stock: ${f.stock})</span>`;
@@ -149,19 +148,12 @@ function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
     
     const flav = allFlavors.find(f => f.id === flavId);
-    if (!flav) return;
-    
-    // VÉRIFICATION DU STOCK
-    if (flav.stock <= 0) {
-        alert("Cette saveur est en rupture de stock.");
-        return;
-    }
+    if (!flav || flav.stock <= 0) return;
 
     const cat = allCategories.find(c => c.id === flav.categorie_id);
-    
     const existing = cart.find(item => item.id === flavId);
+    
     if(existing) { 
-        // BLOQUER SI ON DÉPASSE LE STOCK
         if (existing.qty >= flav.stock) {
             alert(`Stock maximum atteint pour cette saveur (${flav.stock} disponible).`);
             return;
@@ -176,6 +168,28 @@ function addToCart(flavId) {
     toggleCart();
 }
 
+// --- NOUVELLE FONCTION POUR LES BOUTONS + ET - ---
+function updateQty(index, change) {
+    const item = cart[index];
+    const flav = allFlavors.find(f => f.id === item.id);
+
+    if (change > 0) {
+        // Vérification du stock si on augmente
+        if (flav && item.qty >= flav.stock) {
+            alert(`Stock maximum atteint (${flav.stock} disponible).`);
+            return;
+        }
+        item.qty++;
+    } else {
+        // Si on diminue
+        item.qty--;
+        if (item.qty <= 0) {
+            cart.splice(index, 1); // Supprime l'article si la quantité tombe à 0
+        }
+    }
+    updateCartUI();
+}
+
 function updateCartUI() {
     const count = cart.reduce((sum, item) => sum + item.qty, 0); 
     document.getElementById('cart-count').textContent = count;
@@ -185,7 +199,6 @@ function updateCartUI() {
         itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; 
         document.getElementById('cart-total-price').innerHTML = '0 &euro;'; 
         
-        // On reset le code promo quand le panier est vide
         window.appliedPromoCode = null;
         window.appliedPromoPct = 0;
         if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
@@ -198,17 +211,23 @@ function updateCartUI() {
     cart.forEach((item, index) => {
         total += item.prix * item.qty;
         html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #333;">
-            <div><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}&euro;</div></div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span style="color:var(--neon-cyan); font-weight:bold;">x${item.qty}</span>
-                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer;">&times;</button>
+            <div style="flex: 1;">
+                <div style="color:white; font-weight:bold;">${item.nom}</div>
+                <div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}&euro;</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <!-- BOUTONS + ET - ICI -->
+                <button onclick="updateQty(${index}, -1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">-</button>
+                <span style="color:var(--neon-cyan); font-weight:bold; min-width: 15px; text-align: center;">${item.qty}</span>
+                <button onclick="updateQty(${index}, 1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
+                
+                <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer; font-size:16px; margin-left: 5px;">&times;</button>
             </div>
         </div>`;
     });
     
     itemsContainer.innerHTML = html; 
     
-    // APPLICATION DE LA RÉDUCTION POUR L'AFFICHAGE
     let finalTotal = total;
     if (window.appliedPromoPct > 0) {
         finalTotal = total - (total * (window.appliedPromoPct / 100));
@@ -256,7 +275,6 @@ async function checkout() {
             alert('&#9989; Commande envoy&eacute;e avec succ&egrave;s !');
             cart = []; 
             
-            // Reset du code promo
             window.appliedPromoCode = null;
             window.appliedPromoPct = 0;
             if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
