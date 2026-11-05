@@ -23,10 +23,10 @@
     <header class="header">
         <div class="logo">PUFF <span>ZONE</span></div>
         <div class="header-actions">
-            <a href="/livreur.html" class="btn-header">🛵 Espace Livreur</a>
-            <a href="/admin.html" class="btn-header">⚙️ Accès Admin</a>
-            <div id="user-greeting" style="font-weight: bold; color: var(--neon-cyan); margin-left: 15px;">👋 Visiteur</div>
-            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">🛒 Panier (<span id="cart-count">0</span>)</button>
+            <a href="/livreur.html" class="btn-header">&#128757; Espace Livreur</a>
+            <a href="/admin.html" class="btn-header">&#9881;&#65039; Acc&egrave;s Admin</a>
+            <div id="user-greeting" style="font-weight: bold; color: var(--neon-cyan); margin-left: 15px;">&#128075; Visiteur</div>
+            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">&#128722; Panier (<span id="cart-count">0</span>)</button>
         </div>
     </header>
 
@@ -55,30 +55,30 @@
             <div id="step-choice">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue sur la boutique</p>
                 <button onclick="showLoginForm()" class="btn-ajouter" style="margin-bottom: 10px;">Se Connecter</button>
-                <button onclick="showRegisterForm()" class="btn-ajouter" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); margin-bottom: 20px;">Créer un compte</button>
+                <button onclick="showRegisterForm()" class="btn-ajouter" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); margin-bottom: 20px;">Cr&eacute;er un compte</button>
                 
                 <div style="border-top: 1px solid #333; padding-top: 15px; margin-top: 10px;">
-                    <a href="/admin-login.html" style="color: #94A3B8; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: bold;">⚙️ Accès Staff / Admin</a>
+                    <a href="/admin-login.html" style="color: #94A3B8; text-decoration: none; font-size: 12px; text-transform: uppercase; font-weight: bold;">&#9881;&#65039; Acc&egrave;s Staff / Admin</a>
                 </div>
             </div>
 
             <!-- ÉCRAN 1 : CONNEXION -->
             <div id="step-phone" style="display: none;">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Connexion</p>
-                <input type="text" id="phone-input" placeholder="Ton numéro de téléphone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <input type="text" id="phone-input" placeholder="Ton num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
                 <button onclick="checkPhone()" class="btn-ajouter" style="margin-bottom: 10px;">Continuer</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">← Retour</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
 
             <!-- ÉCRAN 2 : INSCRIPTION -->
             <div id="step-info" style="display:none;">
                 <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 15px;">Inscription</p>
-                <input type="text" id="name-input" placeholder="Ton prénom/nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
-                <input type="text" id="phone-input-reg" placeholder="Ton numéro de téléphone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="name-input" placeholder="Ton pr&eacute;nom/nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
+                <input type="text" id="phone-input-reg" placeholder="Ton num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
                 <input type="text" id="address-input" placeholder="Ton adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box; outline:none;">
-                <input type="text" id="whatsapp-input" placeholder="Numéro WhatsApp" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
+                <input type="text" id="whatsapp-input" placeholder="Num&eacute;ro WhatsApp" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box; outline:none;">
                 <button onclick="saveProfile()" class="btn-ajouter" style="margin-bottom: 10px;">S'inscrire</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">← Retour</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
         </div>
     </div>
@@ -86,8 +86,8 @@
     <!-- TIROIR PANIER -->
     <div id="cart-drawer" style="position:fixed; top:0; right:-400px; width:350px; height:100%; background:var(--card); border-left:1px solid var(--border); z-index:10000; transition:right 0.3s; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; backdrop-filter: blur(10px);">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px;">
-            <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">🛒 Ton Panier</h2>
-            <button onclick="toggleCart()" style="background:none; border:none; color:#ff6b6b; font-size:24px; cursor:pointer;">✕</button>
+            <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">&#128722; Ton Panier</h2>
+            <button onclick="toggleCart()" style="background:none; border:none; color:#ff6b6b; font-size:24px; cursor:pointer;">&times;</button>
         </div>
         <div id="cart-items" style="flex-grow:1; overflow-y:auto; margin-top:20px;"></div>
         
@@ -104,10 +104,10 @@
 
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
                 <span style="color:#aaa;">Total :</span>
-                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 €</span>
+                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 &euro;</span>
             </div>
             <button onclick="checkout()" class="btn-ajouter">Valider la commande</button>
-            <button onclick="logout()" style="width:100%; background:none; border:none; color:#ff6b6b; margin-top:15px; cursor:pointer; font-size:12px;">Se déconnecter</button>
+            <button onclick="logout()" style="width:100%; background:none; border:none; color:#ff6b6b; margin-top:15px; cursor:pointer; font-size:12px;">Se d&eacute;connecter</button>
         </div>
     </div>
 
@@ -127,7 +127,7 @@
                 return;
             }
 
-            msg.textContent = "Vérification...";
+            msg.textContent = "V&eacute;rification...";
             msg.style.color = "#aaa";
 
             try {
@@ -141,7 +141,7 @@
                 if (data.success) {
                     window.appliedPromoCode = code;
                     window.appliedPromoPct = data.pourcentage;
-                    msg.textContent = `✅ Code appliqué : -${data.pourcentage}%`;
+                    msg.innerHTML = `&#9989; Code appliqu&eacute; : -${data.pourcentage}%`;
                     msg.style.color = "#22C55E";
                     
                     if (typeof updateCartUI === "function") {
@@ -150,12 +150,12 @@
                         const totalEl = document.getElementById('cart-total-price');
                         let currentTotal = parseFloat(totalEl.textContent.replace(' €', '').replace(',', '.'));
                         let newTotal = currentTotal - (currentTotal * (data.pourcentage / 100));
-                        totalEl.textContent = newTotal.toFixed(2).replace('.', ',') + ' €';
+                        totalEl.innerHTML = newTotal.toFixed(2).replace('.', ',') + ' &euro;';
                     }
                 } else {
                     window.appliedPromoCode = null;
                     window.appliedPromoPct = 0;
-                    msg.textContent = `❌ ${data.error || 'Code invalide'}`;
+                    msg.innerHTML = `&#10060; ${data.error || 'Code invalide'}`;
                     msg.style.color = "#EF4444";
                 }
             } catch (e) {
