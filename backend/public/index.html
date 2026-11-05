@@ -6,35 +6,58 @@
     <title>PUFF ZONE - Explore une autre dimension</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* STYLE POUR LA VAPOTE EN DECO */
-        .puff-deco {
+        /* STYLE POUR LE TEXTE DÉFILANT EN FOND */
+        .bg-text-container {
             position: fixed;
-            bottom: 5%;
-            right: 5%;
-            width: 250px;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            transform: translateY(-50%);
             z-index: -1;
-            opacity: 0.8;
             pointer-events: none;
-            filter: drop-shadow(0 0 30px rgba(34, 211, 238, 0.4)) drop-shadow(0 0 60px rgba(168, 85, 247, 0.2));
-            animation: floatPuff 6s ease-in-out infinite;
+            overflow: hidden;
+            display: flex;
+            white-space: nowrap;
+            opacity: 0.08; /* Très discret */
         }
-        
-        @keyframes floatPuff {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-15px) rotate(2deg); }
+
+        .bg-text-marquee {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 15vw; /* Très grand */
+            font-weight: 900;
+            letter-spacing: 10px;
+            color: transparent;
+            -webkit-text-stroke: 2px var(--neon-cyan);
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+            animation: scrollBgText 40s linear infinite;
+        }
+
+        /* On alterne les couleurs pour le style */
+        .bg-text-marquee span:nth-child(even) {
+            -webkit-text-stroke: 2px var(--neon-purple);
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+        }
+
+        @keyframes scrollBgText {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
         @media (max-width: 768px) {
-            .puff-deco { width: 150px; right: -20px; bottom: 10%; opacity: 0.5; }
+            .bg-text-marquee { font-size: 25vw; }
         }
     </style>
 </head>
 <body>
-    <!-- FOND ANIMÉ -->
+    <!-- FOND ANIMÉ ÉTOILES -->
     <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;"></canvas>
 
-    <!-- VAPOTE EN DECO (Assure-toi que puff.png est bien dans le dossier public) -->
-    <img src="puff.png" class="puff-deco" alt="Puff Zone" onerror="this.style.display='none'">
+    <!-- TEXTE DÉFILANT EN FOND -->
+    <div class="bg-text-container">
+        <div class="bg-text-marquee" id="marquee-text">
+            <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
+        </div>
+    </div>
 
     <header class="header">
         <div class="logo">✦ PUFF<span>ZONE</span></div>
@@ -116,6 +139,11 @@
 
     <script src="script.js"></script>
     <script src="bg-animation.js"></script>
+    <script>
+        // Dupliquer le texte pour un défilement infini sans coupure
+        const marquee = document.getElementById('marquee-text');
+        marquee.innerHTML += marquee.innerHTML; 
+    </script>
     <script>
         // LOGIQUE PROMO (Inchangée)
         window.appliedPromoCode = null; window.appliedPromoPct = 0;
