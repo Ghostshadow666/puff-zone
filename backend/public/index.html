@@ -81,7 +81,7 @@
                 <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">← Retour</button>
             </div>
         </div>
-</div>
+    </div>
 
     <!-- TIROIR PANIER -->
     <div id="cart-drawer" style="position:fixed; top:0; right:-400px; width:350px; height:100%; background:var(--card); border-left:1px solid var(--border); z-index:10000; transition:right 0.3s; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; backdrop-filter: blur(10px);">
@@ -90,7 +90,18 @@
             <button onclick="toggleCart()" style="background:none; border:none; color:#ff6b6b; font-size:24px; cursor:pointer;">✕</button>
         </div>
         <div id="cart-items" style="flex-grow:1; overflow-y:auto; margin-top:20px;"></div>
+        
         <div style="border-top:1px solid #333; padding-top:15px;">
+            
+            <!-- NOUVEAU : CHAMP CODE PROMO -->
+            <div id="promo-section" style="margin-bottom: 15px;">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="promo-input" placeholder="CODE PROMO" style="flex:1; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; outline:none; text-transform:uppercase; font-family:'Rajdhani',sans-serif; font-weight:bold;">
+                    <button onclick="applyPromo()" style="padding:10px 15px; background:var(--neon-cyan); color:black; border:none; border-radius:5px; font-weight:900; cursor:pointer; text-transform:uppercase;">OK</button>
+                </div>
+                <div id="promo-msg" style="font-size:12px; margin-top:5px; font-weight:bold;"></div>
+            </div>
+
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
                 <span style="color:#aaa;">Total :</span>
                 <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 €</span>
@@ -101,7 +112,60 @@
     </div>
 
     <script src="script.js"></script>
+    
+    <!-- SCRIPT POUR LE CODE PROMO -->
+    <script>
+        // Variable globale qui sera lue par script.js lors de la validation
+        window.appliedPromoCode = null;
+        window.appliedPromoPct = 0;
+
+        async function applyPromo() {
+            const code = document.getElementById('promo-input').value.trim();
+            const msg = document.getElementById('promo-msg');
+            if (!code) {
+                msg.textContent = "Veuillez entrer un code.";
+                msg.style.color = "#EF4444";
+                return;
+            }
+
+            msg.textContent = "Vérification...";
+            msg.style.color = "#aaa";
+
+            try {
+                const res = await fetch('/api/promo/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    window.appliedPromoCode = code;
+                    window.appliedPromoPct = data.pourcentage;
+                    msg.textContent = `✅ Code appliqué : -${data.pourcentage}%`;
+                    msg.style.color = "#22C55E";
+                    
+                    // On demande à script.js de recalculer l'affichage s'il expose une fonction
+                    if (typeof updateCartUI === "function") {
+                        updateCartUI();
+                    } else {
+                        // Fallback : on applique la réduction visuelle sur le total actuel
+                        const totalEl = document.getElementById('cart-total-price');
+                        let currentTotal = parseFloat(totalEl.textContent.replace(' €', '').replace(',', '.'));
+                        let newTotal = currentTotal - (currentTotal * (data.pourcentage / 100));
+                        totalEl.textContent = newTotal.toFixed(2).replace('.', ',') + ' €';
+                    }
+                } else {
+                    window.appliedPromoCode = null;
+                    window.appliedPromoPct = 0;
+                    msg.textContent = `❌ ${data.error || 'Code invalide'}`;
+                    msg.style.color = "#EF4444";
+                }
+            } catch (e) {
+                msg.textContent = "Erreur de connexion";
+                msg.style.color = "#EF4444";
+            }
+        }
+    </script>
 </body>
 </html>
-
-
