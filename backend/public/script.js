@@ -38,7 +38,7 @@ function backToChoice() {
 // --- LOGIQUE DE CONNEXION ---
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
-    if(!phone || phone.length < 8) return alert('Num&eacute;ro invalide');
+    if(!phone || phone.length < 8) return alert('Num\u00e9ro invalide');
 
     try {
         const res = await fetch(`${API_URL}/clients/login`, {
@@ -53,7 +53,7 @@ async function checkPhone() {
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
         } else {
-            alert('Num&eacute;ro non reconnu. Veuillez cr&eacute;er un compte.');
+            alert('Num\u00e9ro non reconnu. Veuillez cr\u00e9er un compte.');
             showRegisterForm();
             document.getElementById('phone-input-reg').value = phone; 
         }
@@ -80,9 +80,9 @@ async function saveProfile() {
             localStorage.setItem('puff_client', JSON.stringify(currentUser));
             document.getElementById('login-modal').style.display = 'none';
             updateGreeting();
-            alert('Compte cr&eacute;&eacute; / mis &agrave; jour avec succ&egrave;s !');
+            alert('Compte cr\u00e9\u00e9 / mis \u00e0 jour avec succ\u00e8s !');
         }
-    } catch(e) { alert('Erreur lors de la cr&eacute;ation du compte.'); }
+    } catch(e) { alert('Erreur lors de la cr\u00e9ation du compte.'); }
 }
 
 function updateGreeting() {
@@ -168,23 +168,20 @@ function addToCart(flavId) {
     toggleCart();
 }
 
-// --- NOUVELLE FONCTION POUR LES BOUTONS + ET - ---
 function updateQty(index, change) {
     const item = cart[index];
     const flav = allFlavors.find(f => f.id === item.id);
 
     if (change > 0) {
-        // Vérification du stock si on augmente
         if (flav && item.qty >= flav.stock) {
             alert(`Stock maximum atteint (${flav.stock} disponible).`);
             return;
         }
         item.qty++;
     } else {
-        // Si on diminue
         item.qty--;
         if (item.qty <= 0) {
-            cart.splice(index, 1); // Supprime l'article si la quantité tombe à 0
+            cart.splice(index, 1);
         }
     }
     updateCartUI();
@@ -216,11 +213,9 @@ function updateCartUI() {
                 <div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}&euro;</div>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
-                <!-- BOUTONS + ET - ICI -->
                 <button onclick="updateQty(${index}, -1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">-</button>
                 <span style="color:var(--neon-cyan); font-weight:bold; min-width: 15px; text-align: center;">${item.qty}</span>
                 <button onclick="updateQty(${index}, 1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
-                
                 <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer; font-size:16px; margin-left: 5px;">&times;</button>
             </div>
         </div>`;
@@ -272,7 +267,7 @@ async function checkout() {
         const data = await res.json();
         
         if(res.ok && data.success) {
-            alert('&#9989; Commande envoy&eacute;e avec succ&egrave;s !');
+            alert('\u2705 Commande envoy\u00e9e avec succ\u00e8s !');
             cart = []; 
             
             window.appliedPromoCode = null;
