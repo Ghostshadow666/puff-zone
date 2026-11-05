@@ -1,13 +1,10 @@
-// --- ANIMATION FOND CYBER-CORE (NEURONAL + SYNTHWAVE GRID) ---
+// --- ANIMATION FOND PREMIUM (NÉBULEUSE + ÉTOILES + FUMÉE) ---
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 
 let width, height;
-let particles = [];
-const particleCount = 60;
-const connectionDistance = 150;
-const gridSpeed = 0.02;
-let gridOffset = 0;
+let stars = [];
+const starCount = 80;
 
 function resize() {
     width = canvas.width = window.innerWidth;
@@ -16,107 +13,99 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- PARTICULES (Réseau Neuronal) ---
-class Particle {
+// --- ÉTOILES / PARTICULES ---
+class Star {
     constructor() {
         this.x = Math.random() * width;
-        this.y = Math.random() * height * 0.7; // Reste dans la partie haute
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.radius = Math.random() * 2 + 1;
-        this.color = Math.random() > 0.5 ? '#22D3EE' : '#A855F7';
+        this.y = Math.random() * height;
+        this.radius = Math.random() * 1.5 + 0.5;
+        this.vx = (Math.random() - 0.5) * 0.2;
+        this.vy = (Math.random() - 0.5) * 0.2;
+        this.opacity = Math.random() * 0.5 + 0.1;
+        this.color = Math.random() > 0.5 ? '34, 211, 238' : '168, 85, 247'; // Cyan ou Violet
     }
     update() {
         this.x += this.vx;
         this.y += this.vy;
         if (this.x < 0 || this.x > width) this.vx *= -1;
-        if (this.y < 0 || this.y > height * 0.8) this.vy *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
     }
     draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
+        ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
         ctx.fill();
-        ctx.shadowBlur = 0;
     }
 }
 
-for (let i = 0; i < particleCount; i++) {
-    particles.push(new Particle());
+for (let i = 0; i < starCount; i++) {
+    stars.push(new Star());
 }
 
-// --- GRILLE SYNTHWAVE ---
-function drawGrid() {
-    const horizonY = height * 0.7; // L'horizon se situe à 70% de l'écran
-    const centerX = width / 2;
-    const vanishingPointY = horizonY;
-
-    ctx.strokeStyle = 'rgba(168, 85, 247, 0.15)'; // Violet translucide
-    ctx.lineWidth = 1;
-
-    // Lignes verticales (perspective vers le point de fuite)
-    for (let x = -width; x < width * 2; x += 60) {
+// --- FUMÉE (Vape) ---
+class SmokeParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = Math.random() * 30 + 20;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = -(Math.random() * 0.5 + 0.2); // Monte
+        this.opacity = Math.random() * 0.1 + 0.05;
+        this.life = 1.0;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.radius += 0.3; // La fumée s'étend
+        this.life -= 0.005;
+        this.opacity = Math.max(0, this.life * 0.15);
+    }
+    draw() {
         ctx.beginPath();
-        ctx.moveTo(x, height);
-        ctx.lineTo(centerX, vanishingPointY);
-        ctx.stroke();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200, 210, 255, ${this.opacity})`; // Fumée bleutée
+        ctx.fill();
     }
-
-    // Lignes horizontales (qui défilent vers l'avant)
-    ctx.strokeStyle = 'rgba(34, 211, 238, 0.2)'; // Cyan translucide
-    const numLines = 20;
-    for (let i = 0; i < numLines; i++) {
-        // Effet de perspective mathématique
-        let z = i + (gridOffset % 1);
-        let y = vanishingPointY + (height - vanishingPointY) / z;
-        
-        if (y > height) continue;
-
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-    }
-    
-    gridOffset += gridSpeed;
 }
+
+let smokeParticles = [];
+// Position initiale de la fumée (sera mise à jour par rapport à la puff)
+let puffX = width - 150; // En bas à droite par défaut
+let puffY = height - 100;
+
+function spawnSmoke() {
+    // On génère de la fumée depuis le haut de la puff (environ 100px plus haut)
+    smokeParticles.push(new SmokeParticle(puffX + (Math.random() * 20 - 10), puffY - 80));
+}
+
+setInterval(spawnSmoke, 100); // Génère de la fumée toutes les 100ms
 
 // --- BOUCLE D'ANIMATION ---
 function animate() {
     ctx.clearRect(0, 0, width, height);
 
-    // 1. Dessin de la grille (en bas)
-    drawGrid();
-
-    // 2. Mise à jour et dessin des particules (en haut)
-    particles.forEach(p => {
-        p.update();
-        p.draw();
+    // 1. Mise à jour des étoiles
+    stars.forEach(s => {
+        s.update();
+        s.draw();
     });
 
-    // 3. Connexions entre particules (Réseau)
-    for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-            const dx = particles[i].x - particles[j].x;
-            const dy = particles[i].y - particles[j].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (dist < connectionDistance) {
-                ctx.beginPath();
-                ctx.moveTo(particles[i].x, particles[i].y);
-                ctx.lineTo(particles[j].x, particles[j].y);
-                // L'opacité dépend de la distance
-                const opacity = 1 - (dist / connectionDistance);
-                ctx.strokeStyle = `rgba(34, 211, 238, ${opacity * 0.3})`;
-                ctx.lineWidth = 1;
-                ctx.stroke();
-            }
+    // 2. Mise à jour de la fumée
+    smokeParticles.forEach((p, index) => {
+        p.update();
+        p.draw();
+        if (p.life <= 0) {
+            smokeParticles.splice(index, 1);
         }
-    }
+    });
 
     requestAnimationFrame(animate);
 }
 
 animate();
+
+// Mettre à jour la position de la fumée si la fenêtre change
+window.addEventListener('resize', () => {
+    puffX = width - 150;
+    puffY = height - 100;
+});
