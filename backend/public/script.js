@@ -125,8 +125,16 @@ function renderCatalogueInColumns() {
             <div class="flavor-list">
                 ${catFlavors.map(f => {
                     const isOut = f.stock <= 0;
+                    // AFFICHAGE DU STOCK ICI
+                    const stockHtml = isOut 
+                        ? `<span style="color: #EF4444; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Rupture)</span>` 
+                        : `<span style="color: #22C55E; font-size: 0.75rem; margin-left: 8px; font-weight: bold;">(Stock: ${f.stock})</span>`;
+
                     return `<div class="flavor-row">
-                        <div class="flavor-info"><span class="flavor-name">${f.nom}</span></div>
+                        <div class="flavor-info">
+                            <span class="flavor-name">${f.nom}</span>
+                            ${stockHtml}
+                        </div>
                         ${isOut ? `<button disabled class="btn-mini">✕</button>` : `<button onclick="addToCart(${f.id})" class="btn-mini">+</button>`}
                     </div>`;
                 }).join('')}
@@ -227,8 +235,6 @@ async function checkout() {
     }
     if(cart.length === 0) return alert('Panier vide');
     
-    // On envoie le total ORIGINAL au serveur, c'est lui qui va appliquer la réduction
-    // pour éviter que le client ne triche sur le prix.
     const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
     const promoCode = window.appliedPromoCode || null;
 
@@ -257,7 +263,7 @@ async function checkout() {
             
             updateCartUI(); 
             toggleCart();
-            window.location.reload(); // Recharger pour mettre à jour les stocks visuels
+            window.location.reload(); 
         } else {
             alert('Erreur : ' + (data.error || 'lors de la validation.'));
         }
