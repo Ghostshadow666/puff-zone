@@ -20,12 +20,21 @@ body {
     overflow-x: hidden;
 }
 
-/* BACKGROUNDS */
-.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(168, 85, 247, 0.15), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(34, 211, 238, 0.1), transparent 55%); z-index: -3; }
+/* BACKGROUNDS ORIGINAUX */
+.nebula-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 15% 0%, rgba(168, 85, 247, 0.15), transparent 55%), radial-gradient(ellipse at 85% 100%, rgba(34, 211, 238, 0.1), transparent 55%); z-index: -4; }
+.overlay-dark { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: -3; }
 .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px), radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px); background-size: 550px 550px, 350px 350px; background-position: 0 0, 40px 60px; z-index: -2; opacity: 0.3; animation: starsAnim 60s linear infinite; }
 @keyframes starsAnim { 0% { transform: translateY(0); } 100% { transform: translateY(-550px); } }
 
-/* HEADER */
+/* PLANETE 3D EN FOND */
+.planet-bg { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); perspective: 1000px; width: 100%; height: 100%; z-index: -1; pointer-events: none; display: flex; justify-content: center; align-items: center; opacity: 0.15; }
+.planet { width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #22D3EE, #A855F7, #05050f); box-shadow: 0 0 80px rgba(168, 85, 247, 0.8); position: relative; z-index: 2; animation: floatPlanet 8s ease-in-out infinite; }
+.orbit-ring { position: absolute; width: 600px; height: 600px; border: 2px dashed rgba(34, 211, 238, 0.4); border-radius: 50%; transform-style: preserve-3d; animation: orbitSpin 15s linear infinite; }
+.orbit-text { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); color: #fff; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.5rem; white-space: nowrap; text-shadow: 0 0 10px var(--neon-cyan); }
+@keyframes floatPlanet { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+@keyframes orbitSpin { 0% { transform: rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateX(65deg) rotateZ(360deg); } }
+
+/* HEADER ORIGINAL */
 .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(10, 10, 26, 0.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
 .logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: #fff; }
 .logo span { color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); }
@@ -35,13 +44,13 @@ body {
 .btn-panier { background: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
 .btn-panier:hover { background: rgba(34, 211, 238, 0.1); box-shadow: 0 0 10px var(--neon-cyan); }
 
-/* LAYOUT PRINCIPAL */
-.layout-principal { display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; }
+/* LAYOUT ORIGINAL */
+.layout-principal { display: grid; grid-template-columns: 250px 1fr; gap: 20px; padding: 20px; max-width: 1200px; margin: 0 auto; position: relative; z-index: 10; }
 .sidebar-categories { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; backdrop-filter: blur(10px); height: fit-content; }
 .contenu-catalogue h1 { font-family: 'Orbitron', sans-serif; font-size: 2rem; margin-bottom: 20px; }
 .grille-produits { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
-/* CATEGORIES & PRODUITS */
+/* PRODUITS */
 .category-column { background: var(--card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; backdrop-filter: blur(10px); transition: 0.3s; }
 .category-column:hover { border-color: var(--purple); box-shadow: 0 0 15px rgba(168, 85, 247, 0.2); }
 .category-header { padding: 15px; text-align: center; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3); }
@@ -55,28 +64,18 @@ body {
 .btn-mini { background: var(--neon-cyan); color: black; border: none; width: 30px; height: 30px; border-radius: 5px; font-weight: 900; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
 .btn-mini:hover { transform: scale(1.1); box-shadow: 0 0 10px var(--neon-cyan); }
 
-/* PANIER DRAWER */
+/* PANIER */
 #cart-drawer { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: var(--card); border-left: 1px solid var(--border); z-index: 10000; transition: right 0.3s; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; backdrop-filter: blur(15px); box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
-
-/* 3D PLANET ANIMATION */
-.planet-container { perspective: 1000px; width: 100%; height: 250px; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; margin-bottom: 30px; }
-.planet { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #22D3EE, #A855F7, #05050f); box-shadow: 0 0 50px rgba(168, 85, 247, 0.8), inset -10px -10px 20px rgba(0,0,0,0.8); position: relative; z-index: 2; animation: floatPlanet 6s ease-in-out infinite; }
-.orbit-ring { position: absolute; width: 280px; height: 280px; border: 2px dashed rgba(34, 211, 238, 0.4); border-radius: 50%; transform-style: preserve-3d; animation: orbitSpin 10s linear infinite; }
-.orbit-ring-2 { position: absolute; width: 200px; height: 200px; border: 1px solid rgba(168, 85, 247, 0.5); border-radius: 50%; transform-style: preserve-3d; animation: orbitSpin 6s linear infinite reverse; }
-.orbit-text { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); color: #fff; font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.1rem; white-space: nowrap; text-shadow: 0 0 10px var(--neon-cyan); }
-@keyframes floatPlanet { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-@keyframes orbitSpin { 0% { transform: rotateX(65deg) rotateZ(0deg); } 100% { transform: rotateX(65deg) rotateZ(360deg); } }
 
 /* RESPONSIVE MOBILE */
 @media (max-width: 768px) {
     .header { flex-direction: column; gap: 15px; padding: 15px; text-align: center; }
     .header-actions { flex-wrap: wrap; justify-content: center; width: 100%; }
     .layout-principal { grid-template-columns: 1fr; padding: 10px; }
-    .sidebar-categories { display: none; } /* Optionnel : cacher les catégories sur mobile pour gagner de la place */
+    .sidebar-categories { display: none; }
     #cart-drawer { width: 100%; right: -100%; }
     .grille-produits { grid-template-columns: 1fr; }
     .logo { font-size: 1.3rem; }
-    .planet-container { height: 180px; }
-    .orbit-ring { width: 220px; height: 220px; }
-    .orbit-ring-2 { width: 160px; height: 160px; }
+    .planet { width: 200px; height: 200px; }
+    .orbit-ring { width: 350px; height: 350px; }
 }
