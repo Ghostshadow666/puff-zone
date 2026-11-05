@@ -41,41 +41,6 @@ app.get('/api/health', async (req, res) => {
   catch (e) { res.status(500).json({ status: 'error', error: e.message }); }
 });
 
-// --- ROUTE DE DIAGNOSTIC ---
-app.get('/api/debug-login', async (req, res) => {
-  try {
-    const bcrypt = require('bcryptjs');
-    const r = await pool.query("SELECT name, password, role FROM utilisateurs WHERE name = 'Admin1'");
-    if (r.rows.length === 0) {
-      return res.json({ status: "ERREUR", message: "Admin1 n'existe pas dans la base." });
-    }
-    const user = r.rows[0];
-    const isMatch = await bcrypt.compare('admin123', user.password);
-    res.json({
-      status: "OK",
-      nom: user.name,
-      role: user.role,
-      mot_de_passe_correspond: isMatch,
-      debut_du_hash: user.password.substring(0, 15) + "..."
-    });
-  } catch (e) {
-    res.status(500).json({ status: "ERREUR_SERVEUR", error: e.message });
-  }
-});
-
-// --- ROUTE DE CREATION FORCEE ---
-app.get('/api/force-create-admin', async (req, res) => {
-  try {
-    const bcrypt = require('bcryptjs');
-    const hash = await bcrypt.hash('admin123', 10);
-    await pool.query("DELETE FROM utilisateurs WHERE name = 'Admin1'");
-    await pool.query("INSERT INTO utilisateurs (name, password, role) VALUES ('Admin1', $1, 'admin')", [hash]);
-    res.json({ status: "SUCCÈS", message: "Admin1 a été recréé avec le mot de passe admin123 !" });
-  } catch (e) {
-    res.status(500).json({ status: "ERREUR_SERVEUR", error: e.message });
-  }
-});
-
 // --- CLIENTS (Public) ---
 app.post('/api/clients/register', async (req, res) => {
   const { telephone, nom, adresse, whatsapp } = req.body;
@@ -107,12 +72,28 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- MES COMMANDES (Côté Client - Public) ---
+app.get('/api/clients/:id/commandes', async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT c.*, 
+             (SELECT json_agg(json_build_object('saveur', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) 
+              FROM commande_items ci WHERE ci.commande_id = c.id) as items
+      FROM commandes c 
+      WHERE c.client_id = $1 
+      ORDER BY c.date_commande DESC
+    `, [req.params.id]);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- ADMIN : LISTE DES CLIENTS ---
 app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM clients ORDER BY created_at DESC'); res.json(r.rows); } 
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- COMMANDES ---
+// --- COMMANDES (Admin & Public) ---
 app.post('/api/commandes', async (req, res) => {
   const { client_id, cart, total } = req.body;
   try {
