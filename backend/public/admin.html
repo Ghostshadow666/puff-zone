@@ -54,6 +54,7 @@
         <button class="nav-tab" onclick="switchTab('tab-personnel', this)">👥 Personnel</button>
         <button class="nav-tab" onclick="switchTab('tab-commandes', this)">📦 Commandes <span id="notif-badge" class="notif-badge">0</span></button>
         <button class="nav-tab" onclick="switchTab('tab-clients', this)">🔒 Clients</button>
+        <button class="nav-tab" onclick="switchTab('tab-promo', this)">🏷️ Codes Promo</button>
         <button class="nav-tab" onclick="switchTab('tab-stats', this)">📊 Stats</button>
         <button class="nav-tab" onclick="switchTab('tab-stock', this)">📦 Stock</button>
         <button class="nav-tab" onclick="switchTab('tab-ventes', this)">💳 Ventes</button>
@@ -129,6 +130,24 @@
         <div class="card">
             <h2>🔒 Base de données Clients</h2>
             <div id="clientsList" style="text-align:center; color:var(--text2);">Chargement...</div>
+        </div>
+    </div>
+
+    <!-- ONGLET PROMO -->
+    <div id="tab-promo" class="tab-content">
+        <div class="card">
+            <h2>➕ Créer un Code Promo</h2>
+            <form id="addPromoForm">
+                <div class="form-row">
+                    <div class="input-group"><label>Code (ex: PUFF10)</label><input type="text" id="promoCode" placeholder="PUFF10" required></div>
+                    <div class="input-group"><label>Réduction (%)</label><input type="number" id="promoPct" min="1" max="100" placeholder="10" required></div>
+                    <button type="submit" class="btn" id="submitPromoBtn">Créer le code</button>
+                </div>
+            </form>
+        </div>
+        <div class="card">
+            <h2>🏷️ Codes actifs</h2>
+            <div id="promoList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
         </div>
     </div>
 
@@ -241,6 +260,7 @@
         if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
         if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').style.display = 'none'; }
         if(tabId === 'tab-clients') loadClients();
+        if(tabId === 'tab-promo') loadPromos();
         if(tabId === 'tab-stats') loadStats();
     }
 
@@ -414,6 +434,38 @@
             `).join('');
         } catch (e) { document.getElementById('clientsList').innerHTML = 'Erreur.'; }
     }
+
+    // --- PROMOS ---
+    async function loadPromos() {
+        try {
+            const res = await fetch(`${API_URL}/promo`);
+            const promos = await res.json();
+            const container = document.getElementById('promoList');
+            if (promos.length === 0) { container.innerHTML = 'Aucun code promo actif.'; return; }
+            container.innerHTML = promos.map(p => `
+                <div class="item-card">
+                    <div class="item-info">
+                        <span class="item-name">🏷️ ${p.code}</span>
+                        <span class="item-details">Réduction : ${p.pourcentage}%</span>
+                    </div>
+                    <button class="btn btn-danger" onclick="deletePromo(${p.id})">🗑️</button>
+                </div>
+            `).join('');
+        } catch (e) { document.getElementById('promoList').innerHTML = 'Erreur.'; }
+    }
+
+    document.getElementById('addPromoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('promoCode').value;
+        const pourcentage = parseInt(document.getElementById('promoPct').value);
+        try {
+            await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, pourcentage }) });
+            document.getElementById('addPromoForm').reset();
+            loadPromos();
+        } catch (err) { alert('Erreur (Code déjà existant ?)'); }
+    });
+
+    async function deletePromo(id) { if(confirm('Supprimer ce code ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
 
     // --- STATS & GRAPHIQUES ---
     let chartTop = null;

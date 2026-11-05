@@ -28,6 +28,9 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS commande_items (
         id SERIAL PRIMARY KEY, commande_id INTEGER REFERENCES commandes(id) ON DELETE CASCADE, saveur_nom VARCHAR(100), quantite INTEGER, prix DECIMAL(10,2)
       );
+      CREATE TABLE IF NOT EXISTS codes_promo (
+        id SERIAL PRIMARY KEY, code VARCHAR(50) UNIQUE NOT NULL, pourcentage INTEGER NOT NULL, actif BOOLEAN DEFAULT true, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
@@ -91,17 +94,57 @@ app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- CODES PROMO (Public vérification + Admin gestion) ---
+app.post('/api/promo/check', async (req, res) => {
+  const { code } = req.body;
+  try {
+    const r = await pool.query('SELECT * FROM codes_promo WHERE code = $1 AND actif = true', [code]);
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expiré' });
+    res.json({ success: true, pourcentage: r.rows[0].pourcentage });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/promo', authenticateToken, isAdmin, async (req, res) => {
+  try { const r = await pool.query('SELECT * FROM codes_promo ORDER BY created_at DESC'); res.json(r.rows); } 
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
+  const { code, pourcentage } = req.body;
+  try {
+    const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: "Ce code existe déjà !" }); }
+});
+
+app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
+  try { await pool.query('DELETE FROM codes_promo WHERE id=$1', [req.params.id]); res.json({ success: true }); } 
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // --- COMMANDES ---
 app.post('/api/commandes', async (req, res) => {
-  const { client_id, cart, total } = req.body;
+  const { client_id, cart, total, promo_code } = req.body;
   try {
-    const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING id', [client_id, total]);
+    let finalTotal = parseFloat(total);
+    
+    // Application du code promo si fourni
+    if (promo_code) {
+      const promo = await pool.query('SELECT * FROM codes_promo WHERE code = $1 AND actif = true', [promo_code]);
+      if (promo.rows.length > 0) {
+        const pct = promo.rows[0].pourcentage;
+        finalTotal = finalTotal - (finalTotal * (pct / 100));
+      }
+    }
+
+    const cmd = await pool.query('INSERT INTO commandes (client_id, total) VALUES ($1,$2) RETURNING id', [client_id, finalTotal]);
     const cmdId = cmd.rows[0].id;
+    
     for (const item of cart) {
       await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, prix_achat) VALUES ($1,$2,$3,$4,$5)', [cmdId, item.nom, item.qty, item.prix, item.prix_achat || 0]);
       await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]);
     }
-    res.json({ success: true, commande_id: cmdId });
+    res.json({ success: true, commande_id: cmdId, finalTotal });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
