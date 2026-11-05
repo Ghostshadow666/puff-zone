@@ -164,7 +164,7 @@
         const token = localStorage.getItem('token');
         if (token && token !== 'undefined' && token !== 'null') { config = config || {}; config.headers = config.headers || {}; config.headers['Authorization'] = 'Bearer ' + token; }
         return originalFetch(resource, config).then(response => {
-            if (response.status === 401 || response.status === 403) { localStorage.removeItem('token'); localStorage.removeItem('puff_staff'); window.location.href = 'admin-login.html'; }
+            if (response.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('puff_staff'); window.location.href = 'admin-login.html'; }
             return response;
         });
     };
@@ -199,6 +199,14 @@
         } catch (e) {}
     }
     setInterval(checkNotifications, 15000);
+    // RafraÃ®chissement automatique des commandes si on est sur l'onglet
+    setInterval(() => {
+        const commandesTab = document.getElementById('tab-commandes');
+        if (commandesTab && commandesTab.classList.contains('active')) {
+            loadCommandes();
+        }
+    }, 10000); // Toutes les 10 secondes
+
     document.addEventListener('DOMContentLoaded', () => { loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
 
     async function loadDrivers() {
@@ -238,7 +246,7 @@
     async function loadStats() {
         try {
             const res = await fetch(`${API_URL}/stats`); const data = await res.json();
-            if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
+            if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (Ã¢â€šÂ¬)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
             if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantit&eacute;s', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
         } catch (e) {}
     }
@@ -309,7 +317,7 @@
             const tbody = document.getElementById('logsList');
             
             if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Aucun log enregistré.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Aucun log enregistrÃƒÂ©.</td></tr>';
                 return;
             }
 
