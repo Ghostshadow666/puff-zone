@@ -31,7 +31,7 @@ const initDB = async () => {
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("âœ… Base de donnÃ©es vÃ©rifiÃ©e et Ã  jour !");
+    console.log("✅ Base de données vérifiée et à jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -59,7 +59,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃ©ro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Numéro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -118,13 +118,24 @@ app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
 
 app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
   const { statut } = req.body;
-  try { await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); res.json({ success: true }); }
+  try { 
+    const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') {
+      return res.status(403).json({ error: 'Action interdite : cette commande est déjà livrée.' });
+    }
+    await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); 
+    res.json({ success: true }); 
+  }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res) => {
   const { livreur_id } = req.body;
   try {
+    const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') {
+      return res.status(403).json({ error: 'Action interdite : cette commande est déjà livrée.' });
+    }
     await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -164,10 +175,18 @@ app.get('/api/livreur/:id/stats', authenticateToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// --- STATS GENERALES (Top Saveurs + CA 7 Jours) ---
 app.get('/api/stats', authenticateToken, isAdmin, async (req, res) => {
   try {
     const top = await pool.query(`SELECT saveur_nom, SUM(quantite) as total_qte FROM commande_items GROUP BY saveur_nom ORDER BY total_qte DESC LIMIT 5`);
-    res.json({ topSaveurs: top.rows });
+    const ca7jours = await pool.query(`
+      SELECT TO_CHAR(date_commande, 'DD/MM') as jour, SUM(total) as ca
+      FROM commandes
+      WHERE statut = 'livre' AND date_commande >= NOW() - INTERVAL '7 days'
+      GROUP BY TO_CHAR(date_commande, 'DD/MM'), DATE_TRUNC('day', date_commande)
+      ORDER BY DATE_TRUNC('day', date_commande) ASC
+    `);
+    res.json({ topSaveurs: top.rows, ca7jours: ca7jours.rows });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -265,12 +284,12 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    res.json({ success: true, message: "Commandes et Chiffre d'Affaires rÃ©initialisÃ©s." });
+    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- FALLBACK SPA & GESTION ERREUR GLOBALE ---
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.use((err, req, res, next) => { console.error("ðŸ’¥ ERREUR SERVEUR:", err); res.status(500).json({ error: "Une erreur interne est survenue." }); });
+app.use((err, req, res, next) => { console.error("💥 ERREUR SERVEUR:", err); res.status(500).json({ error: "Une erreur interne est survenue." }); });
 
-app.listen(PORT, () => console.log(`ðŸš€ Serveur PUFF ZONE dÃ©marrÃ© sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
