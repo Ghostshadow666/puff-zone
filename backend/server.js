@@ -9,11 +9,11 @@ const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./
 
 const app = express();
 
-// --- SÉCURITÉ : LIMITEUR DE TENTATIVES DE CONNEXION ---
+// --- SÃ‰CURITÃ‰ : LIMITEUR DE TENTATIVES DE CONNEXION ---
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limite à 5 requêtes par IP
-  message: { error: 'Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.' }
+  max: 5, // Limite Ã  5 requÃªtes par IP
+  message: { error: 'Trop de tentatives de connexion. Veuillez rÃ©essayer dans 15 minutes.' }
 });
 const PORT = process.env.PORT || 5000;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
@@ -32,7 +32,7 @@ const logAction = async (user, action, details) => {
       'INSERT INTO logs_activite (user_name, user_role, action, details) VALUES ($1, $2, $3, $4)',
       [name, role, action, details]
     );
-  } catch (e) { console.error("Erreur ÃƒÆ’Ã‚Â©criture log:", e); }
+  } catch (e) { console.error("Erreur ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©criture log:", e); }
 };
 
 const initDB = async () => {
@@ -72,7 +72,7 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Base de donnÃƒÆ’Ã‚Â©es vÃƒÆ’Ã‚Â©rifiÃƒÆ’Ã‚Â©e et ÃƒÆ’Ã‚Â  jour !");
+    console.log("ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Base de donnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rifiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e et ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -99,7 +99,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃƒÆ’Ã‚Â©ro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
@@ -131,7 +131,7 @@ app.post('/api/promo/check', async (req, res) => {
   const { code } = req.body;
   try {
     const r = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [code]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expirÃƒÆ’Ã‚Â©' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expirÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©' });
     res.json({ success: true, pourcentage: r.rows[0].pourcentage });
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
@@ -145,9 +145,9 @@ app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
   const { code, pourcentage } = req.body;
   try {
     const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]);
-    await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Code Promo', `Code: ${code.toUpperCase()} (${pourcentage}%)`);
+    await logAction(req.user, 'CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation Code Promo', `Code: ${code.toUpperCase()} (${pourcentage}%)`);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: "Ce code existe dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  !" }); }
+  } catch (e) { res.status(500).json({ error: "Ce code existe dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  !" }); }
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
@@ -184,7 +184,7 @@ app.post('/api/commandes', async (req, res) => {
       await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmdId, item.nom, item.qty, item.prix]);
       await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]);
     }
-    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Commande #${cmdId} - Total: ${finalTotal.toFixed(2)}ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬`);
+    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Commande #${cmdId} - Total: ${finalTotal.toFixed(2)}ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬`);
     res.json({ success: true, commande_id: cmdId, finalTotal });
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
@@ -200,7 +200,7 @@ app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
   const { statut } = req.body;
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
-    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  livrÃƒÆ’Ã‚Â©e.' });
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  livrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e.' });
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]);
     await logAction(req.user, 'Changement Statut Commande', `Commande #${req.params.id} -> ${statut}`);
     res.json({ success: true });
@@ -211,7 +211,7 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
   const { livreur_id } = req.body;
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
-    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  livrÃƒÆ’Ã‚Â©e.' });
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â  livrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e.' });
     await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
     await logAction(req.user, 'Assignation Livreur', `Commande #${req.params.id} -> Livreur ID ${livreur_id}`);
     res.json({ success: true });
@@ -253,7 +253,7 @@ app.post('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => {
   try {
     const hashed = await require('bcryptjs').hash(password, 10);
     const r = await pool.query('INSERT INTO utilisateurs (name,password,role) VALUES ($1,$2,$3) RETURNING *', [name,hashed, role]);
-    await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Personnel', `Nom: ${name}, RÃƒÆ’Ã‚Â´le: ${role}`);
+    await logAction(req.user, 'CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation Personnel', `Nom: ${name}, RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â´le: ${role}`);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
@@ -273,11 +273,11 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     const user = r.rows[0];
     const validPassword = await checkPassword(password, user.password);
     if (!validPassword) {
-      await logAction({name, role: 'inconnu'}, 'Tentative Connexion ÃƒÆ’Ã¢â‚¬Â°chouÃƒÆ’Ã‚Â©e', `Nom: ${name}`);
+      await logAction({name, role: 'inconnu'}, 'Tentative Connexion ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°chouÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e', `Nom: ${name}`);
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
     const token = generateToken(user);
-    await logAction({name, role: user.role}, 'Connexion RÃƒÆ’Ã‚Â©ussie', `Utilisateur: ${name}`);
+    await logAction({name, role: user.role}, 'Connexion RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ussie', `Utilisateur: ${name}`);
     res.json({ success: true, token, user: { id: user.id, name: user.name, role: user.role } });
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
@@ -304,7 +304,7 @@ app.post('/api/login-livreur', loginLimiter, async (req, res) => {
 });
 
 app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
-app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Zone', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
+app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); await logAction(req.user, 'CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation Zone', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
 app.put('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { await pool.query('UPDATE zones SET nom=$1, lat=$2, lng=$3, rayon=$4, min_commande=$5 WHERE id=$6', [nom, lat, lng, rayon, min_commande, req.params.id]); await logAction(req.user, 'Modification Zone', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Zone', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
@@ -316,12 +316,12 @@ app.get('/api/catalogue', async (req, res) => {
 });
 
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
-app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation CatÃƒÆ’Ã‚Â©gorie', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
-app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); await logAction(req.user, 'Modification CatÃƒÆ’Ã‚Â©gorie', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
-app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression CatÃƒÆ’Ã‚Â©gorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); await logAction(req.user, 'CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation CatÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gorie', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); await logAction(req.user, 'Modification CatÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gorie', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression CatÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©gorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
 app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM saveurs ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
-app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); await logAction(req.user, 'CrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©ation Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); await logAction(req.user, 'Modification Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Saveur', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
@@ -344,7 +344,7 @@ app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, r
     const commandes = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`);
     const items = await pool.query('SELECT * FROM commande_items');
     const exportData = { export_date: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
-    await logAction(req.user, 'Exportation DonnÃƒÆ’Ã‚Â©es', 'Export JSON des commandes');
+    await logAction(req.user, 'Exportation DonnÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es', 'Export JSON des commandes');
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="puffzone_export_commandes.json"');
     res.json(exportData);
@@ -358,12 +358,12 @@ app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, r
     const backupData = { date_backup: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
     await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [backupData]);
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    await logAction(req.user, 'Reset Commandes', `Sauvegarde effectuÃƒÆ’Ã‚Â©e (${commandes.rows.length} commandes)`);
-    res.json({ success: true, message: "Commandes sauvegardÃƒÆ’Ã‚Â©es puis rÃƒÆ’Ã‚Â©initialisÃƒÆ’Ã‚Â©es avec succÃƒÆ’Ã‚Â¨s." });
+    await logAction(req.user, 'Reset Commandes', `Sauvegarde effectuÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e (${commandes.rows.length} commandes)`);
+    res.json({ success: true, message: "Commandes sauvegardÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es puis rÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©initialisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©es avec succÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s." });
   } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-// --- ROUTE POUR RÃƒÆ’Ã¢â‚¬Â°CUPÃƒÆ’Ã¢â‚¬Â°RER LES LOGS ---
+// --- ROUTE POUR RÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°CUPÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°RER LES LOGS ---
 app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query('SELECT id, date_log, user_name, user_role, action, details FROM logs_activite ORDER BY date_log DESC LIMIT 200');
@@ -372,4 +372,4 @@ app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
 });
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬ Serveur PUFF ZONE dÃƒÆ’Ã‚Â©marrÃƒÆ’Ã‚Â© sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Serveur PUFF ZONE dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©marrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© sur le port ${PORT}`));
