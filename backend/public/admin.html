@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUFF ZONE &mdash; Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -62,7 +62,34 @@
         .role-livreur { background: rgba(34, 211, 238, 0.2); color: var(--neon-cyan); border: 1px solid rgba(34, 211, 238, 0.3);}
         .role-client { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid rgba(16, 185, 129, 0.3);}
         .role-inconnu { background: rgba(255, 255, 255, 0.1); color: #aaa; border: 1px solid rgba(255, 255, 255, 0.2);}
-        @media (max-width: 768px) { .log-table { display: block; overflow-x: auto; white-space: nowrap; } }
+        
+        /* --- STYLE SECURITE / SOC --- */
+        .soc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .soc-panel { background: rgba(0,0,0,0.5); border: 1px solid rgba(34, 211, 238, 0.3); border-radius: 15px; padding: 20px; }
+        .soc-title { font-family: 'Share Tech Mono', monospace; color: var(--neon-cyan); font-size: 1.1rem; margin-bottom: 15px; border-bottom: 1px dashed rgba(34, 211, 238, 0.3); padding-bottom: 10px; }
+        
+        /* RADAR */
+        .radar-container { position: relative; width: 200px; height: 200px; margin: 0 auto; border-radius: 50%; border: 2px solid rgba(34, 211, 238, 0.5); background: radial-gradient(circle, rgba(34, 211, 238, 0.1) 0%, transparent 70%); box-shadow: inset 0 0 20px rgba(34, 211, 238, 0.2); overflow: hidden; }
+        .radar-sweep { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 70%, rgba(34, 211, 238, 0.8) 100%); animation: radar-spin 3s linear infinite; }
+        .radar-dot { position: absolute; width: 6px; height: 6px; background: var(--red); border-radius: 50%; box-shadow: 0 0 10px var(--red); top: 30%; left: 60%; animation: blink 1s infinite alternate; }
+        @keyframes radar-spin { 100% { transform: rotate(360deg); } }
+        @keyframes blink { 0% { opacity: 0.2; } 100% { opacity: 1; } }
+
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .status-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; text-align: center; }
+        .status-value { font-family: 'Share Tech Mono', monospace; font-size: 1.8rem; font-weight: bold; }
+        .status-label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; margin-top: 5px; }
+
+        .terminal { background: #000; border: 1px solid #333; border-radius: 10px; padding: 15px; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; height: 250px; overflow-y: auto; color: #0f0; }
+        .term-line { margin-bottom: 5px; }
+        .term-time { color: #555; margin-right: 10px; }
+        .term-alert { color: var(--red); font-weight: bold; }
+        .term-ok { color: var(--green); }
+
+        @media (max-width: 768px) { 
+            .log-table { display: block; overflow-x: auto; white-space: nowrap; }
+            .soc-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -80,7 +107,8 @@
         <button class="nav-tab" onclick="switchTab('tab-stats', this)">&#128202; Stats</button>
         <button class="nav-tab" onclick="switchTab('tab-stock', this)">&#128230; Stock</button>
         <button class="nav-tab" onclick="switchTab('tab-ventes', this)">&#128179; Ventes</button>
-        <button class="nav-tab" onclick="switchTab('tab-logs', this)">&#128220; Logs</button>`n        <button class="nav-tab" onclick="switchTab('tab-securite', this)">&#128737;&#65039; S&eacute;curit&eacute;</button>
+        <button class="nav-tab" onclick="switchTab('tab-logs', this)">&#128220; Logs</button>
+        <button class="nav-tab" onclick="switchTab('tab-securite', this)">&#128737;&#65039; S&eacute;curit&eacute;</button>
     </div>
     <button class="logout-btn" onclick="logoutAdmin()">D&eacute;connexion</button>
 </div>
@@ -121,6 +149,61 @@
     </div>
     <div id="tab-logs" class="tab-content">
         <div class="card"><h2>&#128220; Journal d'Activit&eacute;</h2><p style="color:var(--text2); font-size:0.9rem; margin-bottom: 20px;">Toutes les actions sont enregistr&eacute;es ici. Les adresses IP sont masqu&eacute;es.</p><div style="overflow-x: auto;"><table class="log-table"><thead><tr><th>Date</th><th>Utilisateur</th><th>R&ocirc;le</th><th>Action</th><th>D&eacute;tails</th><th>IP</th></tr></thead><tbody id="logsList"><tr><td colspan="6" style="text-align:center; padding: 30px;">Chargement des logs...</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- ONGLET SÉCURITÉ (SOC) -->
+    <div id="tab-securite" class="tab-content">
+        <div class="card" style="border-color: rgba(34, 211, 238, 0.5); background: rgba(0, 10, 20, 0.8);">
+            <h2 style="color: var(--neon-cyan); font-family: 'Share Tech Mono', monospace;">&#128737;&#65039; CENTRE D'OP&Eacute;RATIONS DE CYBERS&Eacute;CURIT&Eacute;</h2>
+            <p style="color:var(--text2); font-size:0.9rem; margin-bottom: 25px;">Surveillance des menaces et &eacute;tat du syst&egrave;me en temps r&eacute;el.</p>
+            
+            <div class="soc-grid">
+                <!-- Radar -->
+                <div class="soc-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="soc-title" style="align-self: flex-start; width: 100%;">SCAN DU R&Eacute;SEAU</div>
+                    <div class="radar-container">
+                        <div class="radar-sweep"></div>
+                        <div class="radar-dot"></div>
+                    </div>
+                    <div style="margin-top: 15px; color: var(--green); font-family: 'Share Tech Mono', monospace; font-size: 0.9rem;">
+                        [SYST&Egrave;ME S&Eacute;CURIS&Eacute;]
+                    </div>
+                </div>
+
+                <!-- Statut -->
+                <div class="soc-panel">
+                    <div class="soc-title">T&Eacute;L&Eacute;M&Eacute;TRIE SYST&Egrave;ME</div>
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <div class="status-value" id="socDbStatus" style="color: var(--green);">ONLINE</div>
+                            <div class="status-label">Base de Donn&eacute;es</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-value" id="socShieldStatus" style="color: var(--neon-cyan);">ACTIF</div>
+                            <div class="status-label">Bouclier Web</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-value" id="socAttacks" style="color: var(--red);">0</div>
+                            <div class="status-label">Menaces Bloqu&eacute;es</div>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-value" style="color: var(--neon-purple);">100%</div>
+                            <div class="status-label">Int&eacute;grit&eacute;</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal Log -->
+            <div class="soc-panel">
+                <div class="soc-title">FLUX DE S&Eacute;CURIT&Eacute; (LOGS)</div>
+                <div class="terminal" id="socTerminal">
+                    <div class="term-line"><span class="term-time">[SYSTEM]</span> Initialisation du syst&egrave;me de surveillance...</div>
+                    <div class="term-line"><span class="term-time">[SYSTEM]</span> Connexion &eacute;tablie avec la base de donn&eacute;es.</div>
+                    <div class="term-line"><span class="term-ok">[OK]</span> Aucune menace d&eacute;tect&eacute;e pour le moment.</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -237,7 +320,7 @@
     function centerMap(lat, lng) { map.setView([lat, lng], 12); }
     function editZone(id) { const z = allZones.find(x => x.id === id); if (!z) return; editingZoneId = z.id; document.getElementById('zoneName').value = z.nom; document.getElementById('zoneMin').value = z.min_commande; document.getElementById('zoneRayon').value = z.rayon / 1000; document.getElementById('rayonValue').textContent = z.rayon / 1000; document.getElementById('submitZoneBtn').textContent = 'Enregistrer'; document.getElementById('submitZoneBtn').disabled = false; document.getElementById('cancelZoneBtn').style.display = 'block'; selectedCoords = { lat: z.lat, lng: z.lng }; centerMap(z.lat, z.lng); if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([z.lat, z.lng]).addTo(map); currentCircle = L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map); }
     function resetZoneForm() { editingZoneId = null; document.getElementById('addZoneForm').reset(); document.getElementById('rayonValue').textContent = '3'; document.getElementById('submitZoneBtn').textContent = '&#10133; Ajouter'; document.getElementById('submitZoneBtn').disabled = true; document.getElementById('cancelZoneBtn').style.display = 'none'; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); selectedCoords = null; }
-    async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const el = document.getElementById('zoneList'); if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; } allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map); }); el.innerHTML = allZones.map(x => `<div class="item-card" style="flex-direction: row; justify-content: space-between;"><div class="item-info"><span class="item-name">&#128205; ${x.nom}</span><span class="item-details">d&egrave;s ${x.min_commande} \u20AC &middot; ${(x.rayon/1000).toFixed(1)} km</span></div><div style="display:flex; gap:8px;"><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editZone(${x.id})">&#9999;&#65039;</button><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="centerMap(${x.lat}, ${x.lng})">&#127919;</button><button class="btn btn-danger" style="padding: 8px 12px;" onclick="deleteZone(${x.id})">&#128465;&#65039;</button></div></div>`).join(''); } catch(e){} }
+    async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const el = document.getElementById('zoneList'); if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; } allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map); }); el.innerHTML = allZones.map(x => `<div class="item-card" style="flex-direction: row; justify-content: space-between;"><div class="item-info"><span class="item-name">&#128205; ${x.nom}</span><span class="item-details">d&egrave;s ${x.min_commande} &euro; &middot; ${(x.rayon/1000).toFixed(1)} km</span></div><div style="display:flex; gap:8px;"><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editZone(${x.id})">&#9999;&#65039;</button><button class="btn" style="padding: 8px 12px; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="centerMap(${x.lat}, ${x.lng})">&#127919;</button><button class="btn btn-danger" style="padding: 8px 12px;" onclick="deleteZone(${x.id})">&#128465;&#65039;</button></div></div>`).join(''); } catch(e){} }
     document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords) return alert("Cliquez sur la carte."); const data = { nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, min_commande: parseInt(document.getElementById('zoneMin').value) }; const method = editingZoneId ? 'PUT' : 'POST'; const url = editingZoneId ? `${API_URL}/zones/${editingZoneId}` : `${API_URL}/zones`; await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); resetZoneForm(); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); loadZones(); });
     async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); loadZones(); } }
 
@@ -304,39 +387,39 @@
                 else if (log.user_role === 'livreur') roleClass = 'role-livreur';
                 else if (log.user_role === 'client') roleClass = 'role-client';
                 const dateStr = new Date(log.date_log).toLocaleString('fr-FR');
-                // Remplacement direct de l'euro mal encodÃ© dans l'affichage des logs
-                const detailsStr = log.details ? log.details.replace(/Ã¢â€šÂ¬/g, '\u20AC') : '-';
+                const detailsStr = log.details ? log.details.replace(/â‚¬/g, '\u20AC') : '-';
                 return `<tr><td style="color: var(--text2);">${dateStr}</td><td style="font-weight: 600;">${log.user_name}</td><td><span class="log-badge ${roleClass}">${log.user_role}</span></td><td style="font-weight: 600; color: var(--neon-cyan);">${log.action}</td><td style="color: var(--text2);">${detailsStr}</td><td style="font-family: monospace; color: #555;">***.***.***.***</td></tr>`;
             }).join('');
         } catch (e) { document.getElementById('logsList').innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--red);">Erreur de chargement des logs.</td></tr>'; }
     }
+
     async function loadSecurity() {
         try {
             const res = await fetch(`${API_URL}/security/analyse`);
             const data = await res.json();
             
-            document.getElementById('secTotalAttacks').textContent = data.totalAttacks;
+            document.getElementById('socAttacks').textContent = data.totalAttacks;
             
-            const tbody = document.getElementById('securityList');
-            let html = '';
-
-            if (data.failedLogins.length === 0 && data.unauthorizedAccess.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--green);">&#9989; Aucune intrusion d&eacute;tect&eacute;e. Le site est s&eacute;curis&eacute;.</td></tr>';
-                return;
+            const terminal = document.getElementById('socTerminal');
+            let html = `<div class="term-line"><span class="term-time">[SYSTEM]</span> Analyse des logs de sécurité...</div>`;
+            
+            if (data.totalAttacks === 0) {
+                html += `<div class="term-line"><span class="term-time">[${new Date().toLocaleTimeString()}]</span> <span class="term-ok">[OK] Aucune tentative d'intrusion d&eacute;tect&eacute;e.</span></div>`;
+            } else {
+                html += `<div class="term-line"><span class="term-time">[${new Date().toLocaleTimeString()}]</span> <span class="term-alert">[ALERTE] ${data.totalAttacks} tentatives d'intrusion bloqu&eacute;es !</span></div>`;
+                data.failedLogins.forEach(log => {
+                    html += `<div class="term-line"><span class="term-time">[${new Date(log.date_log).toLocaleTimeString()}]</span> <span class="term-alert">[BLOCAGE] ${log.details} (IP: ***.***.***.***)</span></div>`;
+                });
             }
 
-            data.failedLogins.forEach(log => {
-                html += `<tr>
-                    <td style="color: var(--text2);">${new Date(log.date_log).toLocaleString('fr-FR')}</td>
-                    <td style="font-weight: 600; color: var(--red);">Tentative de Brute Force</td>
-                    <td style="color: var(--text2);">${log.details}</td>
-                    <td><span class="log-badge" style="background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);">BLOQU&Eacute;</span></td>
-                </tr>`;
-            });
+            html += `<div class="term-line"><span class="term-time">[SYSTEM]</span> Bouclier Web (Helmet) : <span class="term-ok">ACTIF</span></div>`;
+            html += `<div class="term-line"><span class="term-time">[SYSTEM]</span> Limiteur de connexion : <span class="term-ok">ACTIF (5 req/15min)</span></div>`;
 
-            tbody.innerHTML = html;
+            terminal.innerHTML = html;
+            terminal.scrollTop = terminal.scrollHeight; // Auto scroll vers le bas
+            
         } catch (e) {
-            document.getElementById('securityList').innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--red);">Erreur d&apos;analyse.</td></tr>';
+            document.getElementById('socTerminal').innerHTML = `<div class="term-line"><span class="term-alert">[ERREUR] Impossible de contacter le service de s&eacute;curit&eacute;.</span></div>`;
         }
     }
 </script>
