@@ -13,6 +13,18 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- FONCTION POUR ENREGISTRER LES LOGS ---
+const logAction = async (user, action, details) => {
+  try {
+    const name = user ? user.name : 'Inconnu';
+    const role = user ? user.role : 'Inconnu';
+    await pool.query(
+      'INSERT INTO logs_activite (user_name, user_role, action, details) VALUES ($1, $2, $3, $4)',
+      [name, role, action, details]
+    );
+  } catch (e) { console.error("Erreur écriture log:", e); }
+};
+
 const initDB = async () => {
   try {
     await pool.query(`
@@ -34,23 +46,27 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS zones (
         id SERIAL PRIMARY KEY, nom VARCHAR(100), lat DECIMAL(10,8), lng DECIMAL(11,8), rayon INTEGER, min_commande INTEGER
       );
-      -- NOUVELLE TABLE DE BACKUP
       CREATE TABLE IF NOT EXISTS backup_commandes (
+        id SERIAL PRIMARY KEY, date_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP, data JSONB
+      );
+      CREATE TABLE IF NOT EXISTS logs_activite (
         id SERIAL PRIMARY KEY, 
-        date_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
-        data JSONB
+        date_log TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+        user_name VARCHAR(100), 
+        user_role VARCHAR(50), 
+        action VARCHAR(255), 
+        details TEXT
       );
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("✅ Base de données vérifiée et à jour (Table backup incluse) !");
+    console.log("✅ Base de données vérifiée et à jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
 
-// ... (Routes clients, commandes, zones, etc. inchangées) ...
 app.get('/api/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ status: 'ok', db: 'connected' }); }
   catch (e) { res.status(500).json({ status: 'error', error: e.message }); }
@@ -119,12 +135,17 @@ app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
   const { code, pourcentage } = req.body;
   try {
     const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]);
+    await logAction(req.user, 'Création Code Promo', `Code: ${code.toUpperCase()} (${pourcentage}%)`);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: "Ce code existe déjà !" }); }
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
-  try { await pool.query('DELETE FROM codes_promo WHERE id=$1', [req.params.id]); res.json({ success: true }); }
+  try { 
+    await pool.query('DELETE FROM codes_promo WHERE id=$1', [req.params.id]); 
+    await logAction(req.user, 'Suppression Code Promo', `ID: ${req.params.id}`);
+    res.json({ success: true }); 
+  }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -153,6 +174,7 @@ app.post('/api/commandes', async (req, res) => {
       await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmdId, item.nom, item.qty, item.prix]);
       await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]);
     }
+    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Commande #${cmdId} - Total: ${finalTotal.toFixed(2)}€`);
     res.json({ success: true, commande_id: cmdId, finalTotal });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -170,6 +192,7 @@ app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
     if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande déjà livrée.' });
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]);
+    await logAction(req.user, 'Changement Statut Commande', `Commande #${req.params.id} -> ${statut}`);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -180,6 +203,7 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
     if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande déjà livrée.' });
     await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
+    await logAction(req.user, 'Assignation Livreur', `Commande #${req.params.id} -> Livreur ID ${livreur_id}`);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -219,10 +243,17 @@ app.post('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => {
   try {
     const hashed = await require('bcryptjs').hash(password, 10);
     const r = await pool.query('INSERT INTO utilisateurs (name,password,role) VALUES ($1,$2,$3) RETURNING *', [name,hashed, role]);
+    await logAction(req.user, 'Création Personnel', `Nom: ${name}, Rôle: ${role}`);
     res.json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-app.delete('/api/utilisateurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM utilisateurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/utilisateurs/:id', authenticateToken, isAdmin, async (req, res) => { 
+  try { 
+    await pool.query('DELETE FROM utilisateurs WHERE id=$1', [req.params.id]); 
+    await logAction(req.user, 'Suppression Personnel', `ID: ${req.params.id}`);
+    res.json({ success: true }); 
+  } catch (e) { res.status(500).json({ error: e.message }); } 
+});
 
 app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
@@ -231,8 +262,12 @@ app.post('/api/login', async (req, res) => {
     if (r.rows.length === 0) return res.status(401).json({ error: 'Identifiants incorrects' });
     const user = r.rows[0];
     const validPassword = await checkPassword(password, user.password);
-    if (!validPassword) return res.status(401).json({ error: 'Identifiants incorrects' });
+    if (!validPassword) {
+      await logAction({name, role: 'inconnu'}, 'Tentative Connexion Échouée', `Nom: ${name}`);
+      return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
     const token = generateToken(user);
+    await logAction({name, role: user.role}, 'Connexion Réussie', `Utilisateur: ${name}`);
     res.json({ success: true, token, user: { id: user.id, name: user.name, role: user.role } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -253,14 +288,15 @@ app.post('/api/login-livreur', async (req, res) => {
     const validPassword = await checkPassword(password, livreur.password);
     if (!validPassword) return res.status(401).json({ error: 'Identifiants incorrects' });
     const token = generateToken(livreur);
+    await logAction({name, role: 'livreur'}, 'Connexion Livreur', `Utilisateur: ${name}`);
     res.json({ success: true, token, livreur: { id: livreur.id, name: livreur.name, role: livreur.role } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
-app.put('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { await pool.query('UPDATE zones SET nom=$1, lat=$2, lng=$3, rayon=$4, min_commande=$5 WHERE id=$6', [nom, lat, lng, rayon, min_commande, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); await logAction(req.user, 'Création Zone', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
+app.put('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { await pool.query('UPDATE zones SET nom=$1, lat=$2, lng=$3, rayon=$4, min_commande=$5 WHERE id=$6', [nom, lat, lng, rayon, min_commande, req.params.id]); await logAction(req.user, 'Modification Zone', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Zone', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 app.get('/api/catalogue', async (req, res) => {
   try {
@@ -270,16 +306,15 @@ app.get('/api/catalogue', async (req, res) => {
 });
 
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); await logAction(req.user, 'Création Catégorie', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); await logAction(req.user, 'Modification Catégorie', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Catégorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM saveurs ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); await logAction(req.user, 'Création Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); await logAction(req.user, 'Modification Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Saveur', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- VENTES ---
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`
@@ -294,43 +329,35 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- EXPORT DES DONNÉES ---
 app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const commandes = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`);
     const items = await pool.query('SELECT * FROM commande_items');
-    const exportData = {
-      export_date: new Date().toISOString(),
-      commandes: commandes.rows,
-      items: items.rows
-    };
+    const exportData = { export_date: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
+    await logAction(req.user, 'Exportation Données', 'Export JSON des commandes');
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="puffzone_export_commandes.json"');
     res.json(exportData);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- RESET AVEC BACKUP AUTOMATIQUE ---
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
-    // 1. Récupération de toutes les données actuelles
     const commandes = await pool.query('SELECT * FROM commandes');
     const items = await pool.query('SELECT * FROM commande_items');
-    
-    // 2. Création de l'objet de sauvegarde
-    const backupData = {
-      date_backup: new Date().toISOString(),
-      commandes: commandes.rows,
-      items: items.rows
-    };
-
-    // 3. Insertion dans la table de backup
+    const backupData = { date_backup: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
     await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [backupData]);
-
-    // 4. On vide les tables d'origine
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    
+    await logAction(req.user, 'Reset Commandes', `Sauvegarde effectuée (${commandes.rows.length} commandes)`);
     res.json({ success: true, message: "Commandes sauvegardées puis réinitialisées avec succès." });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- ROUTE POUR RÉCUPÉRER LES LOGS ---
+app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT id, date_log, user_name, user_role, action, details FROM logs_activite ORDER BY date_log DESC LIMIT 200');
+    res.json(r.rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
