@@ -14,9 +14,14 @@
         .topbar-logo { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;}
         .topbar-logo span { background: linear-gradient(135deg, #C084FC 0%, #22D3EE 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .nav-tabs { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid var(--border); flex-wrap: wrap; justify-content: center;}
-        .nav-tab { padding: 8px 16px; border: none; background: transparent; color: var(--text2); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+        .nav-tab { position: relative; padding: 8px 16px; border: none; background: transparent; color: var(--text2); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
         .nav-tab:hover { color: #fff; }
         .nav-tab.active { background: linear-gradient(135deg, var(--purple), var(--cyan)); color: #fff; box-shadow: 0 2px 10px rgba(168,85,247,0.3); }
+        
+        /* CSS POUR LA BULLE DE NOTIFICATION */
+        .notif-badge { display: none; position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; font-weight: bold; box-shadow: 0 0 10px var(--red); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
         .logout-btn { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 16px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .logout-btn:hover { background: rgba(239, 68, 68, 0.25); }
         .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
@@ -35,7 +40,7 @@
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 0.8rem; }
         .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
-        .item-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; }
+        .item-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
         .item-info { display: flex; flex-direction: column; gap: 4px; }
         .item-name { font-weight: 900; font-size: 1.1rem; }
         .item-details { font-size: 0.8rem; color: var(--text2); }
@@ -50,7 +55,7 @@
         <button class="nav-tab active" onclick="switchTab('tab-livreurs', this)">🛵 Livreurs</button>
         <button class="nav-tab" onclick="switchTab('tab-zones', this)">🗺️ Zones</button>
         <button class="nav-tab" onclick="switchTab('tab-personnel', this)">👥 Personnel</button>
-        <button class="nav-tab" onclick="switchTab('tab-commandes', this)">📦 Commandes</button>
+        <button class="nav-tab" onclick="switchTab('tab-commandes', this)">📦 Commandes <span id="notif-badge" class="notif-badge">0</span></button>
         <button class="nav-tab" onclick="switchTab('tab-clients', this)">🔒 Clients</button>
         <button class="nav-tab" onclick="switchTab('tab-stats', this)">📊 Stats</button>
         <button class="nav-tab" onclick="switchTab('tab-stock', this)">📦 Stock</button>
@@ -118,7 +123,7 @@
     <!-- ONGLET CLIENTS -->
     <div id="tab-clients" class="tab-content">
         <div class="card">
-            <h2>🔒 Base de données Clients (Admin uniquement)</h2>
+            <h2>🔒 Base de données Clients</h2>
             <div id="clientsList" style="text-align:center; color:var(--text2);">Chargement...</div>
         </div>
     </div>
@@ -218,7 +223,7 @@
 
     const API_URL = '/api';
     let map = null, currentMarker = null, currentCircle = null, selectedCoords = null;
-    let allCategories = [], allFlavors = [], currentBase64Image = null;
+    let allCategories = [], allFlavors = [], allLivreurs = [], currentBase64Image = null;
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
@@ -226,11 +231,13 @@
         btn.classList.add('active');
         document.getElementById(tabId).classList.add('active');
         if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
+        if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').style.display = 'none'; }
+        if(tabId === 'tab-clients') loadClients();
     }
 
     function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
 
-    // --- SYSTÈME DE NOTIFICATION NOUVELLE COMMANDE ---
+    // --- SYSTÈME DE NOTIFICATION NOUVELLE COMMANDE (BULLE ROUGE) ---
     let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0;
     let audioCtx;
     function playSound() {
@@ -242,17 +249,24 @@
         gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
         osc.start(); osc.stop(audioCtx.currentTime + 0.5);
     }
+    
     async function checkNotifications() {
         try {
             const res = await fetch(`${API_URL}/commandes`);
             if (!res.ok) return;
             const commandes = await res.json();
             if (commandes.length === 0) return;
+            
             const maxId = Math.max(...commandes.map(c => c.id));
-            const btnCommandes = document.querySelector('button[onclick*="tab-commandes"]');
+            const badge = document.getElementById('notif-badge');
+            
             if (lastOrderId !== 0 && maxId > lastOrderId) {
                 playSound();
-                if (btnCommandes) { btnCommandes.innerHTML = `🔴 ${commandes.length} Commandes`; btnCommandes.classList.add('active'); }
+                const nouvelles = commandes.filter(c => c.id > lastOrderId).length;
+                if (badge) {
+                    badge.textContent = nouvelles;
+                    badge.style.display = 'inline-block';
+                }
             }
             if (lastOrderId === 0) { lastOrderId = maxId; localStorage.setItem('lastOrderId', lastOrderId); }
         } catch (e) {}
@@ -261,14 +275,15 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes();
-        checkNotifications(); // Premier check au chargement
+        checkNotifications();
     });
 
-    // --- LIVREURS (Avec stats directes) ---
+    // --- LIVREURS ---
     async function loadDrivers() {
         try { 
             const res = await fetch(`${API_URL}/livreurs`); 
             const d = await res.json(); 
+            allLivreurs = d; // On les garde pour l'assignation des commandes
             const el = document.getElementById('driverList'); 
             if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; } 
             el.innerHTML = d.map(x => `
@@ -286,6 +301,81 @@
         } catch(e) { console.error(e); }
     }
     async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
+
+    // --- COMMANDES ---
+    async function loadCommandes() {
+        try {
+            const res = await fetch(`${API_URL}/commandes`);
+            const commandes = await res.json();
+            const container = document.getElementById('commandesList');
+            
+            if (commandes.length === 0) {
+                container.innerHTML = 'Aucune commande.';
+                return;
+            }
+
+            container.innerHTML = commandes.map(cmd => {
+                // Options du statut
+                const statuts = { 'en_attente': '⏳ En attente', 'en_preparation': '👨‍🍳 Préparation', 'en_livraison': '🛵 En livraison', 'livre': '✅ Livré' };
+                let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+                
+                // Options du livreur
+                let optionsLivreur = `<option value="">-- Assigner un livreur --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('');
+
+                return `
+                <div class="item-card" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="item-info">
+                            <span class="item-name">Commande #${cmd.id} - ${cmd.client_nom}</span>
+                            <span class="item-details">📞 ${cmd.telephone} | 📍 ${cmd.adresse || 'Non renseignée'}</span>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--cyan);">${parseFloat(cmd.total).toFixed(2)} €</div>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select onchange="updateStatut(${cmd.id}, this.value)" style="flex:1; min-width: 150px;">${optionsStatut}</select>
+                        <select onchange="assignLivreur(${cmd.id}, this.value)" style="flex:1; min-width: 150px;">${optionsLivreur}</select>
+                        <a href="https://wa.me/${(cmd.whatsapp || cmd.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; display:flex; align-items:center; justify-content:center;">WhatsApp</a>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (e) { document.getElementById('commandesList').innerHTML = 'Erreur de chargement.'; }
+    }
+
+    async function updateStatut(id, statut) {
+        try {
+            await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut }) });
+            loadCommandes();
+        } catch (e) { alert('Erreur statut.'); }
+    }
+
+    async function assignLivreur(id, livreur_id) {
+        if (!livreur_id) return;
+        try {
+            await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ livreur_id }) });
+            alert('✅ Livreur assigné !');
+        } catch (e) { alert('Erreur assignation.'); }
+    }
+
+    // --- CLIENTS ---
+    async function loadClients() {
+        try {
+            const res = await fetch(`${API_URL}/clients`);
+            const clients = await res.json();
+            const container = document.getElementById('clientsList');
+            
+            if (clients.length === 0) { container.innerHTML = 'Aucun client.'; return; }
+
+            container.innerHTML = clients.map(c => `
+                <div class="item-card">
+                    <div class="item-info">
+                        <span class="item-name">👤 ${c.nom || 'Inconnu'} (${c.telephone})</span>
+                        <span class="item-details">📍 ${c.adresse || 'Pas d adresse'}</span>
+                    </div>
+                    <a href="https://wa.me/${(c.whatsapp || c.telephone || '').replace(/\D/g,'')}" target="_blank" class="btn" style="background:#25D366; text-decoration:none; padding: 6px 12px; font-size:0.8rem;">WhatsApp</a>
+                </div>
+            `).join('');
+        } catch (e) { document.getElementById('clientsList').innerHTML = 'Erreur.'; }
+    }
 
     // --- ZONES ---
     function initMap() {
@@ -311,7 +401,7 @@
         e.preventDefault(); const btn = document.getElementById('submitUserBtn'); btn.disabled = true;
         try {
             await fetch(`${API_URL}/utilisateurs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('userName').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value }) });
-            document.getElementById('addUserForm').reset(); loadUsers();
+            document.getElementById('addUserForm').reset(); loadUsers(); loadDrivers();
         } catch (err) { alert('Erreur (Nom déjà pris ?)'); } finally { btn.disabled = false; }
     });
     async function deleteUser(id) { if(confirm('Supprimer ce compte ?')) { await fetch(`${API_URL}/utilisateurs/${id}`, { method: 'DELETE' }); loadUsers(); } }
