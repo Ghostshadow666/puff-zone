@@ -115,7 +115,6 @@
     
     <!-- SCRIPT POUR LE CODE PROMO -->
     <script>
-        // Variable globale qui sera lue par script.js lors de la validation
         window.appliedPromoCode = null;
         window.appliedPromoPct = 0;
 
@@ -145,11 +144,9 @@
                     msg.textContent = `✅ Code appliqué : -${data.pourcentage}%`;
                     msg.style.color = "#22C55E";
                     
-                    // On demande à script.js de recalculer l'affichage s'il expose une fonction
                     if (typeof updateCartUI === "function") {
                         updateCartUI();
                     } else {
-                        // Fallback : on applique la réduction visuelle sur le total actuel
                         const totalEl = document.getElementById('cart-total-price');
                         let currentTotal = parseFloat(totalEl.textContent.replace(' €', '').replace(',', '.'));
                         let newTotal = currentTotal - (currentTotal * (data.pourcentage / 100));
