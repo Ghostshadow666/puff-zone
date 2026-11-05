@@ -1,14 +1,24 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const { Pool } = require('pg');
 const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./auth');
 
 const app = express();
+
+// --- SÉCURITÉ : LIMITEUR DE TENTATIVES DE CONNEXION ---
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limite à 5 requêtes par IP
+  message: { error: 'Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.' }
+});
 const PORT = process.env.PORT || 5000;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,7 +32,7 @@ const logAction = async (user, action, details) => {
       'INSERT INTO logs_activite (user_name, user_role, action, details) VALUES ($1, $2, $3, $4)',
       [name, role, action, details]
     );
-  } catch (e) { console.error("Erreur Ã©criture log:", e); }
+  } catch (e) { console.error("Erreur ÃƒÆ’Ã‚Â©criture log:", e); }
 };
 
 const initDB = async () => {
@@ -62,7 +72,7 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("âœ… Base de donnÃ©es vÃ©rifiÃ©e et Ã  jour !");
+    console.log("ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Base de donnÃƒÆ’Ã‚Â©es vÃƒÆ’Ã‚Â©rifiÃƒÆ’Ã‚Â©e et ÃƒÆ’Ã‚Â  jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -82,16 +92,16 @@ app.post('/api/clients/register', async (req, res) => {
       r = await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE telephone=$4 RETURNING *', [nom, adresse, whatsapp, telephone]);
     }
     res.json({ success: true, client: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃ©ro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃƒÆ’Ã‚Â©ro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.put('/api/clients/:id', async (req, res) => {
@@ -99,7 +109,7 @@ app.put('/api/clients/:id', async (req, res) => {
   try {
     const r = await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE id=$4 RETURNING *', [nom, adresse, whatsapp, req.params.id]);
     res.json({ success: true, client: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/clients/:id/commandes', async (req, res) => {
@@ -109,35 +119,35 @@ app.get('/api/clients/:id/commandes', async (req, res) => {
       FROM commandes c WHERE c.client_id = $1 ORDER BY c.date_commande DESC
     `, [req.params.id]);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM clients ORDER BY created_at DESC'); res.json(r.rows); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.post('/api/promo/check', async (req, res) => {
   const { code } = req.body;
   try {
     const r = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [code]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expirÃ©' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expirÃƒÆ’Ã‚Â©' });
     res.json({ success: true, pourcentage: r.rows[0].pourcentage });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/promo', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM codes_promo ORDER BY created_at DESC'); res.json(r.rows); }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
   const { code, pourcentage } = req.body;
   try {
     const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]);
-    await logAction(req.user, 'CrÃ©ation Code Promo', `Code: ${code.toUpperCase()} (${pourcentage}%)`);
+    await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Code Promo', `Code: ${code.toUpperCase()} (${pourcentage}%)`);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: "Ce code existe dÃ©jÃ  !" }); }
+  } catch (e) { res.status(500).json({ error: "Ce code existe dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  !" }); }
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
@@ -146,7 +156,7 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
     await logAction(req.user, 'Suppression Code Promo', `ID: ${req.params.id}`);
     res.json({ success: true }); 
   }
-  catch (e) { res.status(500).json({ error: e.message }); }
+  catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.post('/api/commandes', async (req, res) => {
@@ -174,59 +184,59 @@ app.post('/api/commandes', async (req, res) => {
       await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmdId, item.nom, item.qty, item.prix]);
       await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]);
     }
-    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Commande #${cmdId} - Total: ${finalTotal.toFixed(2)}â‚¬`);
+    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Commande #${cmdId} - Total: ${finalTotal.toFixed(2)}ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬`);
     res.json({ success: true, commande_id: cmdId, finalTotal });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
   const { statut } = req.body;
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
-    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃ©jÃ  livrÃ©e.' });
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  livrÃƒÆ’Ã‚Â©e.' });
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]);
     await logAction(req.user, 'Changement Statut Commande', `Commande #${req.params.id} -> ${statut}`);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res) => {
   const { livreur_id } = req.body;
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
-    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃ©jÃ  livrÃ©e.' });
+    if (check.rows.length > 0 && check.rows[0].statut === 'livre') return res.status(403).json({ error: 'Action interdite : commande dÃƒÆ’Ã‚Â©jÃƒÆ’Ã‚Â  livrÃƒÆ’Ã‚Â©e.' });
     await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
     await logAction(req.user, 'Assignation Livreur', `Commande #${req.params.id} -> Livreur ID ${livreur_id}`);
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => {
   try {
     const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/commandes/livreur/:id/historique', authenticateToken, async (req, res) => {
   try {
     const r = await pool.query(`SELECT c.id, c.total, c.date_commande, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut = 'livre' ORDER BY c.date_commande DESC`, [req.params.id]);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/livreur/:id/stats', authenticateToken, async (req, res) => {
   try {
     const r = await pool.query(`SELECT COUNT(id) as total_livraisons, COALESCE(SUM(total), 0) as total_ca FROM commandes WHERE livreur_id = $1 AND statut = 'livre'`, [req.params.id]);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/stats', authenticateToken, isAdmin, async (req, res) => {
@@ -234,28 +244,28 @@ app.get('/api/stats', authenticateToken, isAdmin, async (req, res) => {
     const top = await pool.query(`SELECT saveur_nom, SUM(quantite) as total_qte FROM commande_items GROUP BY saveur_nom ORDER BY total_qte DESC LIMIT 5`);
     const ca7jours = await pool.query(`SELECT TO_CHAR(date_commande, 'DD/MM') as jour, SUM(total) as ca FROM commandes WHERE statut = 'livre' AND date_commande >= NOW() - INTERVAL '7 days' GROUP BY TO_CHAR(date_commande, 'DD/MM'), DATE_TRUNC('day', date_commande) ORDER BY DATE_TRUNC('day', date_commande) ASC`);
     res.json({ topSaveurs: top.rows, ca7jours: ca7jours.rows });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-app.get('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT id,name,role FROM utilisateurs'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT id,name,role FROM utilisateurs'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 app.post('/api/utilisateurs', authenticateToken, isAdmin, async (req, res) => {
   const { name, password, role } = req.body;
   try {
     const hashed = await require('bcryptjs').hash(password, 10);
     const r = await pool.query('INSERT INTO utilisateurs (name,password,role) VALUES ($1,$2,$3) RETURNING *', [name,hashed, role]);
-    await logAction(req.user, 'CrÃ©ation Personnel', `Nom: ${name}, RÃ´le: ${role}`);
+    await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Personnel', `Nom: ${name}, RÃƒÆ’Ã‚Â´le: ${role}`);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 app.delete('/api/utilisateurs/:id', authenticateToken, isAdmin, async (req, res) => { 
   try { 
     await pool.query('DELETE FROM utilisateurs WHERE id=$1', [req.params.id]); 
     await logAction(req.user, 'Suppression Personnel', `ID: ${req.params.id}`);
     res.json({ success: true }); 
-  } catch (e) { res.status(500).json({ error: e.message }); } 
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } 
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   const { name, password } = req.body;
   try {
     const r = await pool.query('SELECT * FROM utilisateurs WHERE name=$1', [name]);
@@ -263,23 +273,23 @@ app.post('/api/login', async (req, res) => {
     const user = r.rows[0];
     const validPassword = await checkPassword(password, user.password);
     if (!validPassword) {
-      await logAction({name, role: 'inconnu'}, 'Tentative Connexion Ã‰chouÃ©e', `Nom: ${name}`);
+      await logAction({name, role: 'inconnu'}, 'Tentative Connexion ÃƒÆ’Ã¢â‚¬Â°chouÃƒÆ’Ã‚Â©e', `Nom: ${name}`);
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
     const token = generateToken(user);
-    await logAction({name, role: user.role}, 'Connexion RÃ©ussie', `Utilisateur: ${name}`);
+    await logAction({name, role: user.role}, 'Connexion RÃƒÆ’Ã‚Â©ussie', `Utilisateur: ${name}`);
     res.json({ success: true, token, user: { id: user.id, name: user.name, role: user.role } });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/livreurs', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query(`SELECT u.id, u.name, u.role, (SELECT COUNT(c.id) FROM commandes c WHERE c.livreur_id = u.id AND c.statut = 'livre') as total_livraisons, COALESCE((SELECT SUM(c.total) FROM commandes c WHERE c.livreur_id = u.id AND c.statut = 'livre'), 0) as total_ca FROM utilisateurs u WHERE u.role = 'livreur'`);
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-app.post('/api/login-livreur', async (req, res) => {
+app.post('/api/login-livreur', loginLimiter, async (req, res) => {
   const { name, password } = req.body;
   try {
     const r = await pool.query("SELECT * FROM utilisateurs WHERE name=$1 AND role='livreur'", [name]);
@@ -290,30 +300,30 @@ app.post('/api/login-livreur', async (req, res) => {
     const token = generateToken(livreur);
     await logAction({name, role: 'livreur'}, 'Connexion Livreur', `Utilisateur: ${name}`);
     res.json({ success: true, token, livreur: { id: livreur.id, name: livreur.name, role: livreur.role } });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); await logAction(req.user, 'CrÃ©ation Zone', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
-app.put('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { await pool.query('UPDATE zones SET nom=$1, lat=$2, lng=$3, rayon=$4, min_commande=$5 WHERE id=$6', [nom, lat, lng, rayon, min_commande, req.params.id]); await logAction(req.user, 'Modification Zone', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Zone', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Zone', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
+app.put('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { await pool.query('UPDATE zones SET nom=$1, lat=$2, lng=$3, rayon=$4, min_commande=$5 WHERE id=$6', [nom, lat, lng, rayon, min_commande, req.params.id]); await logAction(req.user, 'Modification Zone', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Zone', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
 app.get('/api/catalogue', async (req, res) => {
   try {
     const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories ORDER BY nom ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]);
     res.json({ categories: cats.rows, saveurs: savs.rows });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); await logAction(req.user, 'CrÃ©ation CatÃ©gorie', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); await logAction(req.user, 'Modification CatÃ©gorie', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression CatÃ©gorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation CatÃƒÆ’Ã‚Â©gorie', `Nom: ${nom}`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite,prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); await logAction(req.user, 'Modification CatÃƒÆ’Ã‚Â©gorie', `Nom: ${nom}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression CatÃƒÆ’Ã‚Â©gorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
-app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM saveurs ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); await logAction(req.user, 'CrÃ©ation Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); await logAction(req.user, 'Modification Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
-app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Saveur', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM saveurs ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock) VALUES ($1,$2,$3) RETURNING *', [categorie_id, nom, stock]); await logAction(req.user, 'CrÃƒÆ’Ã‚Â©ation Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); await logAction(req.user, 'Modification Saveur', `Nom: ${nom} (Stock: ${stock})`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
+app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppression Saveur', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); } });
 
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   try {
@@ -326,7 +336,7 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
     let totalCA = 0;
     r.rows.forEach(v => { totalCA += parseFloat(v.prix_vente_total); });
     res.json({ ventes: r.rows, totalCA: totalCA });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, res) => {
@@ -334,11 +344,11 @@ app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, r
     const commandes = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`);
     const items = await pool.query('SELECT * FROM commande_items');
     const exportData = { export_date: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
-    await logAction(req.user, 'Exportation DonnÃ©es', 'Export JSON des commandes');
+    await logAction(req.user, 'Exportation DonnÃƒÆ’Ã‚Â©es', 'Export JSON des commandes');
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="puffzone_export_commandes.json"');
     res.json(exportData);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
@@ -348,18 +358,18 @@ app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, r
     const backupData = { date_backup: new Date().toISOString(), commandes: commandes.rows, items: items.rows };
     await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [backupData]);
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    await logAction(req.user, 'Reset Commandes', `Sauvegarde effectuÃ©e (${commandes.rows.length} commandes)`);
-    res.json({ success: true, message: "Commandes sauvegardÃ©es puis rÃ©initialisÃ©es avec succÃ¨s." });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    await logAction(req.user, 'Reset Commandes', `Sauvegarde effectuÃƒÆ’Ã‚Â©e (${commandes.rows.length} commandes)`);
+    res.json({ success: true, message: "Commandes sauvegardÃƒÆ’Ã‚Â©es puis rÃƒÆ’Ã‚Â©initialisÃƒÆ’Ã‚Â©es avec succÃƒÆ’Ã‚Â¨s." });
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
-// --- ROUTE POUR RÃ‰CUPÃ‰RER LES LOGS ---
+// --- ROUTE POUR RÃƒÆ’Ã¢â‚¬Â°CUPÃƒÆ’Ã¢â‚¬Â°RER LES LOGS ---
 app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query('SELECT id, date_log, user_name, user_role, action, details FROM logs_activite ORDER BY date_log DESC LIMIT 200');
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'Une erreur interne est survenue.' }); }
 });
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`ðŸš€ Serveur PUFF ZONE dÃ©marrÃ© sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬ Serveur PUFF ZONE dÃƒÆ’Ã‚Â©marrÃƒÆ’Ã‚Â© sur le port ${PORT}`));

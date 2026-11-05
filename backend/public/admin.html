@@ -80,7 +80,7 @@
         <button class="nav-tab" onclick="switchTab('tab-stats', this)">&#128202; Stats</button>
         <button class="nav-tab" onclick="switchTab('tab-stock', this)">&#128230; Stock</button>
         <button class="nav-tab" onclick="switchTab('tab-ventes', this)">&#128179; Ventes</button>
-        <button class="nav-tab" onclick="switchTab('tab-logs', this)">&#128220; Logs</button>
+        <button class="nav-tab" onclick="switchTab('tab-logs', this)">&#128220; Logs</button>`n        <button class="nav-tab" onclick="switchTab('tab-securite', this)">&#128737;&#65039; S&eacute;curit&eacute;</button>
     </div>
     <button class="logout-btn" onclick="logoutAdmin()">D&eacute;connexion</button>
 </div>
@@ -155,6 +155,7 @@
         if(tabId === 'tab-clients') loadClients(); if(tabId === 'tab-promo') loadPromos();
         if(tabId === 'tab-stats') loadStats(); if(tabId === 'tab-ventes') loadVentes();
         if(tabId === 'tab-logs') loadLogs();
+        if(tabId === 'tab-securite') loadSecurity();
     }
     function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
     
@@ -303,11 +304,40 @@
                 else if (log.user_role === 'livreur') roleClass = 'role-livreur';
                 else if (log.user_role === 'client') roleClass = 'role-client';
                 const dateStr = new Date(log.date_log).toLocaleString('fr-FR');
-                // Remplacement direct de l'euro mal encodé dans l'affichage des logs
-                const detailsStr = log.details ? log.details.replace(/â‚¬/g, '\u20AC') : '-';
+                // Remplacement direct de l'euro mal encodÃ© dans l'affichage des logs
+                const detailsStr = log.details ? log.details.replace(/Ã¢â€šÂ¬/g, '\u20AC') : '-';
                 return `<tr><td style="color: var(--text2);">${dateStr}</td><td style="font-weight: 600;">${log.user_name}</td><td><span class="log-badge ${roleClass}">${log.user_role}</span></td><td style="font-weight: 600; color: var(--neon-cyan);">${log.action}</td><td style="color: var(--text2);">${detailsStr}</td><td style="font-family: monospace; color: #555;">***.***.***.***</td></tr>`;
             }).join('');
         } catch (e) { document.getElementById('logsList').innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--red);">Erreur de chargement des logs.</td></tr>'; }
+    }
+    async function loadSecurity() {
+        try {
+            const res = await fetch(`${API_URL}/security/analyse`);
+            const data = await res.json();
+            
+            document.getElementById('secTotalAttacks').textContent = data.totalAttacks;
+            
+            const tbody = document.getElementById('securityList');
+            let html = '';
+
+            if (data.failedLogins.length === 0 && data.unauthorizedAccess.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--green);">&#9989; Aucune intrusion d&eacute;tect&eacute;e. Le site est s&eacute;curis&eacute;.</td></tr>';
+                return;
+            }
+
+            data.failedLogins.forEach(log => {
+                html += `<tr>
+                    <td style="color: var(--text2);">${new Date(log.date_log).toLocaleString('fr-FR')}</td>
+                    <td style="font-weight: 600; color: var(--red);">Tentative de Brute Force</td>
+                    <td style="color: var(--text2);">${log.details}</td>
+                    <td><span class="log-badge" style="background: rgba(239,68,68,0.2); color: var(--red); border: 1px solid var(--red);">BLOQU&Eacute;</span></td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        } catch (e) {
+            document.getElementById('securityList').innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px; color: var(--red);">Erreur d&apos;analyse.</td></tr>';
+        }
     }
 </script>
 </body>
