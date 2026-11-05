@@ -54,8 +54,7 @@ async function checkPhone() {
             updateGreeting();
         } else {
             alert('Numéro non reconnu. Veuillez créer un compte.');
-            showRegisterForm(); // On le redirige vers l'inscription
-            // On pré-remplit le numéro pour pas qu'il le retape
+            showRegisterForm();
             document.getElementById('phone-input-reg').value = phone; 
         }
     } catch(e) { alert('Erreur de connexion au serveur.'); }
@@ -85,6 +84,7 @@ async function saveProfile() {
         }
     } catch(e) { alert('Erreur lors de la création du compte.'); }
 }
+
 function updateGreeting() {
     document.getElementById('user-greeting').innerHTML = `👋 ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`;
 }
@@ -94,10 +94,9 @@ function logout() {
     location.reload(); 
 }
 
-// --- CHARGEMENT DU CATALOGUE (OPTIMISÉ) ---
+// --- CHARGEMENT DU CATALOGUE ---
 async function loadCatalogue() {
     try {
-        // Une seule requête au lieu de deux !
         const res = await fetch(`${API_URL}/catalogue`);
         const data = await res.json();
         allCategories = data.categories;
@@ -140,12 +139,30 @@ function renderCatalogueInColumns() {
 // --- PANIER ---
 function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
+    
     const flav = allFlavors.find(f => f.id === flavId);
+    if (!flav) return;
+    
+    // VÉRIFICATION DU STOCK
+    if (flav.stock <= 0) {
+        alert("Cette saveur est en rupture de stock.");
+        return;
+    }
+
     const cat = allCategories.find(c => c.id === flav.categorie_id);
     
     const existing = cart.find(item => item.id === flavId);
-    if(existing) { existing.qty++; } 
-    else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, prix_achat: flav.prix_achat, qty: 1 }); }
+    if(existing) { 
+        // BLOQUER SI ON DÉPASSE LE STOCK
+        if (existing.qty >= flav.stock) {
+            alert(`Stock maximum atteint pour cette saveur (${flav.stock} disponible).`);
+            return;
+        }
+        existing.qty++; 
+    } 
+    else { 
+        cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, prix_achat: flav.prix_achat, qty: 1 }); 
+    }
     
     updateCartUI(); 
     toggleCart();
@@ -159,6 +176,13 @@ function updateCartUI() {
     if(cart.length === 0) { 
         itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; 
         document.getElementById('cart-total-price').textContent = '0 €'; 
+        
+        // On reset le code promo quand le panier est vide
+        window.appliedPromoCode = null;
+        window.appliedPromoPct = 0;
+        if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
+        if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
+        
         return; 
     }
     
@@ -175,10 +199,20 @@ function updateCartUI() {
     });
     
     itemsContainer.innerHTML = html; 
-    document.getElementById('cart-total-price').textContent = total.toFixed(2) + ' €';
+    
+    // APPLICATION DE LA RÉDUCTION POUR L'AFFICHAGE
+    let finalTotal = total;
+    if (window.appliedPromoPct > 0) {
+        finalTotal = total - (total * (window.appliedPromoPct / 100));
+    }
+    
+    document.getElementById('cart-total-price').textContent = finalTotal.toFixed(2) + ' €';
 }
 
-function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
+function removeFromCart(index) { 
+    cart.splice(index, 1); 
+    updateCartUI(); 
+}
 
 function toggleCart() { 
     const drawer = document.getElementById('cart-drawer'); 
@@ -193,18 +227,39 @@ async function checkout() {
     }
     if(cart.length === 0) return alert('Panier vide');
     
-    const total = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
+    // On envoie le total ORIGINAL au serveur, c'est lui qui va appliquer la réduction
+    // pour éviter que le client ne triche sur le prix.
+    const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
+    const promoCode = window.appliedPromoCode || null;
 
     try {
         const res = await fetch(`${API_URL}/commandes`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_id: currentUser.id, cart, total })
+            body: JSON.stringify({ 
+                client_id: currentUser.id, 
+                cart: cart, 
+                total: totalOriginal, 
+                promo_code: promoCode 
+            })
         });
-        if(res.ok) {
+        
+        const data = await res.json();
+        
+        if(res.ok && data.success) {
             alert('✅ Commande envoyée avec succès !');
-            cart = []; updateCartUI(); toggleCart();
+            cart = []; 
+            
+            // Reset du code promo
+            window.appliedPromoCode = null;
+            window.appliedPromoPct = 0;
+            if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
+            if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
+            
+            updateCartUI(); 
+            toggleCart();
+            window.location.reload(); // Recharger pour mettre à jour les stocks visuels
         } else {
-            alert('Erreur lors de la validation.');
+            alert('Erreur : ' + (data.error || 'lors de la validation.'));
         }
     } catch(e) { alert('Erreur de connexion au serveur.'); }
 }
