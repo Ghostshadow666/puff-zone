@@ -35,7 +35,8 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("✅ Base de données vérifiée et à jour !");
+    await pool.query('ALTER TABLE zones ADD COLUMN IF NOT EXISTS frais_livraison DECIMAL(10,2) DEFAULT 0;');
+    console.log("âœ… Base de donnÃ©es vÃ©rifiÃ©e et Ã  jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -63,7 +64,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Numéro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃ©ro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -100,7 +101,7 @@ app.post('/api/promo/check', async (req, res) => {
   const { code } = req.body;
   try {
     const r = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [code]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expiré' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Code invalide ou expirÃ©' });
     res.json({ success: true, pourcentage: r.rows[0].pourcentage });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -115,7 +116,7 @@ app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]);
     res.json(r.rows[0]);
-  } catch (e) { res.status(500).json({ error: "Ce code existe déjà !" }); }
+  } catch (e) { res.status(500).json({ error: "Ce code existe dÃ©jÃ  !" }); }
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
@@ -127,7 +128,7 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/commandes', async (req, res) => {
   const { client_id, cart, total, promo_code, valide_par } = req.body;
   try {
-    // 1. VÉRIFICATION DU STOCK
+    // 1. VÃ‰RIFICATION DU STOCK
     for (const item of cart) {
       const stockCheck = await pool.query('SELECT stock FROM saveurs WHERE nom = $1', [item.nom]);
       if (stockCheck.rows.length === 0) return res.status(400).json({ error: `La saveur "${item.nom}" n'existe plus.` });
@@ -174,7 +175,7 @@ app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
     if (check.rows.length > 0 && check.rows[0].statut === 'livre') {
-      return res.status(403).json({ error: 'Action interdite : cette commande est déjà livrée.' });
+      return res.status(403).json({ error: 'Action interdite : cette commande est dÃ©jÃ  livrÃ©e.' });
     }
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]);
     res.json({ success: true });
@@ -187,7 +188,7 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
   try {
     const check = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]);
     if (check.rows.length > 0 && check.rows[0].statut === 'livre') {
-      return res.status(403).json({ error: 'Action interdite : cette commande est déjà livrée.' });
+      return res.status(403).json({ error: 'Action interdite : cette commande est dÃ©jÃ  livrÃ©e.' });
     }
     await pool.query('UPDATE commandes SET livreur_id = $1 WHERE id = $2', [livreur_id, req.params.id]);
     res.json({ success: true });
@@ -296,7 +297,7 @@ app.post('/api/login-livreur', async (req, res) => {
 });
 
 // --- ZONES ---
-app.get('/api/zones', authenticateToken, async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.get('/api/zones', async (req, res) => { try { const r = await pool.query('SELECT * FROM zones ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/zones', authenticateToken, isAdmin, async (req, res) => { const { nom, lat, lng, rayon, min_commande } = req.body; try { const r = await pool.query('INSERT INTO zones (nom,lat,lng,rayon,min_commande) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, lat, lng, rayon, min_commande]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error:e.message }); } });
 app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM zones WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
@@ -339,10 +340,10 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
+    res.json({ success: true, message: "Commandes et Chiffre d'Affaires rÃ©initialisÃ©s." });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`ðŸš€ Serveur PUFF ZONE dÃ©marrÃ© sur le port ${PORT}`));

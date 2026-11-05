@@ -2,6 +2,8 @@ const API_URL = '/api';
 let allCategories = [];
 let allFlavors = [];
 let cart = [];
+let allZones = [];
+let selectedZoneFrais = 0;
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 
 // --- INITIALISATION ---
@@ -13,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGreeting();
     }
     
-    loadCatalogue();
+    loadCatalogue();`n    loadZones();
 });
 
 // --- GESTION DE LA CONNEXION/INSCRIPTION (UI) ---
@@ -94,7 +96,7 @@ function logout() {
     location.reload(); 
 }
 
-// --- CHARGEMENT DU CATALOGUE ---
+async function loadZones() {`n    try {`n        const res = await fetch(`${API_URL}/zones`);`n        allZones = await res.json();`n        const select = document.getElementById('zone-select');`n        select.innerHTML = '<option value="0">-- Choisir votre zone de livraison --</option>' + allZones.map(z => `<option value="${z.frais_livraison}">${z.nom} (${z.frais_livraison}€)</option>`).join(');`n    } catch (e) { console.error("Erreur zones", e); }`n}`n`nfunction applyZone() {`n    selectedZoneFrais = parseFloat(document.getElementById('zone-select').value) || 0;`n    updateCartUI();`n}`n`n// --- CHARGEMENT DU CATALOGUE ---
 async function loadCatalogue() {
     try {
         const res = await fetch(`${API_URL}/catalogue`);
@@ -223,9 +225,9 @@ function updateCartUI() {
     
     itemsContainer.innerHTML = html; 
     
-    let finalTotal = total;
+    let finalTotal = total + selectedZoneFrais;
     if (window.appliedPromoPct > 0) {
-        finalTotal = total - (total * (window.appliedPromoPct / 100));
+        finalTotal = total - (total * (window.appliedPromoPct / 100));`n        finalTotal += selectedZoneFrais;
     }
     
     document.getElementById('cart-total-price').innerHTML = finalTotal.toFixed(2) + ' &euro;';
@@ -260,7 +262,7 @@ async function checkout() {
                 cart: cart, 
                 total: totalOriginal, 
                 promo_code: promoCode,
-                valide_par: currentUser.nom 
+                valide_par: currentUser.nom,`n                frais_livraison: selectedZoneFrais 
             })
         });
         
