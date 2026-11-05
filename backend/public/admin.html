@@ -31,6 +31,7 @@
         .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
         .input-group label { font-size: 0.8rem; color: var(--text2); font-weight: 700; }
         input[type="text"], input[type="number"], input[type="password"], input[type="file"], select { background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 10px 14px; border-radius: 10px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; outline: none; }
+        input[type="range"] { width: 100%; accent-color: var(--purple); margin-top: 10px; }
         input:focus, select:focus { border-color: var(--cyan); }
         .btn { background: linear-gradient(135deg, var(--purple), var(--cyan)); color: white; border: none; padding:11px 20px; border-radius: 10px; font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: transform 0.2s; }
         .btn:hover { transform: translateY(-2px); }
@@ -42,7 +43,7 @@
         .item-name { font-weight: 900; font-size: 1.1rem; }
         .item-details { font-size: 0.8rem; color: var(--text2); }
         #map { height: 400px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; z-index: 1;}
-        .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        /* On a enlevé le filtre invert ici pour avoir une carte claire */
     </style>
 </head>
 <body>
@@ -72,17 +73,28 @@
 
     <div id="tab-zones" class="tab-content">
         <div class="card">
-            <h2>&#128205; Clique sur la carte pour placer une zone</h2>
+            <h2>&#128205; Zones de livraison &amp; minimum de commande</h2>
+            <p style="font-size:0.85rem; color:var(--text2); margin-bottom: 15px;">
+                Cliquez sur la carte pour placer le centre d'une zone, r&eacute;glez le rayon et le minimum &euro;. Cliquez sur une zone existante pour reprendre son centre.
+            </p>
             <div id="map"></div>
+            
             <form id="addZoneForm">
                 <div class="form-row">
-                    <div class="input-group"><label>Nom de la zone</label><input type="text" id="zoneName" placeholder="ex: Li&egrave;ge Centre" required></div>
-                    <div class="input-group"><label>Minimum (&euro;)</label><input type="number" id="zoneMin" value="50" required></div>
-                    <div class="input-group"><label>Rayon (km)</label><input type="number" id="zoneRayon" value="20"min="1" required></div>
-                    <button type="submit" class="btn" id="submitZoneBtn" disabled>&#10133; Ajouter</button>
+                    <div class="input-group"><label>Nom de la zone</label><input type="text" id="zoneName" placeholder="ex: Li&egrave;ge centre" required></div>
+                    <div class="input-group"><label>Minimum &euro;</label><input type="number" id="zoneMin" value="50" required></div>
+                    
+                    <div class="input-group" style="flex: 2;">
+                        <label>Rayon : <span id="rayonValue" style="color: var(--cyan); font-weight: bold;">3</span> KM</label>
+                        <input type="range" id="zoneRayon" min="1" max="50" value="3" oninput="document.getElementById('rayonValue').textContent = this.value; updateCircleRadius(this.value)">
+                    </div>
+                    
+                    <button type="submit" class="btn" id="submitZoneBtn" disabled>&#10133; Ajouter la zone</button>
+                    <button type="button" class="btn btn-danger" id="cancelZoneBtn" onclick="resetZoneForm()" style="display:none;">Annuler</button>
                 </div>
             </form>
         </div>
+        
         <div class="card">
             <h2>&#128203; Zones enregistr&eacute;es</h2>
             <div id="zoneList" style="text-align:center; color:var(--text2); font-style:italic;">Chargement...</div>
@@ -240,7 +252,8 @@
 
     const API_URL = '/api';
     let map = null, currentMarker = null, currentCircle = null, selectedCoords = null;
-    let allCategories = [], allFlavors = [], allLivreurs = [], currentBase64Image = null;
+    let allCategories = [], allFlavors = [], allLivreurs = [], allZones = [], currentBase64Image = null;
+    let editingZoneId = null;
 
     function switchTab(tabId, btn) {
         document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
@@ -322,7 +335,6 @@
         try {
             const res = await fetch(`${API_URL}/commandes`);
             const commandes = await res.json();
-
             const enCours = commandes.filter(c => c.statut !== 'livre');
             const terminees = commandes.filter(c => c.statut === 'livre');
 
@@ -333,13 +345,11 @@
             const containerTerminees = document.getElementById('commandesTerminees');
             if (terminees.length === 0) { containerTerminees.innerHTML = 'Aucune commande termin&eacute;e.'; }
             else { containerTerminees.innerHTML = terminees.map(cmd => renderCommandeCard(cmd, true)).join(''); }
-
         } catch (e) { document.getElementById('commandesEnCours').innerHTML = 'Erreur de chargement.'; }
     }
 
     function renderCommandeCard(cmd, isTerminee) {
         const statuts = { 'en_attente': '&#9203; En attente', 'en_preparation': '&#128104;&#8205;&#127859; Pr&eacute;paration', 'en_livraison': '&#128757; En livraison', 'livre': '&#9989; Livr&eacute;' };
-
         if (isTerminee) {
             return `
             <div class="item-card" style="border-color: rgba(34, 197, 94, 0.3);">
@@ -353,7 +363,6 @@
         } else {
             let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
             let optionsLivreur = `<option value="">-- Assigner un livreur --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('');
-
             return `
             <div class="item-card" style="flex-direction: column; align-items: stretch; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -465,12 +474,124 @@
 
     // --- ZONES ---
     function initMap() {
-        map = L.map('map').setView([50.633, 5.567], 9); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        map.on('click', function(e) { selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(map); currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: 20000, color: '#A855F7', fillColor: '#A855F7', fillOpacity: 0.2 }).addTo(map); document.getElementById('submitZoneBtn').disabled = false; });
+        map = L.map('map').setView([50.633, 5.567], 8); 
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        
+        map.on('click', function(e) { 
+            selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; 
+            if (currentMarker) map.removeLayer(currentMarker); 
+            if (currentCircle) map.removeLayer(currentCircle); 
+            
+            currentMarker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(map); 
+            const rayon = parseInt(document.getElementById('zoneRayon').value) * 1000;
+            currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: rayon, color: '#A855F7', fillColor: '#A855F7', fillOpacity: 0.2 }).addTo(map); 
+            
+            document.getElementById('submitZoneBtn').disabled = false; 
+        });
     }
-    async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); const z = await res.json(); const el = document.getElementById('zoneList'); el.innerHTML = z.map(x=>`<div class="item-card"><div class="item-info"><span class="item-name">&#128205; ${x.nom} (Min: ${x.min_commande}&euro;)</span></div><button class="btn btn-danger" onclick="deleteZone(${x.id})">&#128465;&#65039;</button></div>`).join(''); } catch(e){} }
-    document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords)return; await fetch(`${API_URL}/zones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon:parseInt(document.getElementById('zoneRayon').value)*1000, min_commande: parseInt(document.getElementById('zoneMin').value) }) }); document.getElementById('addZoneForm').reset(); document.getElementById('submitZoneBtn').disabled=true; map.removeLayer(currentMarker); map.removeLayer(currentCircle); selectedCoords=null; loadZones(); });
-    async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); loadZones(); } }
+
+    function updateCircleRadius(km) {
+        if (currentCircle) {
+            currentCircle.setRadius(km * 1000);
+        }
+    }
+
+    function centerMap(lat, lng) {
+        map.setView([lat, lng], 12);
+    }
+
+    function editZone(id) {
+        const z = allZones.find(x => x.id === id);
+        if (!z) return;
+        editingZoneId = z.id;
+        
+        document.getElementById('zoneName').value = z.nom;
+        document.getElementById('zoneMin').value = z.min_commande;
+        document.getElementById('zoneRayon').value = z.rayon / 1000;
+        document.getElementById('rayonValue').textContent = z.rayon / 1000;
+        
+        document.getElementById('submitZoneBtn').textContent = 'Enregistrer';
+        document.getElementById('submitZoneBtn').disabled = false;
+        document.getElementById('cancelZoneBtn').style.display = 'block';
+
+        selectedCoords = { lat: z.lat, lng: z.lng };
+        centerMap(z.lat, z.lng);
+
+        if (currentMarker) map.removeLayer(currentMarker); 
+        if (currentCircle) map.removeLayer(currentCircle); 
+        
+        currentMarker = L.marker([z.lat, z.lng]).addTo(map); 
+        currentCircle = L.circle([z.lat, z.lng], { radius: z.rayon, color: '#A855F7', fillColor: '#A855F7', fillOpacity: 0.2 }).addTo(map); 
+    }
+
+    function resetZoneForm() {
+        editingZoneId = null;
+        document.getElementById('addZoneForm').reset();
+        document.getElementById('rayonValue').textContent = '3';
+        document.getElementById('submitZoneBtn').textContent = '\u2795 Ajouter la zone';
+        document.getElementById('submitZoneBtn').disabled = true;
+        document.getElementById('cancelZoneBtn').style.display = 'none';
+        
+        if (currentMarker) map.removeLayer(currentMarker); 
+        if (currentCircle) map.removeLayer(currentCircle); 
+        selectedCoords = null;
+    }
+
+    async function loadZones() { 
+        try { 
+            const res = await fetch(`${API_URL}/zones`); 
+            allZones = await res.json(); 
+            const el = document.getElementById('zoneList'); 
+            
+            if (allZones.length === 0) { el.innerHTML = 'Aucune zone.'; return; }
+
+            // Tracé de toutes les zones existantes sur la carte
+            allZones.forEach(z => {
+                L.circle([z.lat, z.lng], { radius: z.rayon, color: '#A855F7', fillColor: 'transparent', weight: 1, dashArray: '5,5' }).addTo(map);
+            });
+
+            el.innerHTML = allZones.map(x => `
+                <div class="item-card" style="flex-direction: row; justify-content: space-between;">
+                    <div class="item-info">
+                        <span class="item-name">&#128205; ${x.nom}</span>
+                        <span class="item-details">d&egrave;s ${x.min_commande} &euro; &middot; Rayon : ${(x.rayon/1000).toFixed(1)} km</span>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1);" onclick="editZone(${x.id})">&#9999;&#65039;</button>
+                        <button class="btn" style="padding: 6px 12px; background: rgba(255,255,255,0.1);" onclick="centerMap(${x.lat}, ${x.lng})">&#127919;</button>
+                        <button class="btn btn-danger" style="padding: 6px 12px;" onclick="deleteZone(${x.id})">&#128465;&#65039;</button>
+                    </div>
+                </div>
+            `).join(''); 
+        } catch(e){ console.error(e); } 
+    }
+
+    document.getElementById('addZoneForm').addEventListener('submit', async (e) => { 
+        e.preventDefault(); 
+        if(!selectedCoords) return alert("Veuillez cliquer sur la carte pour placer le centre de la zone."); 
+        
+        const data = {
+            nom: document.getElementById('zoneName').value, 
+            lat: selectedCoords.lat, 
+            lng: selectedCoords.lng, 
+            rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, 
+            min_commande: parseInt(document.getElementById('zoneMin').value) 
+        };
+
+        const method = editingZoneId ? 'PUT' : 'POST';
+        const url = editingZoneId ? `${API_URL}/zones/${editingZoneId}` : `${API_URL}/zones`;
+
+        await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); 
+        
+        resetZoneForm(); 
+        // Recharger la carte entièrement pour éviter les doublons de cercles
+        map.eachLayer((layer) => {
+            if(layer instanceof L.Circle) { map.removeLayer(layer); }
+        });
+        loadZones(); 
+    });
+
+    async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); map.eachLayer((layer) => { if(layer instanceof L.Circle) { map.removeLayer(layer); } }); loadZones(); } }
 
     // --- PERSONNEL ---
     async function loadUsers() {
