@@ -188,10 +188,11 @@ function updateCartUI() {
     const checkoutBtn = document.getElementById('checkout-btn');
     const zoneMsg = document.getElementById('zone-msg');
 
+    // C'EST ICI QU'ON A CHANGÉ: On vérifie "total" (avant réduction) et non "finalTotal"
     if (!selectedZone) {
         checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
         if(zoneMsg) { zoneMsg.innerHTML = "&#9888;&#65039; Veuillez choisir votre zone."; zoneMsg.style.color = "#EF4444"; }
-    } else if (finalTotal < selectedZone.min_commande) {
+    } else if (total < selectedZone.min_commande) {
         checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
         if(zoneMsg) { zoneMsg.innerHTML = `&#9888;&#65039; Minimum de ${selectedZone.min_commande}&euro; pour la zone ${selectedZone.nom}.`; zoneMsg.style.color = "#EF4444"; }
     } else {
