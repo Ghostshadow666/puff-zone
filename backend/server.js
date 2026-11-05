@@ -31,7 +31,7 @@ const initDB = async () => {
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("Ã¢Å“â€¦ Base de donnÃƒÂ©es vÃƒÂ©rifiÃƒÂ©e et ÃƒÂ  jour !");
+    console.log("ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Base de donnÃƒÆ’Ã‚Â©es vÃƒÆ’Ã‚Â©rifiÃƒÆ’Ã‚Â©e et ÃƒÆ’Ã‚Â  jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -59,7 +59,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃƒÂ©ro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃƒÆ’Ã‚Â©ro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -72,7 +72,7 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MES COMMANDES (CÃƒÂ´tÃƒÂ© Client - Public) ---
+// --- MES COMMANDES (CÃƒÆ’Ã‚Â´tÃƒÆ’Ã‚Â© Client - Public) ---
 app.get('/api/clients/:id/commandes', async (req, res) => {
   try {
     const r = await pool.query(`
@@ -243,9 +243,41 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
 
+
+// --- NOUVELLES ROUTES POUR STATS & HISTORIQUE LIVREUR ---
+app.get('/api/commandes/livreur/:id/historique', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT c.id, c.total, c.date_commande, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom
+      FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id
+      WHERE c.livreur_id = $1 AND c.statut = 'livre'
+      ORDER BY c.date_commande DESC
+    `, [req.params.id]);
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/livreur/:id/stats', authenticateToken, async (req, res) => {
+  try {
+    const r = await pool.query(`
+      SELECT COUNT(id) as total_livraisons, COALESCE(SUM(total), 0) as total_ca
+      FROM commandes WHERE livreur_id = $1 AND statut = 'livre'
+    `, [req.params.id]);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- ROUTE RESET COMMANDES (Admin) ---
+app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
+    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // --- FALLBACK SPA ---
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`Ã°Å¸Å¡â‚¬ Serveur PUFF ZONE dÃƒÂ©marrÃƒÂ© sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬ Serveur PUFF ZONE dÃƒÆ’Ã‚Â©marrÃƒÆ’Ã‚Â© sur le port ${PORT}`));
