@@ -85,7 +85,7 @@
 
     <script src="bg-animation.js"></script>
     <script>
-        // Intercepteur sécurisé : ne déconnecte que si le token est invalide (401)
+        // Intercepteur sÃ©curisÃ© : ne dÃ©connecte que si le token est invalide (401)
         const originalFetch = window.fetch;
         window.fetch = function() {
             let [resource, config] = arguments;
@@ -179,7 +179,7 @@
                 const res = await fetch(`${API_URL}/livreur/${livreur.id}/stats`);
                 const stats = await res.json();
                 document.getElementById('statLivraisons').textContent = stats.total_livraisons;
-                document.getElementById('statCA').textContent = parseFloat(stats.total_ca).toFixed(2) + ' &euro;';
+                document.getElementById('statCA').innerHTML = parseFloat(stats.total_ca).toFixed(2) + ' &euro;';
             } catch (e) {}
         }
 

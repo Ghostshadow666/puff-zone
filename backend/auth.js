@@ -1,39 +1,36 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'votre-secret-super-securise-a-changer';
+const SECRET_KEY = process.env.JWT_SECRET || 'puff_zone_secret_key_2026';
 
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) return res.sendStatus(401);
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
-}
+const generateToken = (user) => {
+  return jwt.sign({ id: user.id, name: user.name, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
+};
 
-function isAdmin(req, res, next) {
-    if (req.user && req.user.role === 'admin') { next(); }
-    else { res.sendStatus(403); }
-}
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
 
-async function hashPassword(password) {
-    const salt = await bcrypt.genSalt(10);
-    return await bcrypt.hash(password, salt);
-}
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Token invalide' });
+    req.user = user;
+    next();
+  });
+};
 
-async function checkPassword(password, hashedPassword) {
-    return await bcrypt.compare(password, hashedPassword);
-}
+const isAdmin = (req, res, next) => {
+  // ON AUTORISE 'admin' ET 'dev' ICI
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'dev')) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Accès refusé : admin ou dev requis' });
+  }
+};
 
-function generateToken(user) {
-    return jwt.sign(
-        { id: user.id, name: user.name, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-    );
-}
+const checkPassword = async (password, hashedPassword) => {
+  return await bcrypt.compare(password, hashedPassword);
+};
 
-module.exports = { authenticateToken, isAdmin, hashPassword, checkPassword, generateToken };
+module.exports = { authenticateToken, isAdmin, checkPassword, generateToken };
