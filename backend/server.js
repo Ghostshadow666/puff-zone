@@ -31,7 +31,7 @@ const initDB = async () => {
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
-    console.log("âœ… Base de donnÃ©es vÃ©rifiÃ©e et Ã  jour !");
+    console.log("✅ Base de données vérifiée et à jour !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -59,7 +59,7 @@ app.post('/api/clients/login', async (req, res) => {
   const { telephone } = req.body;
   try {
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]);
-    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'NumÃ©ro non reconnu' });
+    if (r.rows.length === 0) return res.status(404).json({ success: false, error: 'Numéro non reconnu' });
     res.json({ success: true, client: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -72,7 +72,6 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- MES COMMANDES (CÃ´tÃ© Client - Public) ---
 app.get('/api/clients/:id/commandes', async (req, res) => {
   try {
     const r = await pool.query(`
@@ -87,13 +86,12 @@ app.get('/api/clients/:id/commandes', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- ADMIN : LISTE DES CLIENTS ---
 app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM clients ORDER BY created_at DESC'); res.json(r.rows); } 
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- COMMANDES (Admin & Public) ---
+// --- COMMANDES ---
 app.post('/api/commandes', async (req, res) => {
   const { client_id, cart, total } = req.body;
   try {
@@ -191,25 +189,22 @@ app.post('/api/login', async (req, res) => {
   try { 
     const r = await pool.query('SELECT * FROM utilisateurs WHERE name=$1', [name]); 
     if (r.rows.length === 0) return res.status(401).json({ error: 'Identifiants incorrects' }); 
-    
     const user = r.rows[0];
     const validPassword = await checkPassword(password, user.password);
     if (!validPassword) return res.status(401).json({ error: 'Identifiants incorrects' });
-
     const token = generateToken(user);
     res.json({ success: true, token, user: { id: user.id, name: user.name, role: user.role } }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
 
-// --- LIVREURS (Avec stats incluses) ---
+// --- LIVREURS ---
 app.get('/api/livreurs', authenticateToken, isAdmin, async (req, res) => { 
   try { 
     const r = await pool.query(`
       SELECT u.id, u.name, u.role,
              (SELECT COUNT(c.id) FROM commandes c WHERE c.livreur_id = u.id AND c.statut = 'livre') as total_livraisons,
              COALESCE((SELECT SUM(c.total) FROM commandes c WHERE c.livreur_id = u.id AND c.statut = 'livre'), 0) as total_ca
-      FROM utilisateurs u
-      WHERE u.role = 'livreur'
+      FROM utilisateurs u WHERE u.role = 'livreur'
     `); 
     res.json(r.rows); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
@@ -220,11 +215,9 @@ app.post('/api/login-livreur', async (req, res) => {
   try { 
     const r = await pool.query("SELECT * FROM utilisateurs WHERE name=$1 AND role='livreur'", [name]); 
     if (r.rows.length === 0) return res.status(401).json({ error: 'Identifiants incorrects' }); 
-    
     const livreur = r.rows[0];
     const validPassword = await checkPassword(password, livreur.password);
     if (!validPassword) return res.status(401).json({ error: 'Identifiants incorrects' });
-
     const token = generateToken(livreur);
     res.json({ success: true, token, livreur: { id: livreur.id, name: livreur.name, role: livreur.role } }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
@@ -238,73 +231,46 @@ app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => { t
 // --- CATEGORIES & SAVEURS ---
 app.get('/api/catalogue', async (req, res) => {
   try {
-    const [cats, savs] = await Promise.all([
-      pool.query('SELECT * FROM categories ORDER BY nom ASC'),
-      pool.query('SELECT * FROM saveurs ORDER BY nom ASC')
-    ]);
+    const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories ORDER BY nom ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]);
     res.json({ categories: cats.rows, saveurs: savs.rows });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10) VALUES ($1,$2,$3,$4,$5) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body; try { await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
 app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { try { const r = await pool.query('SELECT * FROM saveurs ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock, prix_achat } = req.body; try { const r = await pool.query('INSERT INTO saveurs (categorie_id,nom,stock,prix_achat) VALUES ($1,$2,$3,$4) RETURNING *', [categorie_id, nom, stock, prix_achat]); res.json(r.rows[0]); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { const { categorie_id, nom, stock, prix_achat } = req.body; try { await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3, prix_achat=$4 WHERE id=$5', [categorie_id, nom, stock, prix_achat, req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { try { await pool.query('DELETE FROM saveurs WHERE id=$1', [req.params.id]); res.json({ success: true }); } catch (e) { res.status(500).json({ error: e.message }); } });
 
-// --- ROUTES POUR MODIFIER (PUT) ---
-app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
-  const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10 } = req.body;
-  try {
-    await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5 WHERE id=$6', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, req.params.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => {
-  const { categorie_id, nom, stock, prix_achat } = req.body;
-  try {
-    await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3, prix_achat=$4 WHERE id=$5', [categorie_id, nom, stock, prix_achat, req.params.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-// ----------------------------------
-
-// --- VENTES ---
+// --- VENTES & RESET ---
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => { 
   try { 
     const r = await pool.query(`
       SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente,
              COALESCE((SELECT SUM(prix_achat * quantite) FROM commande_items WHERE commande_id = c.id), 0) as prix_achat_total,
              COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom
-      FROM commandes c 
-      LEFT JOIN clients cl ON c.client_id = cl.id
-      WHERE LOWER(c.statut) LIKE '%livr%'
-      ORDER BY c.date_commande DESC
+      FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id
+      WHERE LOWER(c.statut) LIKE '%livr%' ORDER BY c.date_commande DESC
     `); 
-    let totalCA = 0;
-    let totalMarge = 0;
-    r.rows.forEach(v => {
-      totalCA += parseFloat(v.prix_vente_total);
-      totalMarge += (parseFloat(v.prix_vente_total) - parseFloat(v.prix_achat_total));
-    });
+    let totalCA = 0; let totalMarge = 0;
+    r.rows.forEach(v => { totalCA += parseFloat(v.prix_vente_total); totalMarge += (parseFloat(v.prix_vente_total) - parseFloat(v.prix_achat_total)); });
     res.json({ ventes: r.rows, totalCA: totalCA, totalMarge: totalMarge }); 
   } catch (e) { res.status(500).json({ error: e.message }); } 
 });
 
-// --- ROUTE RESET COMMANDES (Admin) ---
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
     await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE');
-    res.json({ success: true, message: "Commandes et Chiffre d'Affaires rÃ©initialisÃ©s." });
+    res.json({ success: true, message: "Commandes et Chiffre d'Affaires réinitialisés." });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- FALLBACK SPA ---
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// --- FALLBACK SPA & GESTION ERREUR GLOBALE ---
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.use((err, req, res, next) => { console.error("💥 ERREUR SERVEUR:", err); res.status(500).json({ error: "Une erreur interne est survenue." }); });
 
-app.listen(PORT, () => console.log(`ðŸš€ Serveur PUFF ZONE dÃ©marrÃ© sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Serveur PUFF ZONE démarré sur le port ${PORT}`));
