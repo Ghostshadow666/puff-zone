@@ -6,14 +6,7 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const { Pool } = require('pg');
 const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./auth');
-const cloudinary = require('cloudinary').v2;
 
-// Config Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -66,14 +59,8 @@ initDB();
 
 // --- FONCTION UTILITAIRE UPLOAD CLOUDINARY ---
 async function uploadToCloudinary(base64String) {
-  if (!base64String || !base64String.startsWith('data:image')) return base64String;
-  try {
-    const result = await cloudinary.uploader.upload(base64String, { folder: "puffzone" });
-    return result.secure_url;
-  } catch (error) {
-    console.error("Erreur Upload Cloudinary:", error);
-    return base64String;
-  }
+  // Cloudinary désactivé : on stocke l'image en Base64 directement
+  return base64String;
 }
 
 // --- SETTINGS ---
