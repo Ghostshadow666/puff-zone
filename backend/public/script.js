@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
             marquee.innerHTML = html;
             lucide.createIcons();
         }
-    });
+    }).catch(e => console.error("Erreur promo", e));
 });
 
 async function loadCatalogue() {
@@ -38,6 +38,7 @@ async function loadCatalogue() {
         allFlavors = data.saveurs || [];
         renderCatalogue();
     } catch (e) { 
+        console.error("Erreur catalogue:", e);
         document.getElementById('product-list').innerHTML = '<p class="text-red-500 col-span-full text-center">Erreur de chargement du catalogue.</p>'; 
     }
 }
@@ -45,13 +46,12 @@ async function loadCatalogue() {
 function renderCatalogue() {
     const container = document.getElementById('product-list');
     
-    // Si aucun produit n'est trouvé, on affiche un message
-    if (allFlavors.length === 0) {
+    if (!allFlavors || allFlavors.length === 0) {
         container.innerHTML = `
             <div class="col-span-full text-center py-12 glass-panel rounded-2xl">
                 <i data-lucide="package-search" class="w-12 h-12 text-gray-500 mx-auto mb-4"></i>
                 <h3 class="font-space font-bold text-lg text-white mb-2">Aucun produit disponible</h3>
-                <p class="text-gray-400 text-sm">L'admin n'a pas encore ajouté de produits dans cette galaxie.</p>
+                <p class="text-gray-400 text-sm">La galaxie est en cours de préparation. Revenez bientôt !</p>
             </div>
         `;
         lucide.createIcons();
@@ -61,14 +61,11 @@ function renderCatalogue() {
     let html = '';
     allFlavors.forEach((f, index) => {
         const cat = allCategories.find(c => c.id === f.categorie_id);
-        if(!cat) return; // On ignore si la catégorie n'existe plus
+        if(!cat) return; // Ignore les produits sans catégorie
 
         const isOut = f.stock <= 0;
         const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
         
-        const colors = ['#9d4edd', '#f72585', '#4cc9f0', '#3a0ca3'];
-        const color = colors[index % colors.length];
-
         html += `
         <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between group transition-all duration-300 relative border border-white/10 hover:border-nebula-violet/50">
             <div>
@@ -108,7 +105,6 @@ function renderCatalogue() {
     lucide.createIcons();
 }
 
-// PANIER
 function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
     const flav = allFlavors.find(f => f.id === flavId);
@@ -201,7 +197,6 @@ function toggleCart() {
     }
 }
 
-// LOGIQUE CLIENT
 function showLoginForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'block'; document.getElementById('step-info').style.display = 'none'; }
 function showRegisterForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'block'; }
 function backToChoice() { document.getElementById('step-choice').style.display = 'block'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'none'; }
@@ -235,7 +230,6 @@ function updateGreeting() {
 }
 function logout() { localStorage.removeItem('puff_client'); location.reload(); }
 
-// ZONES & PROMOS
 async function loadZones() { 
     try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const select = document.getElementById('zone-select'); if(select) { select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); } } catch (e) { console.error(e); } 
 }
@@ -261,7 +255,6 @@ async function applyPromo() {
     } catch (e) { msg.textContent = "Erreur"; }
 }
 
-// VALIDATION COMMANDE
 async function checkout() {
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
