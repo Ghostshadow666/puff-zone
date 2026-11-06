@@ -8,25 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="nebula-bg"></div>
-    <div class="overlay-dark"></div>
-    <canvas id="bg-canvas"></canvas>
+    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
 
-    <div class="bg-text-container">
-        <div class="bg-text-marquee" id="marquee-text">
-            <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
-        </div>
-    </div>
-
-    <div id="promo-banner" class="promo-banner"></div>
+    <!-- BANDEAU PROMO DEFILANT (Si codes actifs) -->
+    <div id="promo-banner" class="promo-banner" style="display: none;"></div>
 
     <header class="header">
-        <div class="logo">PUFF <span>ZONE</span></div>
+        <div class="logo">&#10022; PUFF<span>ZONE</span></div>
         <div class="header-actions">
             <a href="/livreur.html" class="btn-header">&#128757; Livreur</a>
             <a href="/admin.html" class="btn-header">&#9881;&#65039; Admin</a>
-            <div id="user-greeting" style="font-weight: bold; color: var(--neon-cyan); font-size: 0.9rem;">&#128075; Visiteur</div>
-            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">&#128722; Panier (<span id="cart-count">0</span>)</button>
+            <div id="user-greeting" style="font-weight: 600; color: var(--text2); font-size: 0.9rem;">&#128075; Visiteur</div>
+            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">Panier (<span id="cart-count">0</span>)</button>
         </div>
     </header>
 
@@ -72,6 +65,7 @@
         </div>
     </div>
 
+    <!-- PANIER DRAWER -->
     <div id="cart-drawer">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px;">
             <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">&#128722; Ton Panier</h2>
@@ -104,9 +98,6 @@
     <script src="script.js"></script>
     <script src="bg-animation.js"></script>
     <script>
-        const marquee = document.getElementById('marquee-text');
-        if(marquee) marquee.innerHTML += marquee.innerHTML; 
-
         window.appliedPromoCode = null; window.appliedPromoPct = 0;
         async function applyPromo() {
             const code = document.getElementById('promo-input').value.trim();
