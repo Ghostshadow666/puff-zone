@@ -26,7 +26,7 @@
     </style>
 </head>
 <body class="relative">
-    <!-- FOND ANIMÉ -->
+    <!-- FOND ANIMÃ‰ -->
     <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
 
     <!-- HEADER -->
@@ -41,7 +41,7 @@
                 </div>
                 
                 <div class="flex items-center gap-3">
-                    <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-all">Déconnexion</button>
+                    <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-all">DÃ©connexion</button>
                 </div>
             </div>
         </div>
@@ -58,7 +58,8 @@
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-stock', this)">Stock</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
-                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Param&egrave;tres</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">SÃ©curitÃ©</button>
             </div>
         </div>
     </header>
@@ -68,7 +69,7 @@
         <!-- ONGLET LIVREURS -->
         <div id="tab-livreurs" class="tab-content active">
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste des livreurs</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ‘¥ Liste des livreurs</h2>
                 <div id="driverList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
@@ -76,19 +77,19 @@
         <!-- ONGLET ZONES -->
         <div id="tab-zones" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
-                <h2 class="text-xl font-space font-bold text-white mb-4">📍 Zones de livraison</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“ Zones de livraison</h2>
                 <div id="map"></div>
                 <form id="addZoneForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom de la zone</label><input type="text" id="zoneName" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="ex: Liège centre" required></div>
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Minimum (€)</label><input type="number" id="zoneMin" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" value="50" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom de la zone</label><input type="text" id="zoneName" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="ex: LiÃ¨ge centre" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Minimum (â‚¬)</label><input type="number" id="zoneMin" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" value="50" required></div>
                         <div><label class="text-xs font-bold text-gray-400 block mb-1">Rayon (KM)</label><input type="number" id="zoneRayon" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" value="20" min="1" required></div>
                     </div>
                     <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Ajouter</button>
                 </form>
             </div>
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">📋 Zones enregistrées</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“‹ Zones enregistrÃ©es</h2>
                 <div id="zoneList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
@@ -96,18 +97,18 @@
         <!-- ONGLET PERSONNEL -->
         <div id="tab-personnel" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
-                <h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un compte</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">âž• CrÃ©er un compte</h2>
                 <form id="addUserForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom</label><input type="text" id="userName" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
                         <div><label class="text-xs font-bold text-gray-400 block mb-1">Mot de passe</label><input type="password" id="userPassword" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Rôle</label><select id="userRole" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"><option value="vendeur">Vendeur</option><option value="admin">Admin</option><option value="dev">Dev</option><option value="livreur">Livreur</option></select></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">RÃ´le</label><select id="userRole" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"><option value="vendeur">Vendeur</option><option value="admin">Admin</option><option value="dev">Dev</option><option value="livreur">Livreur</option></select></div>
                     </div>
-                    <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button>
+                    <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">CrÃ©er</button>
                 </form>
             </div>
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste du personnel</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ‘¥ Liste du personnel</h2>
                 <div id="userList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
@@ -116,13 +117,13 @@
         <div id="tab-commandes" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2>
+                    <h2 class="text-xl font-space font-bold text-white">ðŸŸ¢ Commandes en cours</h2>
                     <button class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all" onclick="loadCommandes()">Actualiser</button>
                 </div>
                 <div id="commandesEnCours" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">✅ Historique</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">âœ… Historique</h2>
                 <div id="commandesTerminees" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
@@ -130,7 +131,7 @@
         <!-- ONGLET CLIENTS -->
         <div id="tab-clients" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">🔒 Clients</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ”’ Clients</h2>
                 <div id="clientsList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
@@ -138,31 +139,31 @@
         <!-- ONGLET PROMOS -->
         <div id="tab-promo" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
-                <h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">âž• CrÃ©er un Code Promo</h2>
                 <form id="addPromoForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">RÃ©duction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div>
                     </div>
-                    <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button>
+                    <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">CrÃ©er</button>
                 </form>
             </div>
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">🏷️ Codes actifs</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ·ï¸ Codes actifs</h2>
                 <div id="promoList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
 
         <!-- ONGLET STATS -->
         <div id="tab-stats" class="tab-content hidden">
-            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">📈 CA (7 jours)</h2><canvas id="chartCA7Jours" height="100"></canvas></div>
-            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📊 Top Saveurs</h2><canvas id="chartTopSaveurs" height="100"></canvas></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“ˆ CA (7 jours)</h2><canvas id="chartCA7Jours" height="100"></canvas></div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“Š Top Saveurs</h2><canvas id="chartTopSaveurs" height="100"></canvas></div>
         </div>
 
         <!-- ONGLET STOCK -->
         <div id="tab-stock" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
-                <h2 id="catFormTitle" class="text-xl font-space font-bold text-white mb-4">➕ Créer une Catégorie</h2>
+                <h2 id="catFormTitle" class="text-xl font-space font-bold text-white mb-4">âž• CrÃ©er une CatÃ©gorie</h2>
                 <input type="hidden" id="editCatId">
                 <form id="addCategoryForm" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -170,9 +171,9 @@
                         <div><label class="text-xs font-bold text-gray-400 block mb-1">Photo</label><input type="file" id="catImage" accept="image/*" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"></div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Prix unitaire (€)</label><input type="number" id="catPrix1" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" value="0" required></div>
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 5 (€)</label><input type="number" id="catPrix5" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
-                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 10 (€)</label><input type="number" id="catPrix10" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Prix unitaire (â‚¬)</label><input type="number" id="catPrix1" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" value="0" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 5 (â‚¬)</label><input type="number" id="catPrix5" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 10 (â‚¬)</label><input type="number" id="catPrix10" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
                     </div>
                     <div class="flex gap-2">
                         <button type="submit" id="submitCatBtn" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer</button>
@@ -180,21 +181,21 @@
                     </div>
                 </form>
             </div>
-            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📁 Catalogue</h2><div id="catalogueList">Chargement...</div></div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“ Catalogue</h2><div id="catalogueList">Chargement...</div></div>
         </div>
 
         <!-- ONGLET VENTES -->
         <div id="tab-ventes" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl">
-                <h2 class="text-xl font-space font-bold text-white mb-4">📊 Ventes</h2>
+                <h2 class="text-xl font-space font-bold text-white mb-4">ðŸ“Š Ventes</h2>
                 <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center mb-6">
                     <div class="text-xs font-bold text-gray-400 uppercase">Chiffre d'Affaires</div>
-                    <div id="totalCA" class="text-3xl font-extrabold text-green-400 mt-2">0.00 €</div>
+                    <div id="totalCA" class="text-3xl font-extrabold text-green-400 mt-2">0.00 â‚¬</div>
                 </div>
                 <div id="ventesList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
                 <div class="mt-6 text-right flex justify-end gap-3">
                     <button onclick="exportVentes()" class="px-6 py-2 rounded-xl border border-nebula-cyan text-nebula-cyan text-xs font-bold hover:bg-nebula-cyan/10">Exporter</button>
-                    <button onclick="resetVentes()" class="px-6 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10">Réinitialiser</button>
+                    <button onclick="resetVentes()" class="px-6 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10">RÃ©initialiser</button>
                 </div>
             </div>
         </div>
@@ -203,7 +204,7 @@
         <div id="tab-logs" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl border border-nebula-cyan/30">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-space font-bold text-nebula-cyan">📜 Journal d'Activité</h2>
+                    <h2 class="text-xl font-space font-bold text-nebula-cyan">ðŸ“œ Journal d'ActivitÃ©</h2>
                     <div class="flex gap-2">
                         <input type="text" id="logSearch" onkeyup="filterLogs()" placeholder="Rechercher..." class="bg-space-bg border border-nebula-cyan/30 rounded-lg py-2 px-3 text-xs text-white outline-none">
                         <button onclick="exportLogs()" class="px-4 py-2 rounded-lg border border-nebula-cyan/30 text-nebula-cyan text-xs font-bold hover:bg-nebula-cyan/10">Exporter</button>
@@ -211,37 +212,37 @@
                 </div>
                 <div class="overflow-y-auto max-h-[500px]">
                     <table class="w-full text-left text-xs font-mono text-gray-300">
-                        <thead class="sticky top-0 bg-space-bg"><tr class="border-b border-nebula-cyan/30 text-nebula-cyan"><th class="p-3">Date</th><th class="p-3">Utilisateur</th><th class="p-3">Rôle</th><th class="p-3">Action</th><th class="p-3">Détails</th><th class="p-3">IP</th></tr></thead>
+                        <thead class="sticky top-0 bg-space-bg"><tr class="border-b border-nebula-cyan/30 text-nebula-cyan"><th class="p-3">Date</th><th class="p-3">Utilisateur</th><th class="p-3">RÃ´le</th><th class="p-3">Action</th><th class="p-3">DÃ©tails</th><th class="p-3">IP</th></tr></thead>
                         <tbody id="logsList"><tr><td colspan="6" class="text-center p-6">Chargement...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ONGLET SÉCURITÉ -->
+        <!-- ONGLET SÃ‰CURITÃ‰ -->
         <div id="tab-securite" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl border border-red-500/30 bg-red-500/5">
-                <h2 class="text-xl font-space font-bold text-red-400 mb-6">⚠️ Crisis Room</h2>
+                <h2 class="text-xl font-space font-bold text-red-400 mb-6">âš ï¸ Crisis Room</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <button onclick="simulateAttack()" class="p-4 rounded-xl bg-space-surface border border-nebula-cyan/30 hover:bg-nebula-cyan/10 transition-all text-center"><div class="text-2xl mb-2">🛡️</div><div class="text-sm font-bold text-white">Simuler Attaque</div></button>
-                    <button onclick="toggleLockdown()" id="lockdownBtn" class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div></button>
-                    <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button>
+                    <button onclick="simulateAttack()" class="p-4 rounded-xl bg-space-surface border border-nebula-cyan/30 hover:bg-nebula-cyan/10 transition-all text-center"><div class="text-2xl mb-2">ðŸ›¡ï¸</div><div class="text-sm font-bold text-white">Simuler Attaque</div></button>
+                    <button onclick="toggleLockdown()" id="lockdownBtn" class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">ðŸ”’</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div></button>
+                    <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">ðŸ—‘ï¸</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center">
-                        <h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3>
+                        <h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÃ‰SEAU</h3>
                         <div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden">
                             <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div>
                         </div>
-                        <div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div>
+                        <div class="text-xs text-green-400 font-mono mt-4">[SÃ‰CURISÃ‰]</div>
                     </div>
                     <div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4">
-                        <h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3>
+                        <h3 class="text-xs font-mono text-nebula-cyan mb-4">TÃ‰LÃ‰MÃ‰TRIE</h3>
                         <div class="grid grid-cols-2 gap-2 text-center">
                             <div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div>
                             <div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div>
                             <div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div>
-                            <div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div>
+                            <div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÃ‰GRITÃ‰</div></div>
                         </div>
                     </div>
                 </div>
@@ -253,7 +254,7 @@
     <!-- MODAL SAVEUR -->
     <div id="flavorModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-nebula-cyan/30">
-            <h2 id="flavorModalTitle" class="text-lg font-bold text-nebula-cyan mb-4">➕ Saveur</h2>
+            <h2 id="flavorModalTitle" class="text-lg font-bold text-nebula-cyan mb-4">âž• Saveur</h2>
             <input type="hidden" id="flavorCatId"><input type="hidden" id="editFlavorId">
             <div class="space-y-4">
                 <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom</label><input type="text" id="flavNom" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
@@ -303,6 +304,7 @@
             if(tabId === 'tab-clients') loadClients(); if(tabId === 'tab-promo') loadPromos();
             if(tabId === 'tab-stats') loadStats(); if(tabId === 'tab-ventes') loadVentes();
             if(tabId === 'tab-logs') loadLogs();
+            if(tabId === 'tab-settings') loadSettings();
             if(tabId === 'tab-securite') loadSecurity();
         }
 
@@ -330,7 +332,7 @@
             try {
                 const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); if(!Array.isArray(d)) return; allLivreurs = d; const el = document.getElementById('driverList');
                 if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; }
-                el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">🛵 ${x.name}</div><div class="text-xs text-gray-400 mt-1">📦 Livraisons: ${x.total_livraisons} | 💰 CA: ${parseFloat(x.total_ca).toFixed(2)} €</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join('');
+                el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">ðŸ›µ ${x.name}</div><div class="text-xs text-gray-400 mt-1">ðŸ“¦ Livraisons: ${x.total_livraisons} | ðŸ’° CA: ${parseFloat(x.total_ca).toFixed(2)} â‚¬</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join('');
             } catch(e) { console.error(e); }
         }
         async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
@@ -340,18 +342,18 @@
                 const res = await fetch(`${API_URL}/commandes`); const commandes = await res.json(); if(!Array.isArray(commandes)) return;
                 const enCours = commandes.filter(c => c.statut !== 'livre'); const terminees = commandes.filter(c => c.statut === 'livre');
                 document.getElementById('commandesEnCours').innerHTML = enCours.length === 0 ? 'Aucune commande en cours.' : enCours.map(cmd => renderCommandeCard(cmd, false)).join('');
-                document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? 'Aucune commande terminée.' : terminees.map(cmd => renderCommandeCard(cmd, true)).join('');
+                document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? 'Aucune commande terminÃ©e.' : terminees.map(cmd => renderCommandeCard(cmd, true)).join('');
             } catch (e) { document.getElementById('commandesEnCours').innerHTML = 'Erreur.'; }
         }
         function renderCommandeCard(cmd, isTerminee) {
-            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Préparation', 'en_livraison': 'En livraison', 'livre': 'Livré' };
-            if (isTerminee) return `<div class="p-4 mb-3 bg-green-500/5 rounded-xl border border-green-500/20 flex justify-between items-center"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | ✅ Livré</div></div><div class="font-bold text-green-400">${parseFloat(cmd.total).toFixed(2)} €</div></div>`;
+            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'PrÃ©paration', 'en_livraison': 'En livraison', 'livre': 'LivrÃ©' };
+            if (isTerminee) return `<div class="p-4 mb-3 bg-green-500/5 rounded-xl border border-green-500/20 flex justify-between items-center"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">ðŸ“ž ${cmd.telephone} | âœ… LivrÃ©</div></div><div class="font-bold text-green-400">${parseFloat(cmd.total).toFixed(2)} â‚¬</div></div>`;
             let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
             let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join('');
-            return `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 space-y-3"><div class="flex justify-between items-start"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | 📍 ${cmd.adresse || 'N/A'}</div></div><div class="font-bold text-nebula-cyan">${parseFloat(cmd.total).toFixed(2)} €</div></div><div class="flex gap-2"><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select></div></div>`;
+            return `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 space-y-3"><div class="flex justify-between items-start"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">ðŸ“ž ${cmd.telephone} | ðŸ“ ${cmd.adresse || 'N/A'}</div></div><div class="font-bold text-nebula-cyan">${parseFloat(cmd.total).toFixed(2)} â‚¬</div></div><div class="flex gap-2"><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select></div></div>`;
         }
         async function updateStatut(id, statut) { try { await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); loadCommandes(); } catch (e) {} }
-        async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id }) }); alert('Assigné !'); loadCommandes(); } catch (e) {} }
+        async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id }) }); alert('AssignÃ© !'); loadCommandes(); } catch (e) {} }
 
         async function loadClients() {
             try {
@@ -362,7 +364,7 @@
 
                 container.innerHTML = clients.map(c => {
                     const tel = (c.whatsapp || c.telephone || '').replace(/\D/g, '');
-                    const adresse = c.adresse || 'Non renseignée';
+                    const adresse = c.adresse || 'Non renseignÃ©e';
                     const adresseEncodee = encodeURIComponent(adresse);
                     const mapLink = c.adresse ? `https://www.google.com/maps/search/?api=1&query=${adresseEncodee}` : '#';
 
@@ -391,7 +393,7 @@
             }
         }
 
-        async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
+        async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">ðŸ·ï¸ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">ðŸ—‘ï¸</button></div>`).join(''); } catch (e) {} }
         document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code: document.getElementById('promoCode').value, pourcentage: parseInt(document.getElementById('promoPct').value) }) }); document.getElementById('addPromoForm').reset(); loadPromos(); });
         async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
 
@@ -399,8 +401,8 @@
         async function loadStats() {
             try {
                 const res = await fetch(`${API_URL}/stats`); const data = await res.json();
-                if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
-                if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantités', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
+                if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (â‚¬)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
+                if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'QuantitÃ©s', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); }
             } catch (e) {}
         }
 
@@ -422,7 +424,7 @@
                 const res = await fetch(`${API_URL}/zones`); 
                 allZones = await res.json(); 
                 
-                // Nettoyer les anciens cercles pour éviter les doublons
+                // Nettoyer les anciens cercles pour Ã©viter les doublons
                 map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); });
 
                 // Dessiner les nouveaux cercles
@@ -430,49 +432,64 @@
                     L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map);
                 });
 
-                document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">📍 ${x.nom}</div><div class="text-xs text-gray-400">dès ${x.min_commande} € | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">🗑️</button></div>`).join(''); 
+                document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">ðŸ“ ${x.nom}</div><div class="text-xs text-gray-400">dÃ¨s ${x.min_commande} â‚¬ | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">ðŸ—‘ï¸</button></div>`).join(''); 
             } catch(e){ console.error(e); } 
         }
         
         document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords) return alert("Cliquez sur la carte."); await fetch(`${API_URL}/zones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, min_commande: parseInt(document.getElementById('zoneMin').value) }) }); map.removeLayer(currentMarker); map.removeLayer(currentCircle); selectedCoords = null; loadZones(); });
         async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); loadZones(); } }
 
-        async function loadUsers() { try { const res = await fetch(`${API_URL}/utilisateurs`); const users = await res.json(); document.getElementById('userList').innerHTML = users.map(u => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div class="text-white text-sm">${u.name} <span class="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300 ml-2 uppercase">${u.role}</span></div><button class="text-red-400" onclick="deleteUser(${u.id})">🗑️</button></div>`).join(''); } catch(e) {} }
+        async function loadUsers() { try { const res = await fetch(`${API_URL}/utilisateurs`); const users = await res.json(); document.getElementById('userList').innerHTML = users.map(u => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div class="text-white text-sm">${u.name} <span class="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300 ml-2 uppercase">${u.role}</span></div><button class="text-red-400" onclick="deleteUser(${u.id})">ðŸ—‘ï¸</button></div>`).join(''); } catch(e) {} }
         document.getElementById('addUserForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/utilisateurs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('userName').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value }) }); document.getElementById('addUserForm').reset(); loadUsers(); loadDrivers(); });
         async function deleteUser(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/utilisateurs/${id}`, { method: 'DELETE' }); loadUsers(); } }
 
         function toggleAdminCategory(catId) { const list = document.getElementById(`admin-flavors-${catId}`); const arrow = document.getElementById(`admin-arrow-${catId}`); if (list.style.display === 'none') { list.style.display = 'block'; arrow.style.transform = 'rotate(0deg)'; } else { list.style.display = 'none'; arrow.style.transform = 'rotate(-90deg)'; } }
         async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
         function renderCatalogue() {
-            const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
+            const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catÃ©gorie.';return;}
             el.innerHTML = allCategories.map(cat => {
                 const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
-                const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60"height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">📦</text></svg>';
-                return `<div class="bg-space-surface/50 border border-white/10 rounded-xl mb-4 overflow-hidden"><div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleAdminCategory(${cat.id})"><img src="${img}" class="w-12 h-12 object-cover rounded-lg"><div class="flex-1"><div class="font-bold text-white text-sm flex items-center gap-2">${cat.nom} <span id="admin-arrow-${cat.id}" class="text-nebula-cyan text-xs transition-transform">▼</span></div><div class="text-xs text-gray-400">U: ${cat.prix_unite}€</div></div><div class="flex gap-2" onclick="event.stopPropagation();"><button class="px-3 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-xs" onclick="openFlavorModal(${cat.id})">+ Saveur</button><button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">🗑️</button></div></div><div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5">${flavs.map(f=>`<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0"><div class="text-sm text-gray-300">${f.nom}</div><div class="flex items-center gap-3"><span class="text-xs font-bold text-green-400">(${f.stock})</span><button class="text-red-400 text-xs" onclick="deleteFlavor(${f.id})">🗑️</button></div></div>`).join('')}</div></div>`;
+                const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60"height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">ðŸ“¦</text></svg>';
+                return `<div class="bg-space-surface/50 border border-white/10 rounded-xl mb-4 overflow-hidden"><div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleAdminCategory(${cat.id})"><img src="${img}" class="w-12 h-12 object-cover rounded-lg"><div class="flex-1"><div class="font-bold text-white text-sm flex items-center gap-2">${cat.nom} <span id="admin-arrow-${cat.id}" class="text-nebula-cyan text-xs transition-transform">â–¼</span></div><div class="text-xs text-gray-400">U: ${cat.prix_unite}â‚¬</div></div><div class="flex gap-2" onclick="event.stopPropagation();"><button class="px-3 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-xs" onclick="openFlavorModal(${cat.id})">+ Saveur</button><button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">ðŸ—‘ï¸</button></div></div><div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5">${flavs.map(f=>`<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0"><div class="text-sm text-gray-300">${f.nom}</div><div class="flex items-center gap-3"><span class="text-xs font-bold text-green-400">(${f.stock})</span><button class="text-red-400 text-xs" onclick="deleteFlavor(${f.id})">ðŸ—‘ï¸</button></div></div>`).join('')}</div></div>`;
             }).join('');
         }
         document.getElementById('addCategoryForm').addEventListener('submit', async (e) => { e.preventDefault(); const editId = document.getElementById('editCatId').value; const data = { nom: document.getElementById('catNom').value, prix_unite: parseFloat(document.getElementById('catPrix1').value), prix_lot_5: document.getElementById('catPrix5').value ? parseFloat(document.getElementById('catPrix5').value) : null, prix_lot_10: document.getElementById('catPrix10').value ? parseFloat(document.getElementById('catPrix10').value) : null }; await fetch(editId ? `${API_URL}/categories/${editId}` : `${API_URL}/categories`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); resetCategoryForm(); loadCatalogue(); });
-        function resetCategoryForm() { document.getElementById('addCategoryForm').reset(); document.getElementById('catFormTitle').innerText = '➕ Créer une Catégorie'; document.getElementById('editCatId').value = ''; document.getElementById('submitCatBtn').innerText = 'Enregistrer'; document.getElementById('cancelCatBtn').classList.add('hidden'); }
+        function resetCategoryForm() { document.getElementById('addCategoryForm').reset(); document.getElementById('catFormTitle').innerText = 'âž• CrÃ©er une CatÃ©gorie'; document.getElementById('editCatId').value = ''; document.getElementById('submitCatBtn').innerText = 'Enregistrer'; document.getElementById('cancelCatBtn').classList.add('hidden'); }
         async function deleteCategory(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
-        function openFlavorModal(catId, flavId = null) { document.getElementById('flavorCatId').value = catId; document.getElementById('editFlavorId').value = flavId|| ''; document.getElementById('flavorModal').classList.remove('hidden'); if (flavId) { const f = allFlavors.find(x => x.id === flavId); document.getElementById('flavorModalTitle').innerText = '✏️ Modifier'; document.getElementById('flavNom').value = f.nom; document.getElementById('flavStock').value= f.stock; } else { document.getElementById('flavorModalTitle').innerText = '➕ Ajouter'; document.getElementById('flavNom').value = ''; document.getElementById('flavStock').value = '0'; } }
+        function openFlavorModal(catId, flavId = null) { document.getElementById('flavorCatId').value = catId; document.getElementById('editFlavorId').value = flavId|| ''; document.getElementById('flavorModal').classList.remove('hidden'); if (flavId) { const f = allFlavors.find(x => x.id === flavId); document.getElementById('flavorModalTitle').innerText = 'âœï¸ Modifier'; document.getElementById('flavNom').value = f.nom; document.getElementById('flavStock').value= f.stock; } else { document.getElementById('flavorModalTitle').innerText = 'âž• Ajouter'; document.getElementById('flavNom').value = ''; document.getElementById('flavStock').value = '0'; } }
         async function saveFlavor() { const catId = document.getElementById('flavorCatId').value, editId = document.getElementById('editFlavorId').value; const data = { categorie_id: parseInt(catId), nom: document.getElementById('flavNom').value, stock: parseInt(document.getElementById('flavStock').value) }; await fetch(editId ? `${API_URL}/saveurs/${editId}` : `${API_URL}/saveurs`, { method: editId ? 'PUT' :'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); document.getElementById('flavorModal').classList.add('hidden'); loadCatalogue(); }
         async function deleteFlavor(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/saveurs/${id}`, { method:'DELETE' }); loadCatalogue(); } }
 
         async function loadVentes() {
             try {
                 const r = await fetch(`${API_URL}/ventes`); const data = await r.json(); const el = document.getElementById('ventesList');
-                if (!data || data.error || typeof data.totalCA === 'undefined') { el.innerHTML = 'Erreur.'; document.getElementById('totalCA').innerText = '0.00 €'; return; }
-                document.getElementById('totalCA').innerText = data.totalCA.toFixed(2) + ' €';
-                el.innerHTML = data.ventes.map(x => `<div class="p-4 mb-2 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="text-white font-bold text-sm">Cmd #${x.id} - ${x.client_nom}</div><div class="text-xs text-gray-400 mt-1">${x.valide_par ? 'Validé par ' + x.valide_par : ''}</div></div><div class="text-green-400 font-bold">${parseFloat(x.prix_vente_total).toFixed(2)}€</div></div>`).join('');
+                if (!data || data.error || typeof data.totalCA === 'undefined') { el.innerHTML = 'Erreur.'; document.getElementById('totalCA').innerText = '0.00 â‚¬'; return; }
+                document.getElementById('totalCA').innerText = data.totalCA.toFixed(2) + ' â‚¬';
+                el.innerHTML = data.ventes.map(x => `<div class="p-4 mb-2 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="text-white font-bold text-sm">Cmd #${x.id} - ${x.client_nom}</div><div class="text-xs text-gray-400 mt-1">${x.valide_par ? 'ValidÃ© par ' + x.valide_par : ''}</div></div><div class="text-green-400 font-bold">${parseFloat(x.prix_vente_total).toFixed(2)}â‚¬</div></div>`).join('');
             } catch(e){ document.getElementById('ventesList').innerHTML = 'Erreur.'; }
         }
         async function exportVentes() { try { const res = await fetch(`${API_URL}/admin/export-commandes`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `export.json`; a.click(); } catch (e) {} }
-        async function resetVentes() { if (!confirm("⚠️ TOUT supprimer ?")) return; try { await fetch(`${API_URL}/admin/reset-commandes`, { method: 'POST' }); alert("Réinitialisé !"); loadVentes(); } catch (e) {} }
+        async function resetVentes() { if (!confirm("âš ï¸ TOUT supprimer ?")) return; try { await fetch(`${API_URL}/admin/reset-commandes`, { method: 'POST' }); alert("RÃ©initialisÃ© !"); loadVentes(); } catch (e) {} }
+
+                async function loadSettings() {
+            try {
+                const res = await fetch(`${API_URL}/settings`);
+                const data = await res.json();
+                if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text;
+            } catch(e) { console.error(e); }
+        }
+        async function saveSettings() {
+            const banner_text = document.getElementById('settingBannerText').value;
+            try {
+                await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banner_text }) });
+                alert('✅ Param&egrave;tres enregistr&eacute;s !');
+            } catch(e) { alert('Erreur.'); }
+        }
 
         async function loadLogs() {
             try {
                 const res = await fetch(`${API_URL}/logs`); const logs = await res.json(); const tbody = document.getElementById('logsList');
-                const fixEncoding = (str) => { if(!str) return ''; return str.replace(/Ã©/g, 'é').replace(/Ã /g, 'à').replace(/Ãª/g, 'ê').replace(/â‚¬/g, '€'); };
+                const fixEncoding = (str) => { if(!str) return ''; return str.replace(/ÃƒÂ©/g, 'Ã©').replace(/Ãƒ /g, 'Ã ').replace(/ÃƒÂª/g, 'Ãª').replace(/Ã¢â€šÂ¬/g, 'â‚¬'); };
                 tbody.innerHTML = logs.map(log => `<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-3 text-gray-400">${new Date(log.date_log).toLocaleString('fr-FR')}</td><td class="p-3 font-bold text-white">${log.user_name}</td><td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-700 text-white">${log.user_role}</span></td><td class="p-3 text-nebula-cyan">${fixEncoding(log.action)}</td><td class="p-3 text-gray-400">${fixEncoding(log.details)}</td><td class="p-3 text-gray-600 font-mono">***.***.***.***</td></tr>`).join('');
             } catch (e) { document.getElementById('logsList').innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-400">Erreur.</td></tr>'; }
         }
@@ -484,7 +501,7 @@
                 const res = await fetch(`${API_URL}/security/analyse`); const data = await res.json();
                 document.getElementById('socAttacks').textContent = data.totalAttacks;
                 const lockStatus = document.getElementById('socLockdownStatus'); lockStatus.textContent = data.isLockdown ? 'ACTIF' : 'OFF'; lockStatus.style.color = data.isLockdown ? '#EF4444' : '#10B981';
-                const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="text-2xl mb-2">🔓</div><div class="text-sm font-bold text-green-400">DÉSACTIVER</div>` : `<div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div>`;
+                const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="text-2xl mb-2">ðŸ”“</div><div class="text-sm font-bold text-green-400">DÃ‰SACTIVER</div>` : `<div class="text-2xl mb-2">ðŸ”’</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div>`;
                 const terminal = document.getElementById('socTerminal');
                 let html = `<div>[SYSTEM] Initialisation...</div>`;
                 if (data.totalAttacks === 0) { html += `<div class="text-green-500">[OK] Aucune menace.</div>`; } else { html += `<div class="text-red-500">[ALERTE] ${data.totalAttacks} menaces !</div>`; data.failedLogins.forEach(log => { html += `<div class="text-red-500">[BLOCAGE] ${log.details}</div>`; }); }
@@ -492,8 +509,8 @@
             } catch (e) {}
         }
         async function simulateAttack() { if(!confirm("Simuler ?")) return; await fetch(`${API_URL}/admin/security/simulate-attack`, { method: 'POST' }); alert("Fait."); loadSecurity(); }
-        async function toggleLockdown() { if(!confirm("Changer l'état ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ON" : "OFF")); loadSecurity(); }
-        async function backupWipe() { if(!confirm("⚠️ TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Confirmer ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
+        async function toggleLockdown() { if(!confirm("Changer l'Ã©tat ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ON" : "OFF")); loadSecurity(); }
+        async function backupWipe() { if(!confirm("âš ï¸ TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Confirmer ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
         async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `secu.json`; a.click(); } catch (e) {} }
     </script>
 </body>

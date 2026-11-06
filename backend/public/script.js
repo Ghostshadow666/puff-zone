@@ -13,24 +13,35 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.getElementById('login-modal').style.display = 'flex';
     }
+    loadSettings();
     loadPromos();
     loadCatalogue();
     loadZones();
 });
 
-async function loadPromos() {
+async function loadSettings() {
     try {
-        const res = await fetch(`${API_URL}/promo/public`);
-        const promos = await res.json();
+        const res = await fetch(`${API_URL}/settings`);
+        const data = await res.json();
         const marquee = document.getElementById('promo-marquee');
-        if (marquee && promos.length > 0) {
+        if (marquee && data.banner_text) {
+            // On duplique le texte pour un défilement infini fluide
             let html = '';
-            for(let i=0; i<10; i++) {
-                promos.forEach(p => { html += `<span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5 text-nebula-cyan"></i> CODE : ${p.code} (-${p.pourcentage}%)</span>`; });
+            for(let i=0; i<8; i++) {
+                html += `<span class="flex items-center gap-2 mx-4"><i data-lucide="sparkles" class="w-4 h-4 text-nebula-cyan"></i> ${data.banner_text}</span>`;
             }
             marquee.innerHTML = html;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+    } catch(e) { console.error("Erreur settings", e); }
+}
+
+async function loadPromos() {
+    try {
+        const res = await fetch(`${API_URL}/promo/public`);
+        const promos = await res.json();
+        // Les promos peuvent être ajoutées au bandeau plus tard si besoin, 
+        // pour l'instant on gère uniquement le texte personnalisé.
     } catch(e) { console.error(e); }
 }
 
@@ -71,27 +82,23 @@ function renderCatalogue() {
         catFlavors.forEach(f => {
             const isOut = f.stock <= 0;
             
-            // CARTES SANS IMAGE (L'image est sur la catégorie maintenant)
+            // CARTES TRÈS COMPACTES
             cardsHtml += `
-            <div class="bg-space-bg/40 border border-white/5 rounded-xl p-3 flex flex-col justify-between group hover:border-nebula-cyan/50 transition-all">
-                <div>
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-nebula-violet/20 text-nebula-cyan truncate max-w-[100px]">${f.nom}</span>
-                        <span class="text-[10px] font-bold ${isOut ? 'text-red-400' : 'text-green-400'}">${isOut ? 'RUPTURE' : 'STK: '+f.stock}</span>
-                    </div>
-                    <div class="text-[10px] text-gray-500 mt-2">Prix unitaire</div>
+            <div class="bg-space-surface/80 border border-white/10 rounded-xl p-2.5 flex flex-col justify-between group hover:border-nebula-cyan/50 transition-all">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-[10px] font-bold text-white truncate max-w-[90px]">${f.nom}</span>
+                    <span class="text-[9px] font-bold ${isOut ? 'text-red-400' : 'text-green-400'}">${isOut ? 'RUPTURE' : 'STK:'+f.stock}</span>
                 </div>
-                <div class="flex justify-between items-center border-t border-white/5 pt-2 mt-4">
-                    <span class="font-bold text-white text-sm">${parseFloat(cat.prix_unite).toFixed(2)}&euro;</span>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="font-bold text-nebula-cyan text-xs">${parseFloat(cat.prix_unite).toFixed(2)}&euro;</span>
                     ${isOut 
                         ? `<button disabled class="px-2 py-1 rounded bg-gray-800 text-gray-500 text-[10px] cursor-not-allowed">&times;</button>`
-                        : `<button onclick="addToCart(${f.id})" class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-nebula-violet to-nebula-magenta text-white text-[10px] font-bold shadow-lg hover:opacity-90 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> AJOUTER</button>`
+                        : `<button onclick="addToCart(${f.id})" class="px-2 py-1 rounded-lg bg-gradient-to-r from-nebula-violet to-nebula-magenta text-white shadow-lg hover:opacity-90 flex items-center justify-center transition-transform hover:scale-105"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>`
                     }
                 </div>
             </div>`;
         });
 
-        // L'image est maintenant dans l'en-tête de la catégorie
         html += `
         <div class="glass-panel rounded-2xl overflow-hidden border border-white/10 mb-4">
             <div class="flex justify-between items-center p-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleCategory(${cat.id})">
@@ -106,7 +113,7 @@ function renderCatalogue() {
             </div>
             <div id="cat-grid-${cat.id}" class="p-4 border-t border-white/10">
                 ${catFlavors.length > 0 
-                    ? `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">${cardsHtml}</div>`
+                    ? `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">${cardsHtml}</div>`
                     : `<div class="text-center text-gray-500 text-sm italic py-4">Bient&ocirc;t disponible...</div>`
                 }
             </div>
