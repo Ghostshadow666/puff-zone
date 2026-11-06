@@ -8,15 +8,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- CANVAS POUR LES ETOILES -->
-    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
+    <div class="nebula-bg"></div>
+    <div class="overlay-dark"></div>
+    <canvas id="bg-canvas"></canvas>
 
-    <!-- TEXTE GEANT QUI DEFILE EN FOND -->
     <div class="bg-text-container">
         <div class="bg-text-marquee" id="marquee-text">
             <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
         </div>
     </div>
+
+    <div id="promo-banner" class="promo-banner"></div>
 
     <header class="header">
         <div class="logo">PUFF <span>ZONE</span></div>
@@ -28,10 +30,12 @@
         </div>
     </header>
 
+    <div id="featured-container"></div>
+
     <section class="hero-section">
         <div class="hero-subtitle">Boutique Officielle</div>
         <h1 class="hero-title">Explore une<br><span>autre dimension.</span></h1>
-        <p class="hero-desc">Des saveurs uniques à découvrir. Plonge dans l'univers PUFF ZONE.</p>
+        <p class="hero-desc">Des saveurs uniques &agrave; d&eacute;couvrir. Plonge dans l'univers PUFF ZONE.</p>
     </section>
 
     <main id="main-site" class="layout-principal" style="display: none;">
@@ -42,7 +46,7 @@
         </section>
     </main>
 
-    <!-- MODALE DE CONNEXION (Inchangée) -->
+    <!-- MODALE DE CONNEXION -->
     <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
         <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);">
             <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
@@ -68,7 +72,6 @@
         </div>
     </div>
 
-    <!-- PANIER DRAWER (Inchangé) -->
     <div id="cart-drawer">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px;">
             <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">&#128722; Ton Panier</h2>
@@ -101,7 +104,6 @@
     <script src="script.js"></script>
     <script src="bg-animation.js"></script>
     <script>
-        // Dupliquer le texte pour un défilement infini sans coupure
         const marquee = document.getElementById('marquee-text');
         if(marquee) marquee.innerHTML += marquee.innerHTML; 
 

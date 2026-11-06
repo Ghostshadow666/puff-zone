@@ -7,8 +7,9 @@ let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 let selectedZone = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('main-site').style.display = 'grid';
-    if (currentUser) { document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
+    const mainSite = document.getElementById('main-site');
+    if(mainSite) mainSite.style.display = 'grid';
+    if (currentUser) { const lm = document.getElementById('login-modal'); if(lm) lm.style.display = 'none'; updateGreeting(); }
     loadPromos();
     loadCatalogue();
     loadZones();
@@ -20,19 +21,15 @@ async function loadPromos() {
         const res = await fetch(`${API_URL}/promo/public`);
         const promos = await res.json();
         const banner = document.getElementById('promo-banner');
-        if(promos.length > 0) {
+        if(banner && promos.length > 0) {
             let html = '';
-            for(let i=0; i<10; i++) { // Duplication pour défilement infini
-                promos.forEach(p => {
-                    html += `<span>&#127991;&#65039; Code ${p.code} : -${p.pourcentage}%</span>`;
-                });
+            for(let i=0; i<10; i++) { 
+                promos.forEach(p => { html += `<span>&#127991;&#65039; Code ${p.code} : -${p.pourcentage}%</span>`; });
             }
             banner.innerHTML = `<div class="marquee-content">${html}</div>`;
             banner.style.display = 'block';
-        } else {
-            banner.style.display = 'none';
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Erreur Promo:", e); }
 }
 
 async function loadCatalogue() {
@@ -43,15 +40,17 @@ async function loadCatalogue() {
         allFlavors = data.saveurs;
         renderFeatured();
         renderCatalogueInColumns();
-    } catch (e) { document.getElementById('product-list').innerHTML = '<p style="color:red;">Erreur.</p>'; }
+    } catch (e) { 
+        const pl = document.getElementById('product-list');
+        if(pl) pl.innerHTML = '<p style="color:red;">Erreur.</p>'; 
+    }
 }
 
 function renderFeatured() {
     const feat = allCategories.filter(c => c.is_featured === true);
     const container = document.getElementById('featured-container');
-    if(feat.length === 0) { container.innerHTML = ''; return; }
+    if(!container || feat.length === 0) { if(container) container.innerHTML = ''; return; }
     
-    // On affiche la première catégorie mise en avant
     const cat = feat[0];
     const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="%23111"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="60">&#128168;</text></svg>';
     
@@ -71,13 +70,12 @@ function renderFeatured() {
     `;
 }
 
-// Le reste des fonctions (loadZones, renderCatalogueInColumns, toggleCategory, etc.) reste identique
-function showLoginForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'block'; document.getElementById('step-info').style.display = 'none'; }
-function showRegisterForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'block'; }
-function backToChoice() { document.getElementById('step-choice').style.display = 'block'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'none'; }
-async function checkPhone() { const phone = document.getElementById('phone-input').value; if(!phone || phone.length < 8) return alert('Invalide'); try { const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) }); if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); } else { alert('Non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; } } catch(e) { alert('Erreur.'); } }
-async function saveProfile() { const phone = document.getElementById('phone-input-reg').value; const nom = document.getElementById('name-input').value; const adresse = document.getElementById('address-input').value; const whatsapp = document.getElementById('whatsapp-input').value; if(!phone || !nom || !adresse) return alert('Remplissez.'); try { const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) }); const data = await res.json(); if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte cr\u00e9\u00e9 !'); } } catch(e) { alert('Erreur.'); } }
-function updateGreeting() { document.getElementById('user-greeting').innerHTML = `&#128075; ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`; }
+function showLoginForm() { const e = document.getElementById('step-choice'); if(e) e.style.display = 'none'; const p = document.getElementById('step-phone'); if(p) p.style.display = 'block'; const i = document.getElementById('step-info'); if(i) i.style.display = 'none'; }
+function showRegisterForm() { const e = document.getElementById('step-choice'); if(e) e.style.display = 'none'; const p = document.getElementById('step-phone'); if(p) p.style.display = 'none'; const i = document.getElementById('step-info'); if(i) i.style.display = 'block'; }
+function backToChoice() { const e = document.getElementById('step-choice'); if(e) e.style.display = 'block'; const p = document.getElementById('step-phone'); if(p) p.style.display = 'none'; const i = document.getElementById('step-info'); if(i) i.style.display = 'none'; }
+async function checkPhone() { const phone = document.getElementById('phone-input').value; if(!phone || phone.length < 8) return alert('Invalide'); try { const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) }); if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); const lm = document.getElementById('login-modal'); if(lm) lm.style.display = 'none'; updateGreeting(); } else { alert('Non reconnu.'); showRegisterForm(); const pir = document.getElementById('phone-input-reg'); if(pir) pir.value = phone; } } catch(e) { alert('Erreur.'); } }
+async function saveProfile() { const phone = document.getElementById('phone-input-reg').value; const nom = document.getElementById('name-input').value; const adresse = document.getElementById('address-input').value; const whatsapp = document.getElementById('whatsapp-input').value; if(!phone || !nom || !adresse) return alert('Remplissez.'); try { const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) }); const data = await res.json(); if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); const lm = document.getElementById('login-modal'); if(lm) lm.style.display = 'none'; updateGreeting(); alert('Compte cr\u00e9\u00e9 !'); } } catch(e) { alert('Erreur.'); } }
+function updateGreeting() { const ug = document.getElementById('user-greeting'); if(ug) ug.innerHTML = `&#128075; ${currentUser.nom} <a href="/compte.html" style="font-size:12px; color:#00f3ff; margin-left:10px;">(Mon compte)</a>`; }
 function logout() { localStorage.removeItem('puff_client'); location.reload(); }
 
 async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const select = document.getElementById('zone-select'); if(select) { select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}\u20AC)</option>`).join(''); } } catch (e) { console.error(e); } }
@@ -86,6 +84,7 @@ function toggleCategory(catId) { const list = document.getElementById(`flavors-$
 
 function renderCatalogueInColumns() {
     const container = document.getElementById('product-list');
+    if(!container) return;
     let html = '';
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
@@ -95,18 +94,27 @@ function renderCatalogueInColumns() {
     container.innerHTML = html;
 }
 
-function addToCart(flavId) { if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; } const flav = allFlavors.find(f => f.id === flavId); if (!flav || flav.stock <= 0) return; const cat = allCategories.find(c => c.id === flav.categorie_id); const existing = cart.find(item => item.id === flavId); if(existing) { if (existing.qty >= flav.stock) { alert(`Stock max atteint.`); return; } existing.qty++; } else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); } updateCartUI(); toggleCart(); }
+function addToCart(flavId) { if(!currentUser) { const lm = document.getElementById('login-modal'); if(lm) lm.style.display = 'flex'; return; } const flav = allFlavors.find(f => f.id === flavId); if (!flav || flav.stock <= 0) return; const cat = allCategories.find(c => c.id === flav.categorie_id); const existing = cart.find(item => item.id === flavId); if(existing) { if (existing.qty >= flav.stock) { alert(`Stock max atteint.`); return; } existing.qty++; } else { cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); } updateCartUI(); toggleCart(); }
 function updateQty(index, change) { const item = cart[index]; const flav = allFlavors.find(f => f.id === item.id); if (change > 0) { if (flav && item.qty >= flav.stock) { alert(`Stock max atteint.`); return; } item.qty++; } else { item.qty--; if (item.qty <= 0) cart.splice(index, 1); } updateCartUI(); }
 
 function updateCartUI() {
-    const count = cart.reduce((sum, item) => sum + item.qty, 0); document.getElementById('cart-count').textContent = count; const itemsContainer = document.getElementById('cart-items');
-    if(cart.length === 0) { itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; document.getElementById('cart-total-price').innerHTML = '0 \u20AC'; window.appliedPromoCode = null; window.appliedPromoPct = 0; if(document.getElementById('promo-input')) document.getElementById('promo-input').value = ''; if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = ''; document.getElementById('checkout-btn').disabled = true; document.getElementById('checkout-btn').style.opacity = '0.5'; return; }
+    const count = cart.reduce((sum, item) => sum + item.qty, 0); 
+    const cc = document.getElementById('cart-count'); if(cc) cc.textContent = count;
+    const itemsContainer = document.getElementById('cart-items');
+    if(!itemsContainer) return;
+    if(cart.length === 0) { itemsContainer.innerHTML = '<p style="text-align:center; color:#aaa;">Panier vide</p>'; const ctp = document.getElementById('cart-total-price'); if(ctp) ctp.innerHTML = '0 \u20AC'; window.appliedPromoCode = null; window.appliedPromoPct = 0; const pi = document.getElementById('promo-input'); if(pi) pi.value = ''; const pm = document.getElementById('promo-msg'); if(pm) pm.textContent = ''; const cb = document.getElementById('checkout-btn'); if(cb) { cb.disabled = true; cb.style.opacity = '0.5'; } return; }
     let html = ''; let total = 0;
     cart.forEach((item, index) => { total += item.prix * item.qty; html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #333;"><div style="flex: 1;"><div style="color:white; font-weight:bold;">${item.nom}</div><div style="color:#aaa; font-size:12px;">${item.categorie} - ${item.prix}\u20AC</div></div><div style="display:flex; align-items:center; gap:8px;"><button onclick="updateQty(${index}, -1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">-</button><span style="color:var(--neon-cyan); font-weight:bold; min-width: 15px; text-align: center;">${item.qty}</span><button onclick="updateQty(${index}, 1)" style="background:rgba(255,255,255,0.1); border:none; color:white; width:24px; height:24px; border-radius:4px; cursor:pointer; font-weight:bold;">+</button><button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff6b6b; cursor:pointer; font-size:16px; margin-left: 5px;">&times;</button></div></div>`; });
-    itemsContainer.innerHTML = html; let finalTotal = total; if (window.appliedPromoPct > 0) { finalTotal = total - (total * (window.appliedPromoPct / 100)); } document.getElementById('cart-total-price').innerHTML = finalTotal.toFixed(2) + ' \u20AC';
+    itemsContainer.innerHTML = html; 
+    let finalTotal = total; if (window.appliedPromoPct > 0) { finalTotal = total - (total * (window.appliedPromoPct / 100)); } 
+    const ctp = document.getElementById('cart-total-price'); if(ctp) ctp.innerHTML = finalTotal.toFixed(2) + ' \u20AC';
     const checkoutBtn = document.getElementById('checkout-btn'); const zoneMsg = document.getElementById('zone-msg');
-    if (!selectedZone) { checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5'; if(zoneMsg) { zoneMsg.innerHTML = "&#9888;&#65039; Veuillez choisir votre zone."; zoneMsg.style.color = "#EF4444"; } } else if (total < selectedZone.min_commande) { checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5'; if(zoneMsg) { zoneMsg.innerHTML = `&#9888;&#65039; Minimum de ${selectedZone.min_commande}\u20AC pour la zone ${selectedZone.nom}.`; zoneMsg.style.color = "#EF4444"; } } else { checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1'; if(zoneMsg) { zoneMsg.innerHTML = ""; } }
+    if(checkoutBtn) {
+        if (!selectedZone) { checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5'; if(zoneMsg) { zoneMsg.innerHTML = "&#9888;&#65039; Veuillez choisir votre zone."; zoneMsg.style.color = "#EF4444"; } } 
+        else if (total < selectedZone.min_commande) { checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5'; if(zoneMsg) { zoneMsg.innerHTML = `&#9888;&#65039; Minimum de ${selectedZone.min_commande}\u20AC pour la zone ${selectedZone.nom}.`; zoneMsg.style.color = "#EF4444"; } } 
+        else { checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1'; if(zoneMsg) { zoneMsg.innerHTML = ""; } }
+    }
 }
 function removeFromCart(index) { cart.splice(index, 1); updateCartUI(); }
-function toggleCart() { const drawer = document.getElementById('cart-drawer'); drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; }
-async function checkout() { if(!currentUser || !currentUser.id) return alert("Connectez-vous."); if(cart.length === 0) return alert('Panier vide'); if(!selectedZone) return alert('Zone ?'); const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0); const promoCode = window.appliedPromoCode || null; try { const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom }) }); const data = await res.json(); if(res.ok && data.success) { alert('\u2705 Commande envoy\u00e9e !'); cart = []; window.appliedPromoCode = null; window.appliedPromoPct = 0; if(document.getElementById('promo-input')) document.getElementById('promo-input').value = ''; if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = ''; updateCartUI(); toggleCart(); window.location.reload(); } else { alert('Erreur : ' + (data.error || 'inconnue')); } } catch(e) { alert('Erreur.'); } }
+function toggleCart() { const drawer = document.getElementById('cart-drawer'); if(drawer) drawer.style.right = drawer.style.right === '0px' ? '-400px' : '0px'; }
+async function checkout() { if(!currentUser || !currentUser.id) return alert("Connectez-vous."); if(cart.length === 0) return alert('Panier vide'); if(!selectedZone) return alert('Zone ?'); const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0); const promoCode = window.appliedPromoCode || null; try { const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom }) }); const data = await res.json(); if(res.ok && data.success) { alert('\u2705 Commande envoy\u00e9e !'); cart = []; window.appliedPromoCode = null; window.appliedPromoPct = 0; const pi = document.getElementById('promo-input'); if(pi) pi.value = ''; const pm = document.getElementById('promo-msg'); if(pm) pm.textContent = ''; updateCartUI(); toggleCart(); window.location.reload(); } else { alert('Erreur : ' + (data.error || 'inconnue')); } } catch(e) { alert('Erreur.'); } }

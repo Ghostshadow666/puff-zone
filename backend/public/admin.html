@@ -88,12 +88,13 @@
     </style>
 </head>
 <body>
-    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;"></canvas>
-    <div class="bg-text-container">
-        <div class="bg-text-marquee" id="marquee-text">
-            <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
-        </div>
+<canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;"></canvas>
+
+<div class="bg-text-container">
+    <div class="bg-text-marquee" id="marquee-text">
+        <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
     </div>
+</div>
 
 <div class="topbar">
     <div class="topbar-logo">&#10022; <span>PUFF ZONE</span> Admin</div>
@@ -194,11 +195,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="bg-animation.js"></script>
-    <script>
-        const marquee = document.getElementById('marquee-text');
-        if(marquee) marquee.innerHTML += marquee.innerHTML;
-    </script>
 <script>
+    const marquee = document.getElementById('marquee-text');
+    if(marquee) marquee.innerHTML += marquee.innerHTML;
+
     const originalFetch = window.fetch;
     window.fetch = function() {
         let [resource, config] = arguments;
@@ -313,19 +313,20 @@
     document.getElementById('addUserForm').addEventListener('submit', async (e) => { e.preventDefault(); const btn = document.getElementById('submitUserBtn'); btn.disabled = true; try { await fetch(`${API_URL}/utilisateurs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('userName').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value }) }); document.getElementById('addUserForm').reset(); loadUsers(); loadDrivers(); } catch (err) { alert('Erreur.'); } finally { btn.disabled = false; } });
     async function deleteUser(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/utilisateurs/${id}`, { method: 'DELETE' }); loadUsers(); } }
 
-    async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
     function toggleAdminCategory(catId) {
-        const list = document.getElementById(dmin-flavors-);
-        const arrow = document.getElementById(dmin-arrow-);
+        const list = document.getElementById(`admin-flavors-${catId}`);
+        const arrow = document.getElementById(`admin-arrow-${catId}`);
         if (list.style.display === 'none') { list.style.display = 'block'; arrow.style.transform = 'rotate(0deg)'; } 
         else { list.style.display = 'none'; arrow.style.transform = 'rotate(-90deg)'; }
     }
+
+    async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
     function renderCatalogue() {
         const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune cat\u00E9gorie.';return;}
         el.innerHTML = allCategories.map(cat => {
             const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
             const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60"height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">&#128230;</text></svg>';
-            return `<div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; overflow: hidden;"><div style="background: rgba(0,0,0,0.2); padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;"><img src="${img}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;"><div style="flex: 1;"><div style="font-weight: 600; font-size: 1.2rem; color: var(--text);">${cat.nom}</div><div style="font-size: 0.85rem; color: var(--text2); margin-top:5px;">U: ${cat.prix_unite}\u20AC ${cat.prix_lot_5 ? '&middot; Lot 5: '+cat.prix_lot_5+'\u20AC' : ''} ${cat.prix_lot_10 ? '&middot; Lot 10: '+cat.prix_lot_10+'\u20AC' : ''}</div></div><div style="display: flex; gap: 10px;"><button class="btn" style="padding: 8px 15px; font-size: 0.85rem;" onclick="openFlavorModal(${cat.id})">&#10133; Saveur</button><button class="btn" style="padding: 8px 15px; font-size: 0.85rem; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editCategory(${cat.id})">&#9999;&#65039;</button><button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.85rem;" onclick="deleteCategory(${cat.id})">&#128465;&#65039;</button></div></div><div style="padding: 15px 20px;">${flavs.map(f=>`<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);"><div><div style="font-weight:600;">${f.nom}</div></div><div style="display:flex; align-items:center; gap:15px;"><span style="font-size:0.85rem; font-weight:700; color:var(--green);">(${f.stock})</span><button class="btn" style="padding:6px 10px; font-size:0.75rem; background:rgba(255,255,255,0.1); box-shadow:none;" onclick="editFlavor(${f.id})">&#9999;&#65039;</button><button class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem;" onclick="deleteFlavor(${f.id})">&#128465;&#65039;</button></div></div>`).join('')}</div></div>`;
+            return `<div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; margin-bottom: 20px; overflow: hidden;"><div style="background: rgba(0,0,0,0.2); padding: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; cursor: pointer;" onclick="toggleAdminCategory(${cat.id})"><img src="${img}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;"><div style="flex: 1;"><div style="font-weight: 600; font-size: 1.2rem; color: var(--text); display:flex; align-items:center; gap:10px;">${cat.nom} <span id="admin-arrow-${cat.id}" style="font-size: 0.9rem; transition: 0.3s; color: var(--neon-cyan);">&#9660;</span></div><div style="font-size: 0.85rem; color: var(--text2); margin-top:5px;">U: ${cat.prix_unite}\u20AC ${cat.prix_lot_5 ? '&middot; Lot 5: '+cat.prix_lot_5+'\u20AC' : ''} ${cat.prix_lot_10 ? '&middot; Lot 10: '+cat.prix_lot_10+'\u20AC' : ''}</div></div><div style="display: flex; gap: 10px;" onclick="event.stopPropagation();"><button class="btn" style="padding: 8px 15px; font-size: 0.85rem;" onclick="openFlavorModal(${cat.id})">&#10133; Saveur</button><button class="btn" style="padding: 8px 15px; font-size: 0.85rem; background: rgba(255,255,255,0.1); box-shadow:none;" onclick="editCategory(${cat.id})">&#9999;&#65039;</button><button class="btn btn-danger" style="padding: 8px 15px; font-size: 0.85rem;" onclick="deleteCategory(${cat.id})">&#128465;&#65039;</button></div></div><div id="admin-flavors-${cat.id}" style="padding: 15px 20px;">${flavs.map(f=>`<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.03);"><div><div style="font-weight:600;">${f.nom}</div></div><div style="display:flex; align-items:center; gap:15px;"><span style="font-size:0.85rem; font-weight:700; color:var(--green);">(${f.stock})</span><button class="btn" style="padding:6px 10px; font-size:0.75rem; background:rgba(255,255,255,0.1); box-shadow:none;" onclick="editFlavor(${f.id})">&#9999;&#65039;</button><button class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem;" onclick="deleteFlavor(${f.id})">&#128465;&#65039;</button></div></div>`).join('')}</div></div>`;
         }).join('');
     }
     document.getElementById('catImage').addEventListener('change', function(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(evt) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const MAX_WIDTH = 400; const scale = MAX_WIDTH / img.width;canvas.width = MAX_WIDTH; canvas.height = img.height * scale; canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); currentBase64Image = canvas.toDataURL('image/jpeg', 0.7); }; img.src = evt.target.result; }; reader.readAsDataURL(file); });
@@ -357,7 +358,7 @@
         try {
             const res = await fetch(`${API_URL}/logs`); const logs = await res.json(); const tbody = document.getElementById('logsList');
             if (logs.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: #888;">Aucun log.</td></tr>'; return; }
-            const fixEncoding = (str) => { if(!str) return ''; return str.replace(/ÃƒÂ©/g, 'Ã©').replace(/Ãƒ /g, 'Ã ').replace(/ÃƒÂª/g, 'Ãª').replace(/Ã¢â€šÂ¬/g, 'â‚¬'); };
+            const fixEncoding = (str) => { if(!str) return ''; return str.replace(/Ã©/g, 'é').replace(/Ã /g, 'à').replace(/Ãª/g, 'ê').replace(/â‚¬/g, '€'); };
             tbody.innerHTML = logs.map(log => {
                 let roleClass = 'role-inconnu';
                 if (log.user_role === 'dev') roleClass = 'role-dev'; else if (log.user_role === 'admin') roleClass = 'role-admin'; else if (log.user_role === 'livreur') roleClass = 'role-livreur'; else if (log.user_role === 'client') roleClass = 'role-client';
@@ -373,7 +374,7 @@
             const res = await fetch(`${API_URL}/security/analyse`); const data = await res.json();
             document.getElementById('socAttacks').textContent = data.totalAttacks;
             const lockStatus = document.getElementById('socLockdownStatus'); lockStatus.textContent = data.isLockdown ? 'ACTIF' : 'OFF'; lockStatus.style.color = data.isLockdown ? 'var(--red)' : 'var(--green)';
-            const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="action-icon" style="color:var(--green);">&#128275;</div><div class="action-title" style="color:var(--green);">DÃ‰SACTIVER LOCKDOWN</div><div class="action-desc">Rouvrir le site.</div>` : `<div class="action-icon">&#128274;</div><div class="action-title">ACTIVER LOCKDOWN</div><div class="action-desc">Bloquer les commandes.</div>`; btn.style.borderColor = data.isLockdown ? 'var(--green)' : 'var(--red)';
+            const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="action-icon" style="color:var(--green);">&#128275;</div><div class="action-title" style="color:var(--green);">DÉSACTIVER LOCKDOWN</div><div class="action-desc">Rouvrir le site.</div>` : `<div class="action-icon">&#128274;</div><div class="action-title">ACTIVER LOCKDOWN</div><div class="action-desc">Bloquer les commandes.</div>`; btn.style.borderColor = data.isLockdown ? 'var(--green)' : 'var(--red)';
             const terminal = document.getElementById('socTerminal');
             let html = `<div class="term-line">[SYSTEM] Initialisation du SOC...</div>`;
             if (data.totalAttacks === 0) { html += `<div class="term-line" style="color:var(--green);">[OK] Aucune menace d\u00E9tect\u00E9e.</div>`; } else { html += `<div class="term-line" style="color:var(--red);">[ALERTE] ${data.totalAttacks} menaces intercept\u00E9es !</div>`; data.failedLogins.forEach(log => { html += `<div class="term-line" style="color:var(--red);">[BLOCAGE] ${log.details}</div>`; }); }
@@ -382,7 +383,7 @@
     }
     async function simulateAttack() { if(!confirm("Lancer une simulation ?")) return; await fetch(`${API_URL}/admin/security/simulate-attack`, { method: 'POST' }); alert("Simulation r\u00E9ussie."); loadSecurity(); }
     async function toggleLockdown() { if(!confirm("Changer l'\u00E9tat du Lockdown ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ACTIV\u00C9" : "D\u00C9SACTIV\u00C9")); loadSecurity(); }
-    async function backupWipe() { if(!confirm("âš ï¸ ATTENTION : TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Derni\u00E8re confirmation. Es-tu s\u00FBr ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
+    async function backupWipe() { if(!confirm("⚠️ ATTENTION : TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Derni\u00E8re confirmation. Es-tu s\u00FBr ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
     async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); if (!res.ok) throw new Error(); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `puffzone_securite_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { alert("Erreur."); } }
 </script>
 </body>
