@@ -7,7 +7,6 @@ const path = require('path');
 const { Pool } = require('pg');
 const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./auth');
 
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
@@ -56,12 +55,6 @@ const initDB = async () => {
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
-
-// --- FONCTION UTILITAIRE UPLOAD CLOUDINARY ---
-async function uploadToCloudinary(base64String) {
-  // Cloudinary désactivé : on stocke l'image en Base64 directement
-  return base64String;
-}
 
 // --- SETTINGS ---
 app.get('/api/settings', async (req, res) => {
@@ -133,7 +126,6 @@ app.put('/api/clients/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-// --- SUPPRESSION D'UN CLIENT ---
 app.delete('/api/clients/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM clients WHERE id=$1', [req.params.id]);
@@ -337,11 +329,7 @@ app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => {
 app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => {
   const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10, is_featured } = req.body;
   try {
-    let finalImageUrl = image_url;
-    if (image_url && image_url.startsWith('data:image')) {
-      finalImageUrl = await uploadToCloudinary(image_url);
-    }
-    const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10, is_featured) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [nom, finalImageUrl || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false]);
+    const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10, is_featured) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false]);
     await logAction(req.user, 'Creation Catégorie', nom);
     res.json(r.rows[0]);
   } catch (e) {
@@ -353,11 +341,7 @@ app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => {
 app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
   const { nom, image_url, prix_unite, prix_lot_5, prix_lot_10, is_featured } = req.body;
   try {
-    let finalImageUrl = image_url;
-    if (image_url && image_url.startsWith('data:image')) {
-      finalImageUrl = await uploadToCloudinary(image_url);
-    }
-    await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5, is_featured=$6 WHERE id=$7', [nom, finalImageUrl || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false, req.params.id]);
+    await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5, is_featured=$6 WHERE id=$7', [nom, image_url || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false, req.params.id]);
     await logAction(req.user, 'Modif Catégorie', nom);
     res.json({ success: true });
   } catch (e) {
