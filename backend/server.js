@@ -409,6 +409,16 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
 
+
+// --- SUPPRESSION D'UN CLIENT ---
+app.delete('/api/clients/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM clients WHERE id=$1', [req.params.id]);
+    await logAction(req.user, 'Suppression Client', `ID: ${req.params.id}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
 app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, res) => { 
   try { const c = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`); const i = await pool.query('SELECT * FROM commande_items'); res.json({ date: new Date(), commandes: c.rows, items: i.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
