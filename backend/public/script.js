@@ -147,7 +147,7 @@ function addToCart(flavId) {
         if (existing.qty >= flav.stock) { alert(`Stock max atteint (${flav.stock} dispo).`); return; }
         existing.qty++; 
     } else { 
-        cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); 
+        cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, prix_lot_5: cat.prix_lot_5, prix_lot_10: cat.prix_lot_10, qty: 1 }); 
     }
     updateCartUI(); toggleCart();
 }
@@ -160,6 +160,39 @@ function updateQty(index, change) {
         item.qty++;
     } else { item.qty--; if (item.qty <= 0) cart.splice(index, 1); }
     updateCartUI();
+}
+
+
+function calculerPrixItem(item) {
+    let qty = item.qty;
+    let total = 0;
+    let detail = [];
+
+    const p1 = parseFloat(item.prix);
+    const p5 = item.prix_lot_5 ? parseFloat(item.prix_lot_5) : null;
+    const p10 = item.prix_lot_10 ? parseFloat(item.prix_lot_10) : null;
+
+    // Calcul des lots de 10
+    if (p10 && qty >= 10) {
+        let nbLots10 = Math.floor(qty / 10);
+        total += nbLots10 * p10;
+        detail.push(`${nbLots10}x Lot10 (${p10}€)`);
+        qty = qty % 10;
+    }
+    // Calcul des lots de 5
+    if (p5 && qty >= 5) {
+        let nbLots5 = Math.floor(qty / 5);
+        total += nbLots5 * p5;
+        detail.push(`${nbLots5}x Lot5 (${p5}€)`);
+        qty = qty % 5;
+    }
+    // Calcul du reste à l'unité
+    if (qty > 0) {
+        total += qty * p1;
+        detail.push(`${qty}x Unité (${p1}€)`);
+    }
+
+    return { total, detail: detail.join(' + ') };
 }
 
 function updateCartUI() {
@@ -183,13 +216,14 @@ function updateCartUI() {
     
     let html = ''; let total = 0;
     cart.forEach((item, index) => {
-        total += item.prix * item.qty;
+        const calc = calculerPrixItem(item);
+        total += calc.total;
         html += `
         <div class="flex items-center justify-between p-3 rounded-xl bg-space-surface/60 border border-white/10 gap-3">
             <div>
                 <h4 class="font-space font-bold text-xs text-white">${item.nom}</h4>
                 <p class="text-[10px] text-gray-400">${item.categorie}</p>
-                <span class="text-xs font-bold text-nebula-cyan">${(item.prix * item.qty).toFixed(2)} €</span>
+                <span class="text-xs font-bold text-nebula-cyan" title="${calc.detail}">${calc.total.toFixed(2)} €</span>
             </div>
             <div class="flex items-center gap-2 bg-space-bg p-1 rounded-lg border border-white/10">
                 <button onclick="updateQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white font-bold">-</button>

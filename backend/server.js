@@ -189,45 +189,79 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 // --- ROUTE COMMANDES AVEC TRANSACTIONS SQL (ANTI-RACE CONDITION) ---
 app.post('/api/commandes', publicLimiter, async (req, res) => { 
   const { client_id, cart, total, promo_code, valide_par } = req.body; 
-  const client = await pool.connect(); // On prend une connexion dédiée
+  const client = await pool.connect();
   
   try { 
-    await client.query('BEGIN'); // Début de la transaction
+    await client.query('BEGIN');
 
-    // 1. Vérification et verrouillage des stocks
+    let calculatedTotal = 0;
+
+    // 1. Vérification et verrouillage des stocks + Calcul du vrai prix
     for (const item of cart) { 
-      const s = await client.query('SELECT stock FROM saveurs WHERE nom = $1 FOR UPDATE', [item.nom]); 
+      // On récupère le stock et les prix de la catégorie liée à cette saveur
+      const s = await client.query(
+        `SELECT s.stock, c.prix_unite, c.prix_lot_5, c.prix_lot_10 
+         FROM saveurs s 
+         JOIN categories c ON s.categorie_id = c.id 
+         WHERE s.nom = $1 FOR UPDATE`, 
+        [item.nom]
+      ); 
+
       if (s.rows.length === 0 || item.qty > s.rows[0].stock) {
-        await client.query('ROLLBACK'); // Annule tout
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: `Stock insuffisant pour "${item.nom}".` }); 
+      }
+
+      // --- CALCUL DU PRIX CÔTÉ SERVEUR (SÉCURITÉ ANTI-TRICHE) ---
+      const dbItem = s.rows[0];
+      let qty = item.qty;
+      const p1 = parseFloat(dbItem.prix_unite);
+      const p5 = dbItem.prix_lot_5 ? parseFloat(dbItem.prix_lot_5) : null;
+      const p10 = dbItem.prix_lot_10 ? parseFloat(dbItem.prix_lot_10) : null;
+
+      if (p10 && qty >= 10) {
+          let nbLots10 = Math.floor(qty / 10);
+          calculatedTotal += nbLots10 * p10;
+          qty = qty % 10;
+      }
+      if (p5 && qty >= 5) {
+          let nbLots5 = Math.floor(qty / 5);
+          calculatedTotal += nbLots5 * p5;
+          qty = qty % 5;
+      }
+      if (qty > 0) {
+          calculatedTotal += qty * p1;
       }
     } 
 
-    // 2. Calcul du total avec promo
-    let finalTotal = parseFloat(total); 
+    // 2. Application du code promo sur le total recalculé
+    let finalTotal = calculatedTotal; 
     if (promo_code) { 
       const p = await client.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1)', [promo_code]); 
       if (p.rows.length > 0) finalTotal -= (finalTotal * (p.rows[0].pourcentage / 100)); 
     } 
 
-    // 3. Création de la commande
+    // 3. Création de la commande avec le VRAI total
     const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code) VALUES ($1,$2,$3,$4) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null]); 
     
     // 4. Ajout des items et déduction du stock
     for (const item of cart) { 
-      await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmd.rows[0].id, item.nom, item.qty, item.prix]); 
+      // On garde le prix unitaire de base pour l'historique, mais le total global est juste
+      const s = await client.query('SELECT prix_unite FROM categories c JOIN saveurs s ON c.id = s.categorie_id WHERE s.nom = $1', [item.nom]);
+      await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmd.rows[0].id, item.nom, item.qty, s.rows[0].prix_unite]); 
       await client.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]); 
     } 
 
-    await client.query('COMMIT'); // Tout est OK, on valide la transaction
+    await client.query('COMMIT');
     await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Cmd #${cmd.rows[0].id}`); 
     res.json({ success: true, commande_id: cmd.rows[0].id, finalTotal }); 
     
   } catch (e) { 
-    await client.query('ROLLBACK'); // En cas d'erreur, on annule tout
+    await client.query('ROLLBACK');
+    console.error(e);
     res.status(500).json({ error: 'Erreur lors de la commande.' }); 
   } finally {
-    client.release(); // On libère la connexion
+    client.release();
   }
 });
 
