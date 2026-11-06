@@ -3,71 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUFF ZONE - Explore une autre dimension</title>
+    <title>PUFF ZONE - Explorez la nouvelle dimension</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* STYLE POUR LE TEXTE DÉFILANT EN FOND */
-        .bg-text-container {
-            position: fixed;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            transform: translateY(-50%);
-            z-index: -1;
-            pointer-events: none;
-            overflow: hidden;
-            display: flex;
-            white-space: nowrap;
-            opacity: 0.08; /* Très discret */
-        }
-
-        .bg-text-marquee {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 15vw; /* Très grand */
-            font-weight: 900;
-            letter-spacing: 10px;
-            color: transparent;
-            -webkit-text-stroke: 2px var(--neon-cyan);
-            text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
-            animation: scrollBgText 40s linear infinite;
-        }
-
-        /* On alterne les couleurs pour le style */
-        .bg-text-marquee span:nth-child(even) {
-            -webkit-text-stroke: 2px var(--neon-purple);
-            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-        }
-
-        @keyframes scrollBgText {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        @media (max-width: 768px) {
-            .bg-text-marquee { font-size: 25vw; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- FOND ANIMÉ ÉTOILES -->
-    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none;"></canvas>
+    <div class="nebula-bg"></div>
+    <div class="overlay-dark"></div>
+    <div id="canvas-container"></div>
 
-    <!-- TEXTE DÉFILANT EN FOND -->
-    <div class="bg-text-container">
-        <div class="bg-text-marquee" id="marquee-text">
-            <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp; <span>PUFF ZONE</span> &nbsp;&nbsp;
-        </div>
-    </div>
+    <!-- BANDEAU PROMO DEFILANT -->
+    <div id="promo-banner" class="promo-banner" style="display: none;"></div>
 
     <header class="header">
-        <div class="logo">✦ PUFF<span>ZONE</span></div>
+        <div class="logo">PUFF <span>ZONE</span></div>
         <div class="header-actions">
-            <a href="/livreur.html" class="btn-header">Espace Livreur</a>
-            <a href="/admin.html" class="btn-header">Admin</a>
-            <div id="user-greeting" style="font-weight: 600; color: var(--text2); font-size: 0.9rem;">&#128075; Visiteur</div>
-            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">Panier (<span id="cart-count">0</span>)</button>
+            <a href="/livreur.html" class="btn-header">&#128757; Livreur</a>
+            <a href="/admin.html" class="btn-header">&#9881;&#65039; Admin</a>
+            <div id="user-greeting" style="font-weight: bold; color: var(--neon-cyan); font-size: 0.9rem;">&#128075; Visiteur</div>
+            <button id="cart-btn" class="btn-panier" onclick="toggleCart()">&#128722; Panier (<span id="cart-count">0</span>)</button>
         </div>
     </header>
+
+    <!-- SECTION NOUVEAUTES (générée par JS) -->
+    <div id="featured-container"></div>
 
     <section class="hero-section">
         <div class="hero-subtitle">Boutique Officielle</div>
@@ -76,94 +35,82 @@
     </section>
 
     <main id="main-site" class="layout-principal" style="display: none;">
-        <div class="grille-produits" id="product-list"></div>
+        <aside class="sidebar-categories" id="categories-container"></aside>
+        <section class="contenu-catalogue">
+            <h1>Le Catalogue</h1>
+            <div class="grille-produits" id="product-list"></div>
+        </section>
     </main>
 
     <!-- MODALE DE CONNEXION -->
-    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(2, 1, 8, 0.85); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
-        <div class="modal-content" style="background:var(--card-bg); padding:40px; border-radius:20px; border:1px solid var(--card-border); width:90%; max-width:400px; text-align:center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-            <h2 style="color:var(--text); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
+    <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+        <div class="modal-content" style="background:var(--card); padding:30px; border-radius:10px; border:1px solid var(--neon-cyan); width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);">
+            <h2 style="color:var(--neon-cyan); margin-top:0; font-family:'Orbitron', sans-serif; letter-spacing: 2px;">PUFF ZONE</h2>
             <div id="step-choice">
-                <p style="color:var(--text2); font-size:14px; text-transform: uppercase; margin-bottom: 25px; letter-spacing:2px;">Bienvenue</p>
-                <button onclick="showLoginForm()" class="btn-panier" style="width:100%; margin-bottom: 15px; padding: 14px; border-radius:10px;">Se Connecter</button>
-                <button onclick="showRegisterForm()" class="btn-header" style="width:100%; border-color:var(--card-border); margin-bottom: 25px; padding: 14px; border-radius:10px;">Cr&eacute;er un compte</button>
-                <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 10px;">
-                    <a href="/admin-login.html" style="color: var(--text2); text-decoration: none; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing:1px;">Acc&egrave;s Staff</a>
-                </div>
+                <p style="color:#aaa; font-size:14px; text-transform: uppercase; margin-bottom: 20px;">Bienvenue</p>
+                <button onclick="showLoginForm()" class="btn-ajouter" style="margin-bottom: 10px; width: 100%; padding: 12px;">Se Connecter</button>
+                <button onclick="showRegisterForm()" class="btn-ajouter" style="background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); margin-bottom: 20px; width: 100%; padding: 12px;">Cr&eacute;er un compte</button>
+                <div style="border-top: 1px solid #333; padding-top: 15px; margin-top: 10px;"><a href="/admin-login.html" style="color: #94A3B8; text-decoration: none; font-size: 12px;">&#9881;&#65039; Acc&egrave;s Staff</a></div>
             </div>
             <div id="step-phone" style="display: none;">
-                <input type="text" id="phone-input" placeholder="Num&eacute;ro de t&eacute;l&eacute;phone" style="width:100%; margin-bottom:20px;">
-                <button onclick="checkPhone()" class="btn-panier" style="width:100%; margin-bottom: 15px; padding: 14px; border-radius:10px;">Continuer</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:var(--text2); cursor:pointer; font-size:12px;">&larr; Retour</button>
+                <input type="text" id="phone-input" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box;">
+                <button onclick="checkPhone()" class="btn-ajouter" style="margin-bottom: 10px; width: 100%; padding: 12px;">Continuer</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
             <div id="step-info" style="display:none;">
-                <input type="text" id="name-input" placeholder="Pr&eacute;nom/Nom" style="width:100%; margin-bottom:15px;">
-                <input type="text" id="phone-input-reg" placeholder="T&eacute;l&eacute;phone" style="width:100%; margin-bottom:15px;">
-                <input type="text" id="address-input" placeholder="Adresse" style="width:100%; margin-bottom:15px;">
-                <input type="text" id="whatsapp-input" placeholder="WhatsApp (Optionnel)" style="width:100%; margin-bottom:20px;">
-                <button onclick="saveProfile()" class="btn-panier" style="width:100%; margin-bottom: 15px; padding: 14px; border-radius:10px;">S'inscrire</button>
-                <button onclick="backToChoice()" style="background:none; border:none; color:var(--text2); cursor:pointer; font-size:12px;">&larr; Retour</button>
+                <input type="text" id="name-input" placeholder="Pr&eacute;nom/Nom" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box;">
+                <input type="text" id="phone-input-reg" placeholder="T&eacute;l&eacute;phone" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box;">
+                <input type="text" id="address-input" placeholder="Adresse" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:10px; box-sizing:border-box;">
+                <input type="text" id="whatsapp-input" placeholder="WhatsApp (Optionnel)" style="width:100%; padding:12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; margin-bottom:15px; box-sizing:border-box;">
+                <button onclick="saveProfile()" class="btn-ajouter" style="margin-bottom: 10px; width: 100%; padding: 12px;">S'inscrire</button>
+                <button onclick="backToChoice()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:12px;">&larr; Retour</button>
             </div>
         </div>
     </div>
 
     <!-- PANIER DRAWER -->
     <div id="cart-drawer">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px;">
-            <h2 style="margin:0; color:var(--text); font-family:'Outfit', sans-serif; font-size: 1.4rem; letter-spacing:1px;">Ton Panier</h2>
-            <button onclick="toggleCart()" style="background:none; border:none; color:var(--text2); font-size:28px; cursor:pointer;">&times;</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px;">
+            <h2 style="margin:0; color:white; font-family:'Orbitron', sans-serif; font-size: 1.2rem;">&#128722; Ton Panier</h2>
+            <button onclick="toggleCart()" style="background:none; border:none; color:#ff6b6b; font-size:24px; cursor:pointer;">&times;</button>
         </div>
-        <div id="cart-items" style="flex-grow:1; overflow-y:auto; margin-top:25px;"></div>
-        <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-            <div id="promo-section" style="margin-bottom: 20px;">
+        <div id="cart-items" style="flex-grow:1; overflow-y:auto; margin-top:20px;"></div>
+        <div style="border-top:1px solid #333; padding-top:15px;">
+            <div id="promo-section" style="margin-bottom: 15px;">
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="promo-input" placeholder="CODE PROMO" style="flex:1; text-transform:uppercase;">
-                    <button onclick="applyPromo()" style="padding:12px 20px; background:var(--neon-cyan); color:black; border:none; border-radius:10px; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.3s;">OK</button>
+                    <input type="text" id="promo-input" placeholder="CODE PROMO" style="flex:1; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; outline:none; text-transform:uppercase;">
+                    <button onclick="applyPromo()" style="padding:10px 15px; background:var(--neon-cyan); color:black; border:none; border-radius:5px; font-weight:900; cursor:pointer;">OK</button>
                 </div>
-                <div id="promo-msg" style="font-size:12px; margin-top:8px; font-weight:bold;"></div>
+                <div id="promo-msg" style="font-size:12px; margin-top:5px; font-weight:bold;"></div>
             </div>
-            <div style="margin-bottom: 20px;">
-                <select id="zone-select" onchange="applyZone()" style="width:100%;">
+            <div style="margin-bottom: 15px;">
+                <select id="zone-select" onchange="applyZone()" style="width:100%; padding:10px; background:rgba(0,0,0,0.5); border:1px solid var(--border); color:white; border-radius:5px; outline:none; font-weight:bold;">
                     <option value="">-- Choisir votre zone --</option>
                 </select>
-                <div id="zone-msg" style="font-size:12px; margin-top:8px; font-weight:bold;"></div>
+                <div id="zone-msg" style="font-size:12px; margin-top:5px; font-weight:bold;"></div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-weight:bold; align-items:center;">
-                <span style="color:var(--text2); font-size:1rem;">Total :</span>
-                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:24px; font-weight:900; text-shadow:0 0 10px rgba(34,211,238,0.4);">0 &euro;</span>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
+                <span style="color:#aaa;">Total :</span>
+                <span id="cart-total-price" style="color:var(--neon-cyan); font-size:20px;">0 &euro;</span>
             </div>
-            <button id="checkout-btn" onclick="checkout()" class="btn-panier" style="width:100%; padding:16px; font-size:1rem; border-radius:10px;">Valider la commande</button>
-            <button onclick="logout()" style="width:100%; background:none; border:none; color:var(--red); margin-top:20px; cursor:pointer; font-size:12px; text-transform:uppercase; letter-spacing:1px; opacity:0.8;">Se d&eacute;connecter</button>
+            <button id="checkout-btn" onclick="checkout()" class="btn-panier" style="width:100%; padding:15px; font-size:1rem;">Valider la commande</button>
+            <button onclick="logout()" style="width:100%; background:none; border:none; color:#ff6b6b; margin-top:15px; cursor:pointer; font-size:12px;">Se d&eacute;connecter</button>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script src="bg-animation.js"></script>
     <script>
-        // Dupliquer le texte pour un défilement infini sans coupure
-        const marquee = document.getElementById('marquee-text');
-        marquee.innerHTML += marquee.innerHTML; 
-    </script>
-    <script>
-        // LOGIQUE PROMO (Inchangée)
         window.appliedPromoCode = null; window.appliedPromoPct = 0;
         async function applyPromo() {
             const code = document.getElementById('promo-input').value.trim();
             const msg = document.getElementById('promo-msg');
-            if (!code) { msg.textContent = "Veuillez entrer un code."; msg.style.color = "#EF4444"; return; }
+            if (!code) { msg.textContent = "Entrez un code."; msg.style.color = "#EF4444"; return; }
             msg.textContent = "V&eacute;rification..."; msg.style.color = "#aaa";
             try {
                 const res = await fetch('/api/promo/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) });
                 const data = await res.json();
-                if (data.success) {
-                    window.appliedPromoCode = code; window.appliedPromoPct = data.pourcentage;
-                    msg.innerHTML = `&#9989; Code appliqu&eacute; : -${data.pourcentage}%`; msg.style.color = "#10B981";
-                    if (typeof updateCartUI === "function") updateCartUI();
-                } else {
-                    window.appliedPromoCode = null; window.appliedPromoPct = 0;
-                    msg.innerHTML = `&#10060; ${data.error || 'Code invalide'}`; msg.style.color = "#EF4444";
-                    if (typeof updateCartUI === "function") updateCartUI();
-                }
+                if (data.success) { window.appliedPromoCode = code; window.appliedPromoPct = data.pourcentage; msg.innerHTML = `&#9989; Code appliqu&eacute; : -${data.pourcentage}%`; msg.style.color = "#22C55E"; if (typeof updateCartUI === "function") updateCartUI(); } 
+                else { window.appliedPromoCode = null; window.appliedPromoPct = 0; msg.innerHTML = `&#10060; ${data.error || 'Invalide'}`; msg.style.color = "#EF4444"; if (typeof updateCartUI === "function") updateCartUI(); }
             } catch (e) { msg.textContent = "Erreur"; msg.style.color = "#EF4444"; }
         }
     </script>
