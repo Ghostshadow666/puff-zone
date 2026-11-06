@@ -127,7 +127,7 @@
             </div>
         </div>
 
-        <!-- ONGLET CLIENTS (MODIFIÉ ICI) -->
+        <!-- ONGLET CLIENTS -->
         <div id="tab-clients" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl">
                 <h2 class="text-xl font-space font-bold text-white mb-4">🔒 Clients</h2>
@@ -353,7 +353,6 @@
         async function updateStatut(id, statut) { try { await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); loadCommandes(); } catch (e) {} }
         async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id }) }); alert('Assigné !'); loadCommandes(); } catch (e) {} }
 
-        // --- CLIENTS (MODIFIÉ ICI) ---
         async function loadClients() {
             try {
                 const res = await fetch(`${API_URL}/clients`);
@@ -386,7 +385,7 @@
                         </div>
                     </div>`;
                 }).join('');
-                lucide.createIcons(); // Recharger les icônes pour les nouveaux éléments
+                lucide.createIcons();
             } catch (e) {
                 document.getElementById('clientsList').innerHTML = 'Erreur de chargement.';
             }
@@ -416,7 +415,25 @@
                 currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map); 
             }); 
         }
-        async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">📍 ${x.nom}</div><div class="text-xs text-gray-400">dès ${x.min_commande} € | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">🗑️</button></div>`).join(''); } catch(e){} }
+        
+        // --- CORRECTION ICI : AJOUT DES CERCLES DANS LA BOUCLE ---
+        async function loadZones() { 
+            try { 
+                const res = await fetch(`${API_URL}/zones`); 
+                allZones = await res.json(); 
+                
+                // Nettoyer les anciens cercles pour éviter les doublons
+                map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); });
+
+                // Dessiner les nouveaux cercles
+                allZones.forEach(z => {
+                    L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map);
+                });
+
+                document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">📍 ${x.nom}</div><div class="text-xs text-gray-400">dès ${x.min_commande} € | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">🗑️</button></div>`).join(''); 
+            } catch(e){ console.error(e); } 
+        }
+        
         document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords) return alert("Cliquez sur la carte."); await fetch(`${API_URL}/zones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, min_commande: parseInt(document.getElementById('zoneMin').value) }) }); map.removeLayer(currentMarker); map.removeLayer(currentCircle); selectedCoords = null; loadZones(); });
         async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method: 'DELETE' }); loadZones(); } }
 
