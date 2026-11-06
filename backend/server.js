@@ -25,6 +25,7 @@ app.use((req, res, next) => {
 });
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Trop de tentatives.' } });
+const publicLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 15, message: { error: 'Trop de requêtes. Veuillez patienter une minute.' } });
 
 const logAction = async (user, action, details) => {
   try { await pool.query('INSERT INTO logs_activite (user_name, user_role, action, details) VALUES ($1, $2, $3, $4)', [user ? user.name : 'Inconnu', user ? user.role : 'Inconnu', action, details]); } catch (e) {}
@@ -99,7 +100,7 @@ app.post('/api/login-livreur', loginLimiter, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-app.post('/api/clients/register', async (req, res) => { 
+app.post('/api/clients/register', publicLimiter, async (req, res) => { 
   const { telephone, nom, adresse, whatsapp } = req.body; 
   try { 
     let r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]); 
@@ -181,7 +182,7 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // --- ROUTE COMMANDES AVEC TRANSACTIONS SQL (ANTI-RACE CONDITION) ---
-app.post('/api/commandes', async (req, res) => { 
+app.post('/api/commandes', publicLimiter, async (req, res) => { 
   const { client_id, cart, total, promo_code, valide_par } = req.body; 
   const client = await pool.connect(); // On prend une connexion dédiée
   
