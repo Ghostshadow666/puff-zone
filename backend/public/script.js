@@ -109,9 +109,9 @@ function renderCatalogue() {
                         <span class="text-xs font-normal bg-nebula-violet/20 text-nebula-cyan px-2 py-0.5 rounded-full border border-nebula-violet/30">${catFlavors.length} produit${catFlavors.length > 1 ? 's' : ''}</span>
                     </h3>
                 </div>
-                <i data-lucide="chevron-down" id="arrow-${cat.id}" class="text-nebula-cyan transition-transform duration-300"></i>
+                <i data-lucide="chevron-down" id="arrow-${cat.id}" class="text-nebula-cyan transition-transform duration-300" style="transform: rotate(-90deg);"></i>
             </div>
-            <div id="cat-grid-${cat.id}" class="p-4 border-t border-white/10">
+            <div id="cat-grid-${cat.id}" class="p-4 border-t border-white/10 hidden">
                 ${catFlavors.length > 0 
                     ? `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">${cardsHtml}</div>`
                     : `<div class="text-center text-gray-500 text-sm italic py-4">Bient&ocirc;t disponible...</div>`
