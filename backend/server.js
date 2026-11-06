@@ -66,9 +66,15 @@ initDB();
 
 // --- FONCTION UTILITAIRE UPLOAD CLOUDINARY ---
 async function uploadToCloudinary(base64String) {
-  if (!base64String || !base64String.startsWith('data:image')) return base64String; // Si c'est dÃ©jÃ  une URL ou vide
+  if (!base64String || !base64String.startsWith('data:image')) return base64String;
   try {
     const result = await cloudinary.uploader.upload(base64String, { folder: "puffzone" });
+    return result.secure_url;
+  } catch (error) {
+    console.error("Erreur Upload Cloudinary:", error);
+    return base64String; // Fallback en base64 si Cloudinary échoue
+  }
+});
     return result.secure_url; // Retourne le lien HTTPS propre
   } catch (error) {
     console.error("Erreur Upload Cloudinary:", error);
