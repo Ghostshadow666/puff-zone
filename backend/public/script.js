@@ -7,43 +7,33 @@ let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 let selectedZone = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Gestion de la connexion au chargement
     if (currentUser) {
-        const lm = document.getElementById('login-modal');
-        if(lm) lm.style.display = 'none';
+        document.getElementById('login-modal').style.display = 'none';
         updateGreeting();
     } else {
-        const lm = document.getElementById('login-modal');
-        if(lm) lm.style.display = 'flex';
+        document.getElementById('login-modal').style.display = 'flex';
     }
-    
-    // Chargement des données
-    loadPromos(); // <-- LA FONCTION MANQUANTE EST MAINTENANT DÉFINIE PLUS BAS
+    loadPromos();
     loadCatalogue();
     loadZones();
 });
 
-// --- CHARGEMENT DES PROMOS (Bandeau défilant) ---
 async function loadPromos() {
     try {
         const res = await fetch(`${API_URL}/promo/public`);
         const promos = await res.json();
         const marquee = document.getElementById('promo-marquee');
-        
         if (marquee && promos.length > 0) {
             let html = '';
             for(let i=0; i<10; i++) {
-                promos.forEach(p => { 
-                    html += `<span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5 text-nebula-cyan"></i> CODE : ${p.code} (-${p.pourcentage}%)</span>`; 
-                });
+                promos.forEach(p => { html += `<span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5 text-nebula-cyan"></i> CODE : ${p.code} (-${p.pourcentage}%)</span>`; });
             }
             marquee.innerHTML = html;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
-    } catch(e) { console.error("Erreur chargement promos:", e); }
+    } catch(e) { console.error(e); }
 }
 
-// --- CHARGEMENT DU CATALOGUE ---
 async function loadCatalogue() {
     try {
         const res = await fetch(`${API_URL}/catalogue`);
@@ -52,91 +42,103 @@ async function loadCatalogue() {
         allFlavors = data.saveurs || [];
         renderCatalogue();
     } catch (e) { 
-        console.error("Erreur catalogue:", e);
         const pl = document.getElementById('product-list');
-        if(pl) pl.innerHTML = '<p class="text-red-500 col-span-full text-center">Erreur de chargement du catalogue.</p>'; 
+        if(pl) pl.innerHTML = '<p class="text-red-500 text-center">Erreur de chargement.</p>'; 
     }
 }
 
+// --- NOUVEAU RENDU : ACCORDÉON PAR CATÉGORIE ---
 function renderCatalogue() {
     const container = document.getElementById('product-list');
     if(!container) return;
-    
-    // Si aucune saveur n'est disponible (ex: catégorie vide)
-    if (!allFlavors || allFlavors.length === 0) {
+
+    if (allCategories.length === 0) {
         container.innerHTML = `
-            <div class="col-span-full text-center py-12 glass-panel rounded-2xl">
+            <div class="text-center py-12 glass-panel rounded-2xl">
                 <i data-lucide="package-search" class="w-12 h-12 text-gray-500 mx-auto mb-4"></i>
-                <h3 class="font-space font-bold text-lg text-white mb-2">Aucun produit disponible</h3>
-                <p class="text-gray-400 text-sm">La galaxie est en cours de préparation. Revenez bientôt !</p>
-            </div>
-        `;
+                <h3 class="font-space font-bold text-lg text-white mb-2">Aucune catégorie</h3>
+                <p class="text-gray-400 text-sm">La galaxie est en cours de préparation.</p>
+            </div>`;
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
     let html = '';
-    allFlavors.forEach((f, index) => {
-        const cat = allCategories.find(c => c.id === f.categorie_id);
-        if(!cat) return; // Ignore si la catégorie a été supprimée
-
-        const isOut = f.stock <= 0;
-        const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
+    allCategories.forEach(cat => {
+        const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
         
-        html += `
-        <div class="glass-panel rounded-2xl p-5 flex flex-col justify-between group transition-all duration-300 relative border border-white/10 hover:border-nebula-violet/50">
-            <div>
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-[10px] font-space font-bold px-2.5 py-1 rounded-full bg-nebula-violet/20 text-nebula-cyan border border-nebula-violet/30">
-                        ${cat.nom}
-                    </span>
-                    <span class="text-xs font-bold ${isOut ? 'text-red-500' : 'text-green-400'}">
-                        ${isOut ? 'RUPTURE' : 'STOCK: ' + f.stock}
-                    </span>
-                </div>
-
-                <div class="py-6 flex justify-center">
-                    <img src="${img}" class="w-32 h-32 object-cover rounded-xl filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] group-hover:scale-105 transition-transform duration-300">
-                </div>
-
-                <div class="space-y-1 text-center">
-                    <h3 class="font-space font-bold text-base text-white group-hover:text-nebula-cyan transition-colors">${f.nom}</h3>
-                    <p class="text-xs text-gray-400">${cat.nom}</p>
-                </div>
-            </div>
-
-            <div class="pt-4 mt-4 border-t border-white/10 flex items-center justify-between gap-3">
+        // Génération des cartes compactes pour cette catégorie
+        let cardsHtml = '';
+        catFlavors.forEach(f => {
+            const isOut = f.stock <= 0;
+            const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
+            
+            cardsHtml += `
+            <div class="bg-space-bg/40 border border-white/5 rounded-xl p-3 flex flex-col justify-between group hover:border-nebula-cyan/50 transition-all">
                 <div>
-                    <span class="text-[9px] text-gray-400 uppercase font-space font-bold">Prix</span>
-                    <span class="font-space font-extrabold text-lg text-white block">${parseFloat(cat.prix_unite).toFixed(2)} €</span>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-nebula-violet/20 text-nebula-cyan truncate max-w-[80px]">${f.nom}</span>
+                        <span class="text-[9px] font-bold ${isOut ? 'text-red-400' : 'text-green-400'}">${isOut ? 'RUPTURE' : 'STK: '+f.stock}</span>
+                    </div>
+                    <div class="h-24 mb-2 flex items-center justify-center">
+                         <img src="${img}" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform">
+                    </div>
                 </div>
-                ${isOut 
-                    ? `<button disabled class="px-4 py-2.5 rounded-xl bg-gray-800 text-gray-500 font-space font-bold text-xs cursor-not-allowed">RUPTURE</button>`
-                    : `<button onclick="addToCart(${f.id})" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-magenta hover:opacity-90 text-white font-space font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(157,78,221,0.4)] transition-all"><i data-lucide="plus" class="w-4 h-4"></i> AJOUTER</button>`
+                <div class="flex justify-between items-center border-t border-white/5 pt-2 mt-2">
+                    <span class="font-bold text-white text-sm">${parseFloat(cat.prix_unite).toFixed(2)}€</span>
+                    ${isOut 
+                        ? `<button disabled class="px-2 py-1 rounded bg-gray-800 text-gray-500 text-[10px] cursor-not-allowed">&times;</button>`
+                        : `<button onclick="addToCart(${f.id})" class="px-2 py-1 rounded bg-gradient-to-r from-nebula-violet to-nebula-magenta text-white text-[10px] font-bold shadow-lg hover:opacity-90"><i data-lucide="plus" class="w-3 h-3"></i></button>`
+                    }
+                </div>
+            </div>`;
+        });
+
+        // Bloc Accordéon
+        html += `
+        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10 mb-4">
+            <div class="flex justify-between items-center p-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleCategory(${cat.id})">
+                <h3 class="font-space font-bold text-lg text-white flex items-center gap-3">
+                    ${cat.nom}
+                    <span class="text-xs font-normal bg-nebula-violet/20 text-nebula-cyan px-2 py-0.5 rounded-full border border-nebula-violet/30">${catFlavors.length} produit${catFlavors.length > 1 ? 's' : ''}</span>
+                </h3>
+                <i data-lucide="chevron-down" id="arrow-${cat.id}" class="text-nebula-cyan transition-transform duration-300"></i>
+            </div>
+            <div id="cat-grid-${cat.id}" class="p-4 border-t border-white/10">
+                ${catFlavors.length > 0 
+                    ? `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">${cardsHtml}</div>`
+                    : `<div class="text-center text-gray-500 text-sm italic py-4">Bientôt disponible...</div>`
                 }
             </div>
         </div>`;
     });
-    
+
     container.innerHTML = html;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// --- PANIER ---
-function addToCart(flavId) {
-    if(!currentUser) { 
-        const lm = document.getElementById('login-modal');
-        if(lm) lm.style.display = 'flex'; 
-        return; 
+function toggleCategory(catId) {
+    const grid = document.getElementById(`cat-grid-${catId}`);
+    const arrow = document.getElementById(`arrow-${catId}`);
+    if (grid.classList.contains('hidden')) {
+        grid.classList.remove('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        grid.classList.add('hidden');
+        arrow.style.transform = 'rotate(-90deg)';
     }
+}
+
+// --- PANIER (Inchangé) ---
+function addToCart(flavId) {
+    if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
     const flav = allFlavors.find(f => f.id === flavId);
     if (!flav || flav.stock <= 0) return;
-    
     const cat = allCategories.find(c => c.id === flav.categorie_id);
     const existing = cart.find(item => item.id === flavId);
     
     if(existing) { 
-        if (existing.qty >= flav.stock) { alert(`Stock maximum atteint (${flav.stock} dispo).`); return; }
+        if (existing.qty >= flav.stock) { alert(`Stock max atteint (${flav.stock} dispo).`); return; }
         existing.qty++; 
     } else { 
         cart.push({ id: flav.id, nom: flav.nom, categorie: cat.nom, prix: cat.prix_unite, qty: 1 }); 
@@ -150,10 +152,7 @@ function updateQty(index, change) {
     if (change > 0) {
         if (flav && item.qty >= flav.stock) { alert(`Stock max atteint.`); return; }
         item.qty++;
-    } else { 
-        item.qty--; 
-        if (item.qty <= 0) cart.splice(index, 1); 
-    }
+    } else { item.qty--; if (item.qty <= 0) cart.splice(index, 1); }
     updateCartUI();
 }
 
@@ -231,7 +230,7 @@ function toggleCart() {
     }
 }
 
-// --- LOGIQUE CLIENT (Connexion/Inscription) ---
+// --- CONNEXION / INSCRIPTION ---
 function showLoginForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'block'; document.getElementById('step-info').style.display = 'none'; }
 function showRegisterForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'block'; }
 function backToChoice() { document.getElementById('step-choice').style.display = 'block'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'none'; }
@@ -241,17 +240,8 @@ async function checkPhone() {
     if(!phone || phone.length < 8) return alert('Numéro invalide');
     try {
         const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) });
-        if (res.ok) { 
-            const data = await res.json(); 
-            currentUser = data.client; 
-            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
-            document.getElementById('login-modal').style.display = 'none'; 
-            updateGreeting(); 
-        } else { 
-            alert('Numéro non reconnu.'); 
-            showRegisterForm(); 
-            document.getElementById('phone-input-reg').value = phone; 
-        }
+        if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
+        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; }
     } catch(e) { alert('Erreur serveur.'); }
 }
 
@@ -264,39 +254,19 @@ async function saveProfile() {
     try {
         const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) });
         const data = await res.json();
-        if(data.success) { 
-            currentUser = data.client; 
-            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
-            document.getElementById('login-modal').style.display = 'none'; 
-            updateGreeting(); 
-            alert('Compte créé !'); 
-        }
+        if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte créé !'); }
     } catch(e) { alert('Erreur.'); }
 }
 
-function updateGreeting() { 
-    const el = document.getElementById('user-greeting');
-    if(el && currentUser) el.innerHTML = `👋 ${currentUser.nom}`; 
-}
+function updateGreeting() { const el = document.getElementById('user-greeting'); if(el && currentUser) el.innerHTML = `👋 ${currentUser.nom}`; }
 function logout() { localStorage.removeItem('puff_client'); location.reload(); }
 
 // --- ZONES & PROMOS ---
 async function loadZones() { 
-    try { 
-        const res = await fetch(`${API_URL}/zones`); 
-        allZones = await res.json(); 
-        const select = document.getElementById('zone-select'); 
-        if(select) { 
-            select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); 
-        } 
-    } catch (e) { console.error(e); } 
+    try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const select = document.getElementById('zone-select'); if(select) { select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); } } catch (e) { console.error(e); } 
 }
 
-function applyZone() { 
-    const zoneId = document.getElementById('zone-select').value; 
-    selectedZone = allZones.find(z => z.id == zoneId) || null; 
-    updateCartUI(); 
-}
+function applyZone() { const zoneId = document.getElementById('zone-select').value; selectedZone = allZones.find(z => z.id == zoneId) || null; updateCartUI(); }
 
 async function applyPromo() {
     const code = document.getElementById('promo-input').value.trim();
@@ -318,7 +288,6 @@ async function applyPromo() {
     } catch (e) { msg.textContent = "Erreur"; }
 }
 
-// --- VALIDATION COMMANDE ---
 async function checkout() {
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
