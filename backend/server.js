@@ -180,26 +180,49 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
+// --- ROUTE COMMANDES AVEC TRANSACTIONS SQL (ANTI-RACE CONDITION) ---
 app.post('/api/commandes', async (req, res) => { 
   const { client_id, cart, total, promo_code, valide_par } = req.body; 
+  const client = await pool.connect(); // On prend une connexion dédiée
+  
   try { 
+    await client.query('BEGIN'); // Début de la transaction
+
+    // 1. Vérification et verrouillage des stocks
     for (const item of cart) { 
-      const s = await pool.query('SELECT stock FROM saveurs WHERE nom = $1', [item.nom]); 
-      if (s.rows.length === 0 || item.qty > s.rows[0].stock) return res.status(400).json({ error: `Stock insuffisant pour "${item.nom}".` }); 
+      const s = await client.query('SELECT stock FROM saveurs WHERE nom = $1 FOR UPDATE', [item.nom]); 
+      if (s.rows.length === 0 || item.qty > s.rows[0].stock) {
+        await client.query('ROLLBACK'); // Annule tout
+        return res.status(400).json({ error: `Stock insuffisant pour "${item.nom}".` }); 
+      }
     } 
+
+    // 2. Calcul du total avec promo
     let finalTotal = parseFloat(total); 
     if (promo_code) { 
-      const p = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1)', [promo_code]); 
+      const p = await client.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1)', [promo_code]); 
       if (p.rows.length > 0) finalTotal -= (finalTotal * (p.rows[0].pourcentage / 100)); 
     } 
-    const cmd = await pool.query('INSERT INTO commandes (client_id, total, valide_par, promo_code) VALUES ($1,$2,$3,$4) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null]); 
+
+    // 3. Création de la commande
+    const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code) VALUES ($1,$2,$3,$4) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null]); 
+    
+    // 4. Ajout des items et déduction du stock
     for (const item of cart) { 
-      await pool.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmd.rows[0].id, item.nom, item.qty, item.prix]); 
-      await pool.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]); 
+      await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmd.rows[0].id, item.nom, item.qty, item.prix]); 
+      await client.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]); 
     } 
+
+    await client.query('COMMIT'); // Tout est OK, on valide la transaction
     await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Cmd #${cmd.rows[0].id}`); 
     res.json({ success: true, commande_id: cmd.rows[0].id, finalTotal }); 
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
+    
+  } catch (e) { 
+    await client.query('ROLLBACK'); // En cas d'erreur, on annule tout
+    res.status(500).json({ error: 'Erreur lors de la commande.' }); 
+  } finally {
+    client.release(); // On libère la connexion
+  }
 });
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
