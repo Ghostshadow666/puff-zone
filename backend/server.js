@@ -471,5 +471,19 @@ app.get('/api/clean-broken-categories', async (req, res) => {
     }
 });
 
+
+// --- ROUTE TEMPORAIRE POUR SUPPRIMER LA CATEGORIE CORROMPUE ---
+app.get('/api/force-clean-test', async (req, res) => {
+    try {
+        await pool.query(`
+            DELETE FROM categories 
+            WHERE nom LIKE '%class=%' OR nom LIKE '%&quot;%' OR nom LIKE '%<%';
+        `);
+        res.send("<h1>C'est nettoyé !</h1><p>La catégorie corrompue a été supprimée. Retourne sur l'admin.</p>");
+    } catch (e) {
+        res.status(500).send("Erreur : " + e.message);
+    }
+});
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`ðŸš€ Serveur sur port ${PORT}`));
