@@ -406,6 +406,24 @@
             const el = document.getElementById('catalogueList'); 
             if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
             
+            // Gestion du badge d'alerte global sur l'onglet Stock
+            const lowStockItems = allFlavors.filter(f => f.stock < 2);
+            const stockTabBtn = document.querySelector('button[onclick*="tab-stock"]');
+            
+            if (stockTabBtn) {
+                stockTabBtn.classList.add('relative'); // Assure le positionnement
+                let badge = document.getElementById('stock-alert-badge');
+                if (lowStockItems.length > 0) {
+                    if (!badge) {
+                        stockTabBtn.innerHTML += ` <span id="stock-alert-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]">${lowStockItems.length}</span>`;
+                    } else {
+                        badge.innerText = lowStockItems.length;
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }
+
             el.innerHTML = allCategories.map(cat => {
                 const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
                 
@@ -426,7 +444,23 @@
                             <button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">🗑️</button>
                         </div>
                     </div>
-                    <div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5" style="display: none;">${flavs.map(f=>`<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0"><div class="text-sm text-gray-300">${escapeHTML(f.nom)}</div><div class="flex items-center gap-3"><span class="text-xs font-bold text-green-400">(${f.stock})</span><button class="text-red-400 text-xs" onclick="deleteFlavor(${f.id})">🗑️</button></div></div>`).join('')}</div>
+                    <div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5" style="display: none;">
+                        ${flavs.map(f => {
+                            // Alerte visuelle si le stock est < 2
+                            const isLow = f.stock < 2;
+                            const stockClass = isLow ? 'text-red-500 animate-pulse font-extrabold' : 'text-green-400 font-bold';
+                            const alertIcon = isLow ? '⚠️ ' : '';
+
+                            return `<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                                <div class="text-sm text-gray-300">${escapeHTML(f.nom)}</div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs ${stockClass}">${alertIcon}(${f.stock})</span>
+                                    <button class="text-nebula-cyan text-xs hover:scale-110 transition-transform" onclick="openFlavorModal(${cat.id}, ${f.id})">✏️</button>
+                                    <button class="text-red-400 text-xs hover:scale-110 transition-transform" onclick="deleteFlavor(${f.id})">🗑️</button>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
                 </div>`;
             }).join('');
         }
