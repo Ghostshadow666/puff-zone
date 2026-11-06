@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let isLockdown = false;
 app.use((req, res, next) => {
   if (isLockdown && req.method !== 'GET' && !req.path.includes('/login') && !req.path.includes('/security')) {
-    return res.status(503).json({ error: 'SYSTÃˆME EN LOCKDOWN.' });
+    return res.status(503).json({ error: 'SYSTÈME EN LOCKDOWN.' });
   }
   next();
 });
@@ -59,7 +59,7 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
-    console.log("âœ… DB Ready !");
+    console.log("✅ DB Ready !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
 initDB();
@@ -72,13 +72,7 @@ async function uploadToCloudinary(base64String) {
     return result.secure_url;
   } catch (error) {
     console.error("Erreur Upload Cloudinary:", error);
-    return base64String; // Fallback en base64 si Cloudinary échoue
-  }
-});
-    return result.secure_url; // Retourne le lien HTTPS propre
-  } catch (error) {
-    console.error("Erreur Upload Cloudinary:", error);
-    throw new Error("Impossible d'uploader l'image sur Cloudinary");
+    return base64String;
   }
 }
 
@@ -90,7 +84,7 @@ app.put('/api/settings', authenticateToken, isAdmin, async (req, res) => {
   const { banner_text } = req.body;
   try {
     await pool.query("UPDATE settings SET value = $1 WHERE key = 'banner_text'", [banner_text]);
-    await logAction(req.user, 'Modification ParamÃ¨tres', 'Bandeau mis Ã  jour');
+    await logAction(req.user, 'Modification Paramètres', 'Bandeau mis à jour');
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
@@ -107,7 +101,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     const user = r.rows[0]; 
     if (!(await checkPassword(password, user.password))) return res.status(401).json({ error: 'Incorrect' }); 
     const token = generateToken(user); 
-    await logAction(user, 'Connexion', 'SuccÃ¨s'); 
+    await logAction(user, 'Connexion', 'Succès'); 
     res.json({ success: true, token, user: { id: user.id, name: user.name, role: user.role } }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
@@ -120,7 +114,7 @@ app.post('/api/login-livreur', loginLimiter, async (req, res) => {
     const livreur = r.rows[0]; 
     if (!(await checkPassword(password, livreur.password))) return res.status(401).json({ error: 'Incorrect' }); 
     const token = generateToken(livreur); 
-    await logAction(livreur, 'Connexion Livreur', 'SuccÃ¨s'); 
+    await logAction(livreur, 'Connexion Livreur', 'Succès'); 
     res.json({ success: true, token, livreur: { id: livreur.id, name: livreur.name, role: livreur.role } }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
@@ -150,6 +144,15 @@ app.put('/api/clients/:id', async (req, res) => {
     const r = await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE id=$4 RETURNING *', [nom, adresse, whatsapp, req.params.id]); 
     res.json({ success: true, client: r.rows[0] }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
+});
+
+// --- SUPPRESSION D'UN CLIENT ---
+app.delete('/api/clients/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM clients WHERE id=$1', [req.params.id]);
+    await logAction(req.user, 'Suppression Client', `ID: ${req.params.id}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
 
 app.get('/api/clients/:id/commandes', async (req, res) => { 
@@ -188,7 +191,7 @@ app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => {
     const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]); 
     await logAction(req.user, 'Creation Promo', code); 
     res.json(r.rows[0]); 
-  } catch (e) { res.status(500).json({ error: "Existe dÃ©jÃ " }); } 
+  } catch (e) { res.status(500).json({ error: "Existe déjà" }); } 
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => { 
@@ -233,7 +236,7 @@ app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
   const { statut } = req.body; 
   try { 
     const c = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]); 
-    if (c.rows[0].statut === 'livre') return res.status(400).json({ error: 'DÃ©jÃ  livrÃ©e' }); 
+    if (c.rows[0].statut === 'livre') return res.status(400).json({ error: 'Déjà livrée' }); 
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); 
     await logAction(req.user, 'Statut Commande', `Cmd #${req.params.id} -> ${statut}`); 
     res.json({ success: true }); 
@@ -352,11 +355,11 @@ app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => {
       finalImageUrl = await uploadToCloudinary(image_url);
     }
     const r = await pool.query('INSERT INTO categories (nom,image_url,prix_unite,prix_lot_5,prix_lot_10, is_featured) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *', [nom, finalImageUrl || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false]);
-    await logAction(req.user, 'Creation CatÃ©gorie', nom);
+    await logAction(req.user, 'Creation Catégorie', nom);
     res.json(r.rows[0]);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'Erreur lors de la crÃ©ation' });
+    res.status(500).json({ error: 'Erreur lors de la création' });
   }
 });
 
@@ -368,7 +371,7 @@ app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
       finalImageUrl = await uploadToCloudinary(image_url);
     }
     await pool.query('UPDATE categories SET nom=$1, image_url=$2, prix_unite=$3, prix_lot_5=$4, prix_lot_10=$5, is_featured=$6 WHERE id=$7', [nom, finalImageUrl || null, prix_unite, prix_lot_5, prix_lot_10, is_featured || false, req.params.id]);
-    await logAction(req.user, 'Modif CatÃ©gorie', nom);
+    await logAction(req.user, 'Modif Catégorie', nom);
     res.json({ success: true });
   } catch (e) {
     console.error(e);
@@ -377,7 +380,7 @@ app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
 });
 
 app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { 
-  try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppr CatÃ©gorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
+  try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppr Catégorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
 app.get('/api/saveurs', authenticateToken, isAdmin, async (req, res) => { 
@@ -415,16 +418,6 @@ app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
 
-
-// --- SUPPRESSION D'UN CLIENT ---
-app.delete('/api/clients/:id', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM clients WHERE id=$1', [req.params.id]);
-    await logAction(req.user, 'Suppression Client', `ID: ${req.params.id}`);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
 app.get('/api/admin/export-commandes', authenticateToken, isAdmin, async (req, res) => { 
   try { const c = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id`); const i = await pool.query('SELECT * FROM commande_items'); res.json({ date: new Date(), commandes: c.rows, items: i.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
@@ -438,58 +431,24 @@ app.get('/api/admin/export-security', authenticateToken, isAdmin, async (req, re
 });
 
 app.post('/api/admin/reset-commandes', authenticateToken, isAdmin, async (req, res) => { 
-  try { const c = await pool.query('SELECT * FROM commandes'); const i = await pool.query('SELECT * FROM commande_items'); await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [{ date: new Date(), commandes: c.rows, items: i.rows }]); await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE'); await logAction(req.user, 'Reset Commandes', 'Sauvegarde OK'); res.json({ success: true, message: "Commandes sauvegardÃ©es et rÃ©initialisÃ©es." }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
+  try { const c = await pool.query('SELECT * FROM commandes'); const i = await pool.query('SELECT * FROM commande_items'); await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [{ date: new Date(), commandes: c.rows, items: i.rows }]); await pool.query('TRUNCATE TABLE commande_items, commandes RESTART IDENTITY CASCADE'); await logAction(req.user, 'Reset Commandes', 'Sauvegarde OK'); res.json({ success: true, message: "Commandes sauvegardées et réinitialisées." }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
 app.get('/api/security/analyse', authenticateToken, isAdmin, async (req, res) => { 
   try { const f = await pool.query("SELECT * FROM logs_activite WHERE action LIKE '%Connexion%' AND details LIKE '%Echouee%' ORDER BY date_log DESC LIMIT 20"); const t = await pool.query("SELECT COUNT(*) FROM logs_activite WHERE action LIKE '%Connexion%' AND details LIKE '%Echouee%'"); res.json({ failedLogins: f.rows, totalAttacks: parseInt(t.rows[0].count), isLockdown }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-app.post('/api/admin/security/toggle-lockdown', authenticateToken, isAdmin, async (req, res) => { isLockdown = !isLockdown; await logAction(req.user, 'Lockdown', isLockdown ? 'ACTIVÃ‰' : 'DÃ‰SACTIVÃ‰'); res.json({ success: true, lockdown: isLockdown }); });
+app.post('/api/admin/security/toggle-lockdown', authenticateToken, isAdmin, async (req, res) => { isLockdown = !isLockdown; await logAction(req.user, 'Lockdown', isLockdown ? 'ACTIVÉ' : 'DÉSACTIVÉ'); res.json({ success: true, lockdown: isLockdown }); });
 
 app.post('/api/admin/security/simulate-attack', authenticateToken, isAdmin, async (req, res) => { await logAction({name: 'PIRATE', role: 'inconnu'}, 'Intrusion', 'Simulation'); res.json({ success: true }); });
 
 app.post('/api/admin/security/backup-wipe', authenticateToken, isAdmin, async (req, res) => { 
-  try { const b = { date: new Date(), clients: (await pool.query('SELECT * FROM clients')).rows, commandes: (await pool.query('SELECT * FROM commandes')).rows }; await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [b]); await pool.query('TRUNCATE TABLE commande_items, commandes, clients, saveurs RESTART IDENTITY CASCADE'); await logAction(req.user, 'Zero-Day', 'WipeeffectuÃ©'); res.json({ success: true, message: 'SauvegardÃ© et nettoyÃ©.' }); } catch (e) { res.status(500).json({ error:'Erreur' }); } 
+  try { const b = { date: new Date(), clients: (await pool.query('SELECT * FROM clients')).rows, commandes: (await pool.query('SELECT * FROM commandes')).rows }; await pool.query('INSERT INTO backup_commandes (data) VALUES ($1)', [b]); await pool.query('TRUNCATE TABLE commande_items, commandes, clients, saveurs RESTART IDENTITY CASCADE'); await logAction(req.user, 'Zero-Day', 'Wipeeffectué'); res.json({ success: true, message: 'Sauvegardé et nettoyé.' }); } catch (e) { res.status(500).json({ error:'Erreur' }); } 
 });
 
 app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => { 
   try { const r = await pool.query('SELECT * FROM logs_activite ORDER BY date_log DESC LIMIT 200'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-
-// --- ROUTE TEMPORAIRE POUR NETTOYER LES CATEGORIES POLLUEES ---
-app.get('/api/clean-broken-categories', async (req, res) => {
-    try {
-        // On enlève les balises HTML et les guillemets qui traînent
-        await pool.query(`
-            UPDATE categories 
-            SET nom = TRIM(REGEXP_REPLACE(nom, '<[^>]*>|&quot;|class=[^ ]*|>', '', 'g'))
-            WHERE nom LIKE '%class=%' OR nom LIKE '%&quot;%' OR nom LIKE '%<%';
-            
-            UPDATE categories 
-            SET image_url = NULL 
-            WHERE image_url LIKE '%class=%' OR image_url LIKE '%&quot;%';
-        `);
-        res.send("<h1>Nettoyage réussi !</h1><p>Tu peux retourner sur l'admin.</p>");
-    } catch (e) {
-        res.status(500).send("Erreur : " + e.message);
-    }
-});
-
-
-// --- ROUTE TEMPORAIRE POUR SUPPRIMER LA CATEGORIE CORROMPUE ---
-app.get('/api/force-clean-test', async (req, res) => {
-    try {
-        await pool.query(`
-            DELETE FROM categories 
-            WHERE nom LIKE '%class=%' OR nom LIKE '%&quot;%' OR nom LIKE '%<%';
-        `);
-        res.send("<h1>C'est nettoyé !</h1><p>La catégorie corrompue a été supprimée. Retourne sur l'admin.</p>");
-    } catch (e) {
-        res.status(500).send("Erreur : " + e.message);
-    }
-});
-
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`ðŸš€ Serveur sur port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
