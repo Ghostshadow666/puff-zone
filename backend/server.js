@@ -51,6 +51,9 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
+    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
+    await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
+    
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
 
     await pool.query("INSERT INTO settings (key, value) VALUES ('lockdown', 'false') ON CONFLICT (key) DO NOTHING");
@@ -77,7 +80,7 @@ app.put('/api/settings', authenticateToken, isAdmin, async (req, res) => {
 
 app.get('/api/health', async (req, res) => { try { await pool.query('SELECT 1'); res.json({ status: 'ok' }); } catch(e) { res.status(500).json({ status: 'error' }); } });
 app.get('/api/promo/public', async (req, res) => { try { const r = await pool.query("SELECT code, pourcentage FROM codes_promo WHERE actif = true"); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
-app.get('/api/catalogue', async (req, res) => { try { const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories ORDER BY is_featured DESC, nom ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]); res.json({ categories: cats.rows, saveurs: savs.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
+app.get('/api/catalogue', async (req, res) => { try { const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories ORDER BY ordre ASC, id ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]); res.json({ categories: cats.rows, saveurs: savs.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
 
 app.post('/api/login', loginLimiter, async (req, res) => { 
   const { name, password } = req.body; 
@@ -385,8 +388,28 @@ app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
+
+// --- NOUVEL ORDRE DES CATÉGORIES ---
+app.put('/api/categories/reorder', authenticateToken, isAdmin, async (req, res) => {
+  const { order } = req.body; // Tableau d'IDs dans le nouvel ordre
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (let i = 0; i < order.length; i++) {
+      await client.query('UPDATE categories SET ordre = $1 WHERE id = $2', [i, order[i]]);
+    }
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'ordre' });
+  } finally {
+    client.release();
+  }
+});
+
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { 
-  try { const r = await pool.query('SELECT * FROM categories ORDER BY nom ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
+  try { const r = await pool.query('SELECT * FROM categories ORDER BY ordre ASC, id ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
 app.post('/api/categories', authenticateToken, isAdmin, async (req, res) => {
