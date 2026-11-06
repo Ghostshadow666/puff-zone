@@ -261,7 +261,6 @@
                 </div>
                 <div class="bg-black border border-gray-700 rounded-xl p-4 font-mono text-xs text-green-500 h-48 overflow-y-auto mb-6" id="socTerminal"></div>
                 
-                <!-- GUIDE DES RISQUES RESTAURÉ ICI -->
                 <div class="bg-black/50 border border-red-500/30 rounded-xl p-4">
                     <h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3>
                     <div class="space-y-3">
@@ -490,14 +489,29 @@
 
         function toggleAdminCategory(catId) { const list = document.getElementById(`admin-flavors-${catId}`); const arrow = document.getElementById(`admin-arrow-${catId}`); if (list.style.display === 'none') { list.style.display = 'block'; arrow.style.transform = 'rotate(0deg)'; } else { list.style.display = 'none'; arrow.style.transform = 'rotate(-90deg)'; } }
         async function loadCatalogue() { try { const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); allCategories = await rc.json(); allFlavors = await rf.json(); renderCatalogue(); } catch(e){ document.getElementById('catalogueList').innerHTML='Erreur.'; } }
+        
         function renderCatalogue() {
             const el = document.getElementById('catalogueList'); if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
             el.innerHTML = allCategories.map(cat => {
                 const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
                 const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><rect width="60" height="60" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="24">📦</text></svg>';
-                return `<div class="bg-space-surface/50 border border-white/10 rounded-xl mb-4 overflow-hidden"><div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleAdminCategory(${cat.id})"><img src="${img}" class="w-12 h-12 object-cover rounded-lg"><div class="flex-1"><div class="font-bold text-white text-sm flex items-center gap-2">${cat.nom} <span id="admin-arrow-${cat.id}" class="text-nebula-cyan text-xs transition-transform">▼</span></div><div class="text-xs text-gray-400">U: ${cat.prix_unite}€</div></div><div class="flex gap-2" onclick="event.stopPropagation();"><button class="px-3 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-xs" onclick="openFlavorModal(${cat.id})">+ Saveur</button><button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">🗑️</button></div></div><div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5">${flavs.map(f=>`<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0"><div class="text-sm text-gray-300">${f.nom}</div><div class="flex items-center gap-3"><span class="text-xs font-bold text-green-400">(${f.stock})</span><button class="text-red-400 text-xs" onclick="deleteFlavor(${f.id})">🗑️</button></div></div>`).join('')}</div></div>`;
+                return `<div class="bg-space-surface/50 border border-white/10 rounded-xl mb-4 overflow-hidden">
+                    <div class="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleAdminCategory(${cat.id})">
+                        <img src="${img}" class="w-12 h-12 object-cover rounded-lg">
+                        <div class="flex-1">
+                            <div class="font-bold text-white text-sm flex items-center gap-2">${cat.nom} <span id="admin-arrow-${cat.id}" class="text-nebula-cyan text-xs transition-transform">▼</span></div>
+                            <div class="text-xs text-gray-400">U: ${cat.prix_unite}€</div>
+                        </div>
+                        <div class="flex gap-2" onclick="event.stopPropagation();">
+                            <button class="px-3 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-xs" onclick="openFlavorModal(${cat.id})">+ Saveur</button>
+                            <button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">🗑️</button>
+                        </div>
+                    </div>
+                    <div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5">${flavs.map(f=>`<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0"><div class="text-sm text-gray-300">${f.nom}</div><div class="flex items-center gap-3"><span class="text-xs font-bold text-green-400">(${f.stock})</span><button class="text-red-400 text-xs" onclick="deleteFlavor(${f.id})">🗑️</button></div></div>`).join('')}</div>
+                </div>`;
             }).join('');
         }
+
         document.getElementById('addCategoryForm').addEventListener('submit', async (e) => { e.preventDefault(); const editId = document.getElementById('editCatId').value; const data = { nom: document.getElementById('catNom').value, prix_unite: parseFloat(document.getElementById('catPrix1').value), prix_lot_5: document.getElementById('catPrix5').value ? parseFloat(document.getElementById('catPrix5').value) : null, prix_lot_10: document.getElementById('catPrix10').value ? parseFloat(document.getElementById('catPrix10').value) : null }; await fetch(editId ? `${API_URL}/categories/${editId}` : `${API_URL}/categories`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); resetCategoryForm(); loadCatalogue(); });
         function resetCategoryForm() { document.getElementById('addCategoryForm').reset(); document.getElementById('catFormTitle').innerText = '➕ Créer une Catégorie'; document.getElementById('editCatId').value = ''; document.getElementById('submitCatBtn').innerText = 'Enregistrer'; document.getElementById('cancelCatBtn').classList.add('hidden'); }
         async function deleteCategory(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
