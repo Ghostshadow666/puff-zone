@@ -7,29 +7,43 @@ let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 let selectedZone = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Gestion de la connexion au chargement
     if (currentUser) {
-        document.getElementById('login-modal').style.display = 'none';
+        const lm = document.getElementById('login-modal');
+        if(lm) lm.style.display = 'none';
         updateGreeting();
     } else {
-        document.getElementById('login-modal').style.display = 'flex';
+        const lm = document.getElementById('login-modal');
+        if(lm) lm.style.display = 'flex';
     }
-    loadPromos();
+    
+    // Chargement des données
+    loadPromos(); // <-- LA FONCTION MANQUANTE EST MAINTENANT DÉFINIE PLUS BAS
     loadCatalogue();
     loadZones();
-    
-    fetch(`${API_URL}/promo/public`).then(r => r.json()).then(promos => {
-        const marquee = document.getElementById('promo-marquee');
-        if(promos.length > 0 && marquee) {
-            let html = '';
-            for(let i=0; i<10; i++) {
-                promos.forEach(p => { html += `<span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5 text-nebula-cyan"></i> CODE : ${p.code} (-${p.pourcentage}%)</span>`; });
-            }
-            marquee.innerHTML = html;
-            lucide.createIcons();
-        }
-    }).catch(e => console.error("Erreur promo", e));
 });
 
+// --- CHARGEMENT DES PROMOS (Bandeau défilant) ---
+async function loadPromos() {
+    try {
+        const res = await fetch(`${API_URL}/promo/public`);
+        const promos = await res.json();
+        const marquee = document.getElementById('promo-marquee');
+        
+        if (marquee && promos.length > 0) {
+            let html = '';
+            for(let i=0; i<10; i++) {
+                promos.forEach(p => { 
+                    html += `<span class="flex items-center gap-1.5"><i data-lucide="tag" class="w-3.5 h-3.5 text-nebula-cyan"></i> CODE : ${p.code} (-${p.pourcentage}%)</span>`; 
+                });
+            }
+            marquee.innerHTML = html;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    } catch(e) { console.error("Erreur chargement promos:", e); }
+}
+
+// --- CHARGEMENT DU CATALOGUE ---
 async function loadCatalogue() {
     try {
         const res = await fetch(`${API_URL}/catalogue`);
@@ -39,13 +53,16 @@ async function loadCatalogue() {
         renderCatalogue();
     } catch (e) { 
         console.error("Erreur catalogue:", e);
-        document.getElementById('product-list').innerHTML = '<p class="text-red-500 col-span-full text-center">Erreur de chargement du catalogue.</p>'; 
+        const pl = document.getElementById('product-list');
+        if(pl) pl.innerHTML = '<p class="text-red-500 col-span-full text-center">Erreur de chargement du catalogue.</p>'; 
     }
 }
 
 function renderCatalogue() {
     const container = document.getElementById('product-list');
+    if(!container) return;
     
+    // Si aucune saveur n'est disponible (ex: catégorie vide)
     if (!allFlavors || allFlavors.length === 0) {
         container.innerHTML = `
             <div class="col-span-full text-center py-12 glass-panel rounded-2xl">
@@ -54,14 +71,14 @@ function renderCatalogue() {
                 <p class="text-gray-400 text-sm">La galaxie est en cours de préparation. Revenez bientôt !</p>
             </div>
         `;
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
     let html = '';
     allFlavors.forEach((f, index) => {
         const cat = allCategories.find(c => c.id === f.categorie_id);
-        if(!cat) return; // Ignore les produits sans catégorie
+        if(!cat) return; // Ignore si la catégorie a été supprimée
 
         const isOut = f.stock <= 0;
         const img = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">💨</text></svg>';
@@ -102,13 +119,19 @@ function renderCatalogue() {
     });
     
     container.innerHTML = html;
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+// --- PANIER ---
 function addToCart(flavId) {
-    if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
+    if(!currentUser) { 
+        const lm = document.getElementById('login-modal');
+        if(lm) lm.style.display = 'flex'; 
+        return; 
+    }
     const flav = allFlavors.find(f => f.id === flavId);
     if (!flav || flav.stock <= 0) return;
+    
     const cat = allCategories.find(c => c.id === flav.categorie_id);
     const existing = cart.find(item => item.id === flavId);
     
@@ -127,14 +150,20 @@ function updateQty(index, change) {
     if (change > 0) {
         if (flav && item.qty >= flav.stock) { alert(`Stock max atteint.`); return; }
         item.qty++;
-    } else { item.qty--; if (item.qty <= 0) cart.splice(index, 1); }
+    } else { 
+        item.qty--; 
+        if (item.qty <= 0) cart.splice(index, 1); 
+    }
     updateCartUI();
 }
 
 function updateCartUI() {
     const count = cart.reduce((sum, item) => sum + item.qty, 0); 
-    document.getElementById('cart-count').textContent = count;
+    const cc = document.getElementById('cart-count');
+    if(cc) cc.textContent = count;
+    
     const itemsContainer = document.getElementById('cart-items');
+    if(!itemsContainer) return;
     
     if(cart.length === 0) { 
         itemsContainer.innerHTML = '<div class="text-center py-12 text-gray-500 text-xs">Votre panier spatial est vide.</div>'; 
@@ -142,8 +171,8 @@ function updateCartUI() {
         window.appliedPromoCode = null; window.appliedPromoPct = 0;
         if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
         if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
-        document.getElementById('checkout-btn').disabled = true; 
-        document.getElementById('checkout-btn').style.opacity = '0.5';
+        const cb = document.getElementById('checkout-btn');
+        if(cb) { cb.disabled = true; cb.style.opacity = '0.5'; }
         return; 
     }
     
@@ -168,18 +197,23 @@ function updateCartUI() {
     
     let finalTotal = total;
     if (window.appliedPromoPct > 0) { finalTotal = total - (total * (window.appliedPromoPct / 100)); }
-    document.getElementById('cart-total-price').innerHTML = finalTotal.toFixed(2) + ' €';
+    const ctp = document.getElementById('cart-total-price');
+    if(ctp) ctp.innerHTML = finalTotal.toFixed(2) + ' €';
 
-    const checkoutBtn = document.getElementById('checkout-btn'); const zoneMsg = document.getElementById('zone-msg');
-    if (!selectedZone) {
-        checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
-        if(zoneMsg) { zoneMsg.innerHTML = "⚠️ Choisissez votre zone."; }
-    } else if (total < selectedZone.min_commande) {
-        checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
-        if(zoneMsg) { zoneMsg.innerHTML = `⚠️ Min. ${selectedZone.min_commande}€ pour ${selectedZone.nom}.`; }
-    } else {
-        checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1';
-        if(zoneMsg) { zoneMsg.innerHTML = ""; }
+    const checkoutBtn = document.getElementById('checkout-btn'); 
+    const zoneMsg = document.getElementById('zone-msg');
+    
+    if(checkoutBtn) {
+        if (!selectedZone) {
+            checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
+            if(zoneMsg) { zoneMsg.innerHTML = "⚠️ Choisissez votre zone."; }
+        } else if (total < selectedZone.min_commande) {
+            checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
+            if(zoneMsg) { zoneMsg.innerHTML = `⚠️ Min. ${selectedZone.min_commande}€ pour ${selectedZone.nom}.`; }
+        } else {
+            checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1';
+            if(zoneMsg) { zoneMsg.innerHTML = ""; }
+        }
     }
 }
 
@@ -197,6 +231,7 @@ function toggleCart() {
     }
 }
 
+// --- LOGIQUE CLIENT (Connexion/Inscription) ---
 function showLoginForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'block'; document.getElementById('step-info').style.display = 'none'; }
 function showRegisterForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'block'; }
 function backToChoice() { document.getElementById('step-choice').style.display = 'block'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'none'; }
@@ -206,8 +241,17 @@ async function checkPhone() {
     if(!phone || phone.length < 8) return alert('Numéro invalide');
     try {
         const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) });
-        if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
-        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; }
+        if (res.ok) { 
+            const data = await res.json(); 
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
+            document.getElementById('login-modal').style.display = 'none'; 
+            updateGreeting(); 
+        } else { 
+            alert('Numéro non reconnu.'); 
+            showRegisterForm(); 
+            document.getElementById('phone-input-reg').value = phone; 
+        }
     } catch(e) { alert('Erreur serveur.'); }
 }
 
@@ -220,20 +264,39 @@ async function saveProfile() {
     try {
         const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) });
         const data = await res.json();
-        if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte créé !'); }
+        if(data.success) { 
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
+            document.getElementById('login-modal').style.display = 'none'; 
+            updateGreeting(); 
+            alert('Compte créé !'); 
+        }
     } catch(e) { alert('Erreur.'); }
 }
 
 function updateGreeting() { 
     const el = document.getElementById('user-greeting');
-    if(el) el.innerHTML = `👋 ${currentUser.nom}`; 
+    if(el && currentUser) el.innerHTML = `👋 ${currentUser.nom}`; 
 }
 function logout() { localStorage.removeItem('puff_client'); location.reload(); }
 
+// --- ZONES & PROMOS ---
 async function loadZones() { 
-    try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const select = document.getElementById('zone-select'); if(select) { select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); } } catch (e) { console.error(e); } 
+    try { 
+        const res = await fetch(`${API_URL}/zones`); 
+        allZones = await res.json(); 
+        const select = document.getElementById('zone-select'); 
+        if(select) { 
+            select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); 
+        } 
+    } catch (e) { console.error(e); } 
 }
-function applyZone() { const zoneId = document.getElementById('zone-select').value; selectedZone = allZones.find(z => z.id == zoneId) || null; updateCartUI(); }
+
+function applyZone() { 
+    const zoneId = document.getElementById('zone-select').value; 
+    selectedZone = allZones.find(z => z.id == zoneId) || null; 
+    updateCartUI(); 
+}
 
 async function applyPromo() {
     const code = document.getElementById('promo-input').value.trim();
@@ -255,6 +318,7 @@ async function applyPromo() {
     } catch (e) { msg.textContent = "Erreur"; }
 }
 
+// --- VALIDATION COMMANDE ---
 async function checkout() {
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
