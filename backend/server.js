@@ -52,6 +52,11 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
+
+    await pool.query("INSERT INTO settings (key, value) VALUES ('lockdown', 'false') ON CONFLICT (key) DO NOTHING");
+    const lockRes = await pool.query("SELECT value FROM settings WHERE key = 'lockdown'");
+    isLockdown = lockRes.rows[0].value === 'true';
+    
     console.log("✅ DB Ready !");
   } catch (e) { console.error("Erreur init DB:", e); }
 };
@@ -433,7 +438,12 @@ app.get('/api/security/analyse', authenticateToken, isAdmin, async (req, res) =>
   try { const f = await pool.query("SELECT * FROM logs_activite WHERE action LIKE '%Connexion%' AND details LIKE '%Echouee%' ORDER BY date_log DESC LIMIT 20"); const t = await pool.query("SELECT COUNT(*) FROM logs_activite WHERE action LIKE '%Connexion%' AND details LIKE '%Echouee%'"); res.json({ failedLogins: f.rows, totalAttacks: parseInt(t.rows[0].count), isLockdown }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-app.post('/api/admin/security/toggle-lockdown', authenticateToken, isAdmin, async (req, res) => { isLockdown = !isLockdown; await logAction(req.user, 'Lockdown', isLockdown ? 'ACTIVÉ' : 'DÉSACTIVÉ'); res.json({ success: true, lockdown: isLockdown }); });
+app.post('/api/admin/security/toggle-lockdown', authenticateToken, isAdmin, async (req, res) => {
+  isLockdown = !isLockdown;
+  await pool.query("UPDATE settings SET value = $1 WHERE key = 'lockdown'", [isLockdown.toString()]);
+  await logAction(req.user, 'Lockdown', isLockdown ? 'ACTIVÉ' : 'DÉSACTIVÉ');
+  res.json({ success: true, lockdown: isLockdown });
+});
 
 app.post('/api/admin/security/simulate-attack', authenticateToken, isAdmin, async (req, res) => { await logAction({name: 'PIRATE', role: 'inconnu'}, 'Intrusion', 'Simulation'); res.json({ success: true }); });
 
