@@ -611,20 +611,8 @@ function renderGroupedCommandeCard(orders) {
         if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text; 
         if(data.order_start_time) document.getElementById('orderStartTime').value = data.order_start_time;
         if(data.order_end_time) document.getElementById('orderEndTime').value = data.order_end_time;
-    } catch(e) { console.error("Erreur loadSettings:", e); } 
+    } catch(e) { console.error(e); } 
 }
-        async function saveSettings() { 
-    const banner_text = document.getElementById('settingBannerText').value; 
-    const start = document.getElementById('orderStartTime').value;
-    const end = document.getElementById('orderEndTime').value;
-    try { 
-        await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banner_text }) }); 
-        await fetch(`${API_URL}/settings/order-window`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end }) }); 
-        alert('✅ Paramètres et horaires enregistrés !'); 
-    } catch(e) { alert('Erreur de sauvegarde.'); } 
-}
-        
-        async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
         document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code:document.getElementById('promoCode').value, pourcentage: parseInt(document.getElementById('promoPct').value) }) }); document.getElementById('addPromoForm').reset(); loadPromos(); });
         async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
         

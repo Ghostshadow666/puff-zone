@@ -708,5 +708,41 @@ app.delete('/api/admin/avis/:id', authenticateToken, isAdmin, async (req, res) =
 });
 // ===== AVIS_PATCH_V1 - END =====
 
+
+// --- ROUTES HORAIRES SECURISEES ---
+app.get('/api/settings/order-window', async (req, res) => {
+  try {
+    const r = await pool.query("SELECT key, value FROM settings WHERE key IN ('order_start_time', 'order_end_time')");
+    let start = '22:00', end = '06:00';
+    r.rows.forEach(row => {
+      if (row.key === 'order_start_time') start = row.value;
+      if (row.key === 'order_end_time') end = row.value;
+    });
+    const now = new Intl.DateTimeFormat('fr-BE', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+    let isOpen = false;
+    if (start <= end) isOpen = now >= start && now <= end;
+    else isOpen = now >= start || now <= end;
+    
+    res.json({ start, end, isOpen });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.put('/api/settings/order-window', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { start, end } = req.body;
+    await pool.query("INSERT INTO settings (key, value) VALUES ('order_start_time', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [start]);
+    await pool.query("INSERT INTO settings (key, value) VALUES ('order_end_time', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [end]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// ----------------------------------
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+
+// --- FORCAGE BDD AU DEMARRAGE ---
+pool.query("INSERT INTO settings (key, value) VALUES ('order_start_time', '22:00'), ('order_end_time', '06:00') ON CONFLICT (key) DO NOTHING")
+  .then(() => console.log("✅ Horaires par défaut vérifiés en BDD"))
+  .catch(err => console.error("Erreur insertion horaires:", err));
+// --------------------------------
+
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
