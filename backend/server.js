@@ -281,7 +281,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'categorie', COALESCE(ci.categorie_nom, c2.nom), 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci LEFT JOIN saveurs s2 ON ci.saveur_nom = s2.nom LEFT JOIN categories c2 ON s2.categorie_id = c2.id WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
+    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'categorie', ci.categorie_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
     res.json(r.rows);
   } catch (e) {
     res.status(500).json({ error: 'Erreur' });
