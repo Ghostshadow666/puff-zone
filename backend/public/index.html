@@ -205,6 +205,68 @@
     <div class="text-[9px] md:text-[10px] text-gray-400 mt-1 md:mt-2">Bruxelles</div>
 </div>
 
+
+<!-- Timer Cosmique FORCE -->
+<div id="cosmic-timer-box" class="fixed top-24 right-4 md:top-1/2 md:right-10 md:-translate-y-1/2 z-[9999] flex-col items-center justify-center w-48 h-48 md:w-64 md:h-64 rounded-full border-2 border-nebula-cyan/50 shadow-[0_0_50px_rgba(76,201,240,0.3)] backdrop-blur-lg bg-black/40 hidden md:flex">
+    <div class="absolute inset-0 rounded-full border border-nebula-violet/40 animate-ping" style="animation-duration: 4s; opacity: 0.2;"></div>
+    <div class="text-[10px] md:text-xs font-mono text-nebula-cyan uppercase tracking-widest mb-1 md:mb-2" id="timer-label">Chargement...</div>
+    <div class="text-3xl md:text-4xl font-black text-white font-cosmic drop-shadow-[0_0_15px_rgba(76,201,240,0.8)]" id="timer-clock">--:--:--</div>
+    <div class="text-[9px] md:text-[10px] text-gray-400 mt-1 md:mt-2">Bruxelles</div>
+</div>
+
+<script>
+// Script autonome pour le timer (ne dépend de rien d'autre)
+document.addEventListener('DOMContentLoaded', async () => {
+    const clockEl = document.getElementById('timer-clock');
+    const labelEl = document.getElementById('timer-label');
+    if (!clockEl || !labelEl) return;
+
+    let data = { start: '22:00', end: '06:00', isOpen: false };
+    
+    try {
+        const res = await fetch('/api/settings/order-window');
+        if (res.ok) {
+            const json = await res.json();
+            if (json.start) data = json;
+        }
+    } catch(e) {
+        console.log("API non joignable, utilisation des horaires par défaut.");
+    }
+
+    // Mise à jour immédiate
+    function updateClock() {
+        const now = new Date();
+        const nowBrussels = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
+        let targetTime = new Date(nowBrussels);
+        
+        const [startH, startM] = data.start.split(':').map(Number);
+        const [endH, endM] = data.end.split(':').map(Number);
+
+        if (data.isOpen) {
+            labelEl.textContent = "Fermeture dans";
+            targetTime.setHours(endH, endM, 0, 0);
+            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
+        } else {
+            labelEl.textContent = "Ouverture dans";
+            targetTime.setHours(startH, startM, 0, 0);
+            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
+        }
+
+        const diff = targetTime - nowBrussels;
+        if (diff <= 0) { clockEl.textContent = "00:00:00"; return; }
+
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        clockEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+});
+</script>
+
 </body>
 </html>
 <!-- TIMER_AVIS_PATCH -->
