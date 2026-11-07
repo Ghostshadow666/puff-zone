@@ -378,61 +378,58 @@ async function checkout() {
 // --- 1. LOGIQUE DU TIMER COSMIQUE ---
 let timerInterval = null;
 async function initCosmicTimer() {
+    const clockEl = document.getElementById('timer-clock');
+    const labelEl = document.getElementById('timer-label');
+    if(!clockEl || !labelEl) return;
+
+    let data = { start: '22:00', end: '06:00', isOpen: false };
+
     try {
         const res = await fetch(`${API_URL}/settings/order-window`);
-        const data = await res.json(); // { start, end, isOpen }
+        if (res.ok) {
+            const json = await res.json();
+            if (json.start) data = json;
+        }
+    } catch(e) { console.warn("Impossible de charger les horaires, valeurs par défaut utilisées."); }
+    
+    if (timerInterval) clearInterval(timerInterval);
+
+    function updateClock() {
+        const now = new Date();
+        const nowBrussels = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
         
-        const clockEl = document.getElementById('timer-clock');
-        const labelEl = document.getElementById('timer-label');
-        if(!clockEl) return;
+        let targetTime = new Date(nowBrussels);
+        let isOpen = data.isOpen;
 
-        if (timerInterval) clearInterval(timerInterval);
+        const [startH, startM] = data.start.split(':').map(Number);
+        const [endH, endM] = data.end.split(':').map(Number);
 
-        function updateClock() {
-            const now = new Date();
-            // On force l'heure de Bruxelles
-            const nowBrussels = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
-            
-            let targetTime = new Date(nowBrussels);
-            let isOpen = data.isOpen;
-
-            // Parse "HH:MM"
-            const [startH, startM] = data.start.split(':').map(Number);
-            const [endH, endM] = data.end.split(':').map(Number);
-
-            if (isOpen) {
-                labelEl.textContent = "Fermeture dans";
-                // Si c'est ouvert, on cible l'heure de fin
-                targetTime.setHours(endH, endM, 0, 0);
-                // Si l'heure de fin est passée (ex: il est 23h et fin à 6h), c'est le lendemain
-                if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
-            } else {
-                labelEl.textContent = "Ouverture dans";
-                // Si c'est fermé, on cible l'heure d'ouverture
-                targetTime.setHours(startH, startM, 0, 0);
-                if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
-            }
-
-            const diff = targetTime - nowBrussels;
-            if (diff <= 0) {
-                clockEl.textContent = "00:00:00";
-                return; // Le fetch se rechargera
-            }
-
-            const h = Math.floor(diff / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-            clockEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        if (isOpen) {
+            labelEl.textContent = "Fermeture dans";
+            targetTime.setHours(endH, endM, 0, 0);
+            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
+        } else {
+            labelEl.textContent = "Ouverture dans";
+            targetTime.setHours(startH, startM, 0, 0);
+            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
         }
 
-        updateClock();
-        timerInterval = setInterval(updateClock, 1000);
+        const diff = targetTime - nowBrussels;
+        if (diff <= 0) {
+            clockEl.textContent = "00:00:00";
+            return; 
+        }
 
-        // Rafraichir l'état de la boutique toutes les minutes pour basculer Ouvert/Fermé
-        setTimeout(initCosmicTimer, 60000);
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-    } catch(e) { console.error("Erreur Timer:", e); }
+        clockEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    updateClock();
+    timerInterval = setInterval(updateClock, 1000);
+    setTimeout(initCosmicTimer, 60000); 
 }
 
 // --- 2. LOGIQUE DES AVIS ANONYMES ---
