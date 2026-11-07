@@ -297,7 +297,7 @@ function renderGroupedCommandeCard(orders) {
         
         ordersDetailHtml += `<div class="flex gap-2 mt-2">
             <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
-            <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
+            <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select><button onclick="deleteCommande(${cmd.id})" class="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-all border border-red-500/30 flex-shrink-0" title="Supprimer la commande">🗑️</button>
         </div></div>`;
     });
 
@@ -325,7 +325,28 @@ function renderGroupedCommandeCard(orders) {
     </div>`;
 }
 
-function renderCommandeCard(cmd, isTerminee) {
+
+        // ===== DELETE_ORDER_ADMIN_PATCH - BEGIN =====
+        async function deleteCommande(id) {
+            if (!confirm('⚠️ Supprimer la commande #' + id + ' ?\n\nLe stock sera automatiquement restauré.')) return;
+            if (!confirm('Confirmer la suppression définitive ?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/commandes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadCommandes();
+                    alert('Commande supprimée et stock restauré !');
+                } else {
+                    const data = await res.json();
+                    alert('Erreur: ' + (data.error || 'inconnue'));
+                }
+            } catch (e) {
+                alert('Erreur réseau.');
+            }
+        }
+        // ===== DELETE_ORDER_ADMIN_PATCH - END =====
+
+        function renderCommandeCard(cmd, isTerminee) {
             const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Préparation', 'en_livraison': 'En livraison', 'livre': 'Livré' };
             
             // Préparation des liens WhatsApp et Maps

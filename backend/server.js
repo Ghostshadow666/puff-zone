@@ -523,5 +523,38 @@ app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM logs_activite ORDER BY date_log DESC LIMIT 200'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
+
+// ===== DELETE_ORDER_PATCH - BEGIN =====
+app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Récupérer les articles de la commande pour le restock
+    const items = await client.query('SELECT saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
+    
+    // 2. Remettre les stocks
+    for (const item of items.rows) {
+      await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]);
+    }
+    
+    // 3. Supprimer les items et la commande
+    await client.query('DELETE FROM commande_items WHERE commande_id = $1', [req.params.id]);
+    await client.query('DELETE FROM commandes WHERE id = $1', [req.params.id]);
+    
+    await client.query('COMMIT');
+    
+    await logAction(req.user, 'Suppression Commande', `Cmd #${req.params.id} supprimée (Stock restauré)`);
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.status(500).json({ error: 'Erreur lors de la suppression.' });
+  } finally {
+    client.release();
+  }
+});
+// ===== DELETE_ORDER_PATCH - END =====
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
