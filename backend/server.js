@@ -109,6 +109,7 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, nom VARCHAR(100), image_url TEXT, prix_unite DECIMAL(10,2), prix_lot_5 DECIMAL(10,2), prix_lot_10 DECIMAL(10,2), is_featured BOOLEAN DEFAULT false, ordre INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS saveurs (id SERIAL PRIMARY KEY, categorie_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, nom VARCHAR(100), stock INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS settings (key VARCHAR(50) PRIMARY KEY, value TEXT);
+      CREATE TABLE IF NOT EXISTS avis (id SERIAL PRIMARY KEY, note INTEGER, commentaire TEXT, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP, approuve BOOLEAN DEFAULT false);
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
@@ -662,6 +663,50 @@ app.post('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) 
   }
 });
 // ===== MAINTENANCE_PATCH_V2 - ROUTES END =====
+
+
+// ===== AVIS_PATCH_V1 - BEGIN =====
+// Client : Soumettre un avis
+app.post('/api/avis', async (req, res) => {
+  const { note, commentaire } = req.body;
+  try {
+    await pool.query('INSERT INTO avis (note, commentaire) VALUES ($1, $2)', [note, commentaire]);
+    res.json({ success: true, message: 'Merci ! Votre avis sera visible après validation.' });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// Client : Voir les avis approuvés
+app.get('/api/avis/approuves', async (req, res) => {
+  try {
+    const r = await pool.query('SELECT id, note, commentaire, date_creation FROM avis WHERE approuve = true ORDER BY date_creation DESC LIMIT 10');
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// Admin : Voir tous les avis
+app.get('/api/admin/avis', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM avis ORDER BY date_creation DESC');
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// Admin : Approuver un avis
+app.put('/api/admin/avis/:id/approve', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('UPDATE avis SET approuve = true WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// Admin : Supprimer un avis
+app.delete('/api/admin/avis/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM avis WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// ===== AVIS_PATCH_V1 - END =====
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

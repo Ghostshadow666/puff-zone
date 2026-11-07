@@ -53,7 +53,8 @@
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
-                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-avis', this)">Avis</button>
+<button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
             </div>
         </div>
     </header>
@@ -140,7 +141,15 @@
                     </button>
                     <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
         </div>
-    </div>
+    
+        <!-- ONGLET AVIS -->
+        <div id="tab-avis" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-space font-bold text-white mb-4">⭐ Modération des Avis</h2>
+                <div id="avisList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
+</div>
 
     <!-- MODAL SAVEUR -->
     <div id="flavorModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -197,7 +206,44 @@
 
         function escapeHTML(str) { if(!str) return ''; return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-        function switchTab(tabId, btn) {
+        
+// ===== AVIS_ADMIN_PATCH =====
+async function loadAvis() {
+    try {
+        const res = await fetch(`${API_URL}/admin/avis`);
+        const avis = await res.json();
+        const container = document.getElementById('avisList');
+        if(avis.length === 0) { container.innerHTML = 'Aucun avis pour le moment.'; return; }
+        
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            const date = new Date(a.date_creation).toLocaleDateString('fr-FR');
+            const badge = a.approuve 
+                ? '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold ml-2">APPROUVÉ</span>'
+                : '<span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-[10px] font-bold ml-2">EN ATTENTE</span>';
+            
+            return `
+            <div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-yellow-400 text-lg">${stars}</div>
+                        <div class="text-xs text-gray-500">${date} ${badge}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${!a.approuve ? `<button onclick="approveAvis(${a.id})" class="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30 transition">Approuver</button>` : ''}
+                        <button onclick="deleteAvis(${a.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30 transition">Suppr.</button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-200 italic">"${a.commentaire}"</p>
+            </div>`;
+        }).join('');
+    } catch(e) { document.getElementById('avisList').innerHTML = 'Erreur.'; }
+}
+async function approveAvis(id) { await fetch(`${API_URL}/admin/avis/${id}/approve`, {method:'PUT'}); loadAvis(); }
+async function deleteAvis(id) { if(confirm('Supprimer cet avis ?')) { await fetch(`${API_URL}/admin/avis/${id}`, {method:'DELETE'}); loadAvis(); } }
+// ========================
+
+function switchTab(tabId, btn) {
             document.querySelectorAll('.nav-tab').forEach(b => { b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); b.classList.add('glass-panel', 'text-gray-400'); });
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             btn.classList.remove('glass-panel', 'text-gray-400'); btn.classList.add('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white');
@@ -207,6 +253,7 @@
             if(tabId === 'tab-clients') loadClients(); if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
             if(tabId === 'tab-stats') loadStats(); if(tabId === 'tab-ventes') loadVentes();
             if(tabId === 'tab-logs') loadLogs(); if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
+            if(tabId === 'tab-avis') loadAvis();
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
         let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;

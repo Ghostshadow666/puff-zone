@@ -371,3 +371,135 @@ async function checkout() {
     } catch(e) { alert('Erreur de connexion.'); btn.disabled = false; }
 }
 // CLIENT_SCHEDULE_PATCH_V1
+
+
+// ===== TIMER_AVIS_JS_PATCH - BEGIN =====
+
+// --- 1. LOGIQUE DU TIMER COSMIQUE ---
+let timerInterval = null;
+async function initCosmicTimer() {
+    try {
+        const res = await fetch(`${API_URL}/settings/order-window`);
+        const data = await res.json(); // { start, end, isOpen }
+        
+        const clockEl = document.getElementById('timer-clock');
+        const labelEl = document.getElementById('timer-label');
+        if(!clockEl) return;
+
+        if (timerInterval) clearInterval(timerInterval);
+
+        function updateClock() {
+            const now = new Date();
+            // On force l'heure de Bruxelles
+            const nowBrussels = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
+            
+            let targetTime = new Date(nowBrussels);
+            let isOpen = data.isOpen;
+
+            // Parse "HH:MM"
+            const [startH, startM] = data.start.split(':').map(Number);
+            const [endH, endM] = data.end.split(':').map(Number);
+
+            if (isOpen) {
+                labelEl.textContent = "Fermeture dans";
+                // Si c'est ouvert, on cible l'heure de fin
+                targetTime.setHours(endH, endM, 0, 0);
+                // Si l'heure de fin est passée (ex: il est 23h et fin à 6h), c'est le lendemain
+                if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
+            } else {
+                labelEl.textContent = "Ouverture dans";
+                // Si c'est fermé, on cible l'heure d'ouverture
+                targetTime.setHours(startH, startM, 0, 0);
+                if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
+            }
+
+            const diff = targetTime - nowBrussels;
+            if (diff <= 0) {
+                clockEl.textContent = "00:00:00";
+                return; // Le fetch se rechargera
+            }
+
+            const h = Math.floor(diff / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+            clockEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        updateClock();
+        timerInterval = setInterval(updateClock, 1000);
+
+        // Rafraichir l'état de la boutique toutes les minutes pour basculer Ouvert/Fermé
+        setTimeout(initCosmicTimer, 60000);
+
+    } catch(e) { console.error("Erreur Timer:", e); }
+}
+
+// --- 2. LOGIQUE DES AVIS ANONYMES ---
+let selectedNote = 0;
+const starSpans = document.querySelectorAll('#star-rating span');
+if (starSpans.length > 0) {
+    starSpans.forEach(star => {
+        star.addEventListener('click', () => {
+            selectedNote = parseInt(star.getAttribute('data-val'));
+            starSpans.forEach(s => {
+                if (parseInt(s.getAttribute('data-val')) <= selectedNote) {
+                    s.classList.remove('text-gray-500');
+                    s.classList.add('text-yellow-400');
+                } else {
+                    s.classList.add('text-gray-500');
+                    s.classList.remove('text-yellow-400');
+                }
+            });
+        });
+    });
+}
+
+async function submitAvis() {
+    const text = document.getElementById('avis-text').value.trim();
+    if (selectedNote === 0) return alert("Veuillez sélectionner une note (étoiles).");
+    if (!text) return alert("Veuillez écrire un commentaire.");
+    
+    try {
+        const res = await fetch(`${API_URL}/avis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: selectedNote, commentaire: text })
+        });
+        const data = await res.json();
+        if(data.success) {
+            alert(data.message);
+            document.getElementById('avis-text').value = '';
+            selectedNote = 0;
+            starSpans.forEach(s => { s.classList.add('text-gray-500'); s.classList.remove('text-yellow-400'); });
+        }
+    } catch(e) { alert("Erreur réseau."); }
+}
+
+async function loadPublicAvis() {
+    const container = document.getElementById('avis-display');
+    if(!container) return;
+    try {
+        const res = await fetch(`${API_URL}/avis/approuves`);
+        const avis = await res.json();
+        if(avis.length === 0) { container.innerHTML = '<p class="text-center text-gray-500 italic">Soyez le premier à laisser un avis !</p>'; return; }
+        
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            return `
+            <div class="glass-panel p-4 rounded-xl">
+                <div class="text-yellow-400 text-lg mb-1">${stars}</div>
+                <p class="text-gray-300 text-sm italic mb-2">"${a.commentaire}"</p>
+                <div class="text-xs text-gray-500 text-right">- Client Anonyme</div>
+            </div>`;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur de chargement des avis.'; }
+}
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+    initCosmicTimer();
+    loadPublicAvis();
+});
+// ===== TIMER_AVIS_JS_PATCH - END =====
+
