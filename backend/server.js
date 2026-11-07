@@ -13,10 +13,29 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
+// ===== TIME_HELPERS =====
+function getBrusselsTime() {
+  return new Intl.DateTimeFormat('fr-BE', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12:false }).format(new Date());
+}
+async function isOrderingOpen() {
+  try {
+    const r = await pool.query("SELECT key, value FROM settings WHERE key IN ('order_start_time', 'order_end_time')");
+    let start = '22:00', end = '06:00';
+    r.rows.forEach(row => {
+      if (row.key === 'order_start_time') start = row.value;
+      if (row.key === 'order_end_time') end = row.value;
+    });
+    const now = getBrusselsTime();
+    if (start <= end) return now >= start && now <= end;
+    return now >= start || now <= end;
+  } catch (e) { return true; }
+}
+// ========================
+
+
 
 // ===== TRAFFIC_PATCH_V1 - BEGIN =====
 // Historique glissant sur 60 secondes (1 point par seconde)
-for (let i = 0; i < 60; i++) liveTraffic.history.push(0);
 
 
 // ===== TRAFFIC_PATCH_V1 - MIDDLEWARE END =====
@@ -240,7 +259,12 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // --- ROUTE COMMANDES AVEC TRANSACTIONS SQL (ANTI-RACE CONDITION) ---
-app.post('/api/commandes', publicLimiter, async (req, res) => { 
+app.post('/api/commandes', publicLimiter, async (req, res) => {
+  const isOpen = await isOrderingOpen();
+  if (!isOpen) {
+    return res.status(403).json({ error: "Les commandes sont actuellement fermées. Revenez pendant nos horaires d'ouverture." });
+  }
+ 
   const { client_id, cart, total, promo_code, valide_par, zone } = req.body; 
   const client = await pool.connect();
   
