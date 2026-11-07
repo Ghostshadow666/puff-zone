@@ -52,6 +52,8 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS zone_nom VARCHAR(100);');
     
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
+    await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS categorie_nom VARCHAR(100);');
+    
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
@@ -272,7 +274,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
+    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'categorie', ci.categorie_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
     res.json(r.rows);
   } catch (e) {
     res.status(500).json({ error: 'Erreur' });
@@ -301,7 +303,7 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
 
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => { 
   try { 
-    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]); 
+    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'categorie', ci.categorie_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]); 
     res.json(r.rows); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
@@ -470,7 +472,7 @@ app.delete('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => {
 
 app.get('/api/ventes', authenticateToken, isAdmin, async (req, res) => {
   try { 
-    const r = await pool.query(`SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente, c.valide_par, c.promo_code, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE LOWER(c.statut) LIKE '%livr%' ORDER BY c.date_commande DESC`); 
+    const r = await pool.query(`SELECT c.id, c.client_id, c.total as prix_vente_total, c.date_commande as date_vente, c.valide_par, c.promo_code, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'categorie', ci.categorie_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE LOWER(c.statut) LIKE '%livr%' ORDER BY c.date_commande DESC`); 
     let totalCA = 0; 
     r.rows.forEach(v => totalCA += parseFloat(v.prix_vente_total)); 
     res.json({ ventes: r.rows, totalCA }); 

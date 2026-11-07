@@ -246,7 +246,7 @@
             let itemsHtml = '<div class="mt-2 bg-black/20 p-3 rounded-lg border border-white/5 text-xs text-gray-300"><div class="font-bold text-nebula-cyan mb-1">Détail de la commande :</div>';
             if (cmd.items && cmd.items.length > 0) {
                 cmd.items.forEach(i => {
-                    itemsHtml += `<div class="flex justify-between"><span>${i.qte}x ${escapeHTML(i.nom)}</span><span class="text-gray-400">${parseFloat(i.prix).toFixed(2)}€/u</span></div>`;
+                    itemsHtml += `<div class="flex justify-between"><span>${i.qte}x ${escapeHTML(i.nom)} ${i.categorie ? `<span class="text-gray-500 text-[10px]">(${escapeHTML(i.categorie)})</span>` : ''}</span><span class="text-gray-400">${parseFloat(i.prix).toFixed(2)}€/u</span></div>`;
                 });
             } else {
                 itemsHtml += '<div>Aucun détail disponible.</div>';
