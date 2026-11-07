@@ -239,7 +239,42 @@
         async function loadDrivers() { try { const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); if(!Array.isArray(d)) return; allLivreurs = d; const el = document.getElementById('driverList'); if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; } el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">🛵 ${x.name}</div><div class="text-xs text-gray-400 mt-1">📦 Livraisons: ${x.total_livraisons} | 💰 CA: ${parseFloat(x.total_ca).toFixed(2)} €</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join(''); } catch(e) { console.error(e); } }
         async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
         async function loadCommandes() { try { const res = await fetch(`${API_URL}/commandes`); const commandes = await res.json(); if(!Array.isArray(commandes)) return; const enCours = commandes.filter(c => c.statut !== 'livre'); const terminees = commandes.filter(c =>c.statut === 'livre'); document.getElementById('commandesEnCours').innerHTML = enCours.length === 0 ? 'Aucune commande en cours.' : enCours.map(cmd => renderCommandeCard(cmd, false)).join(''); document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? 'Aucune commande terminée.' : terminees.map(cmd => renderCommandeCard(cmd, true)).join(''); } catch (e) { document.getElementById('commandesEnCours').innerHTML = 'Erreur.'; } }
-        function renderCommandeCard(cmd, isTerminee) { const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Préparation', 'en_livraison': 'En livraison', 'livre': 'Livré' }; if (isTerminee) return `<div class="p-4 mb-3 bg-green-500/5 rounded-xl border border-green-500/20 flex justify-between items-center"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | ✅ Livré</div></div><div class="font-bold text-green-400">${parseFloat(cmd.total).toFixed(2)} €</div></div>`; let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join(''); let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${l.name}</option>`).join(''); return `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 space-y-3"><div class="flex justify-between items-start"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${cmd.client_nom}</div><div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | 📍 ${cmd.adresse || 'N/A'}</div></div><div class="font-bold text-nebula-cyan">${parseFloat(cmd.total).toFixed(2)} €</div></div><div class="flex gap-2"><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select><select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select></div></div>`; }
+        function renderCommandeCard(cmd, isTerminee) {
+            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Préparation', 'en_livraison': 'En livraison', 'livre': 'Livré' };
+            
+            // Génération de la liste des articles
+            let itemsHtml = '<div class="mt-2 bg-black/20 p-3 rounded-lg border border-white/5 text-xs text-gray-300"><div class="font-bold text-nebula-cyan mb-1">Détail de la commande :</div>';
+            if (cmd.items && cmd.items.length > 0) {
+                cmd.items.forEach(i => {
+                    itemsHtml += `<div class="flex justify-between"><span>${i.qte}x ${escapeHTML(i.nom)}</span><span class="text-gray-400">${parseFloat(i.prix).toFixed(2)}€/u</span></div>`;
+                });
+            } else {
+                itemsHtml += '<div>Aucun détail disponible.</div>';
+            }
+            if (cmd.promo_code) itemsHtml += `<div class="mt-1 text-purple-400 font-bold">Code Promo : ${cmd.promo_code}</div>`;
+            if (cmd.zone_nom) itemsHtml += `<div class="mt-1 text-green-400 font-bold">Zone : ${escapeHTML(cmd.zone_nom)}</div>`;
+            itemsHtml += '</div>';
+
+            if (isTerminee) return `<div class="p-4 mb-3 bg-green-500/5 rounded-xl border border-green-500/20 flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="font-bold text-white">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div><div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | ✅ Livré</div></div><div class="font-bold text-green-400">${parseFloat(cmd.total).toFixed(2)} €</div></div>${itemsHtml}</div>`;
+
+            let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+            let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
+            
+            return `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 space-y-3">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="font-bold text-white">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div>
+                        <div class="text-xs text-gray-400 mt-1">📞 ${cmd.telephone} | 📍 ${escapeHTML(cmd.adresse) || 'N/A'}</div>
+                    </div>
+                    <div class="font-bold text-nebula-cyan text-lg">${parseFloat(cmd.total).toFixed(2)} €</div>
+                </div>
+                ${itemsHtml}
+                <div class="flex gap-2">
+                    <select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
+                    <select class="bg-space-bg border border-white/10 rounded-lg text-xs p-2 text-white flex-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
+                </div>
+            </div>`;
+        }
         async function updateStatut(id, statut) { try { await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); loadCommandes(); } catch (e) {} }
         async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id })}); alert('Assigné !'); loadCommandes(); } catch (e) {} }
         

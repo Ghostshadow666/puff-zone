@@ -330,10 +330,11 @@ async function checkout() {
     
     const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
     const promoCode = window.appliedPromoCode || null;
+    const zoneNom = selectedZone ? selectedZone.nom : null;
     const btn = document.getElementById('checkout-btn'); btn.disabled = true;
 
     try {
-        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom }) });
+        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: zoneNom }) });
         const data = await res.json();
         if(res.ok && data.success) {
             alert('\u2705 Commande envoy\u00e9e avec succ\u00e8s !');

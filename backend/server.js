@@ -49,6 +49,8 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
+    await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS zone_nom VARCHAR(100);');
+    
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
@@ -191,7 +193,7 @@ app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
 
 // --- ROUTE COMMANDES AVEC TRANSACTIONS SQL (ANTI-RACE CONDITION) ---
 app.post('/api/commandes', publicLimiter, async (req, res) => { 
-  const { client_id, cart, total, promo_code, valide_par } = req.body; 
+  const { client_id, cart, total, promo_code, valide_par, zone } = req.body; 
   const client = await pool.connect();
   
   try { 
@@ -245,7 +247,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
     } 
 
     // 3. Création de la commande avec le VRAI total
-    const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code) VALUES ($1,$2,$3,$4) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null]); 
+    const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom) VALUES ($1,$2,$3,$4,$5) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null]); 
     
     // 4. Ajout des items et déduction du stock
     for (const item of cart) { 
@@ -270,7 +272,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
 app.get('/api/commandes', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
+    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY c.date_commande DESC`);
     res.json(r.rows);
   } catch (e) {
     res.status(500).json({ error: 'Erreur' });
@@ -299,7 +301,7 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
 
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => { 
   try { 
-    const r = await pool.query(`SELECT c.*, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]); 
+    const r = await pool.query(`SELECT c.*, c.zone_nom, COALESCE(NULLIF(cl.nom, ''), 'Client ' || cl.telephone) as client_nom, cl.telephone, cl.whatsapp, cl.adresse, (SELECT json_agg(json_build_object('nom', ci.saveur_nom, 'qte', ci.quantite, 'prix', ci.prix)) FROM commande_items ci WHERE ci.commande_id = c.id) as items FROM commandes c LEFT JOIN clients cl ON c.client_id = cl.id WHERE c.livreur_id = $1 AND c.statut != 'livre' ORDER BY c.date_commande DESC`, [req.params.id]); 
     res.json(r.rows); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
