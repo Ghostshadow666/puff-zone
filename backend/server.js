@@ -13,6 +13,43 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
+
+// ===== MAINTENANCE_PATCH_V2 - BEGIN =====
+let _maintenanceCache = { value: false, timestamp: 0 };
+const _MAINT_TTL = 10000;
+async function _checkMaintenance() {
+  const now = Date.now();
+  if (now - _maintenanceCache.timestamp < _MAINT_TTL) return _maintenanceCache.value;
+  try {
+    const r = await pool.query("SELECT value FROM settings WHERE key = 'maintenance_mode' LIMIT 1");
+    _maintenanceCache.value = r.rows.length > 0 && r.rows[0].value === 'true';
+    _maintenanceCache.timestamp = now;
+    return _maintenanceCache.value;
+  } catch (e) {
+    return false;
+  }
+}
+
+app.use(async (req, res, next) => {
+  const p = req.path;
+  if (p === '/maintenance.html' || p === '/favicon.ico') return next();
+  if (p.startsWith('/admin')) return next();
+  if (p.startsWith('/api/admin')) return next();
+  if (p === '/api/login' || p === '/api/login-livreur') return next();
+  if (p === '/api/health') return next();
+  try {
+    const isMaint = await _checkMaintenance();
+    if (isMaint) {
+      if (p.startsWith('/api/')) return res.status(503).json({ error: 'Maintenance en cours.' });
+      return res.status(503).sendFile(path.join(__dirname, 'public', 'maintenance.html'));
+    }
+    next();
+  } catch (e) {
+    next();
+  }
+});
+// ===== MAINTENANCE_PATCH_V2 - MIDDLEWARE END =====
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -59,6 +96,7 @@ const initDB = async () => {
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
     
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
+    await pool.query("INSERT INTO settings (key, value) VALUES ('maintenance_mode', 'false') ON CONFLICT (key) DO NOTHING");
 
     await pool.query("INSERT INTO settings (key, value) VALUES ('lockdown', 'false') ON CONFLICT (key) DO NOTHING");
     const lockRes = await pool.query("SELECT value FROM settings WHERE key = 'lockdown'");
@@ -555,6 +593,35 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
   }
 });
 // ===== DELETE_ORDER_PATCH - END =====
+
+
+// ===== MAINTENANCE_PATCH_V2 - ROUTES =====
+app.get('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query("SELECT value FROM settings WHERE key = 'maintenance_mode' LIMIT 1");
+    const enabled = r.rows.length > 0 && r.rows[0].value === 'true';
+    res.json({ enabled });
+  } catch (e) {
+    res.status(500).json({ error: 'Erreur' });
+  }
+});
+
+app.post('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const enabled = !!(req.body && req.body.enabled);
+    await pool.query(
+      "INSERT INTO settings (key, value) VALUES ('maintenance_mode', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+      [enabled ? 'true' : 'false']
+    );
+    _maintenanceCache = { value: enabled, timestamp: Date.now() };
+    await logAction(req.user, 'Mode Maintenance', enabled ? 'ACTIVE' : 'DESACTIVE');
+    res.json({ success: true, enabled });
+  } catch (e) {
+    console.error('Maintenance toggle error:', e);
+    res.status(500).json({ error: 'Erreur' });
+  }
+});
+// ===== MAINTENANCE_PATCH_V2 - ROUTES END =====
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

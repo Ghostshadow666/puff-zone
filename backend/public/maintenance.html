@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUFF ZONE - Maintenance Cosmique</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap');
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',sans-serif;
+    background: radial-gradient(ellipse at top, #1a0a2e 0%, #0a0a1a 50%, #000005 100%);
+    min-height:100vh; overflow-x:hidden; color:#fff;
+  }
+  .font-cosmic{font-family:'Orbitron',sans-serif;}
+  .neon-text{text-shadow:0 0 10px #a855f7,0 0 25px #a855f7,0 0 50px #a855f7;}
+  .neon-border{box-shadow:0 0 20px rgba(168,85,247,.55),inset 0 0 20px rgba(168,85,247,.12);}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+  @keyframes pulse-glow{0%,100%{filter:drop-shadow(0 0 10px #a855f7)}50%{filter:drop-shadow(0 0 35px #ec4899)}}
+  @keyframes spin-slow{to{transform:rotate(360deg)}}
+  @keyframes twinkle{0%{opacity:.25}100%{opacity:1}}
+  .float{animation:float 4s ease-in-out infinite;}
+  .pulse-glow{animation:pulse-glow 2.5s ease-in-out infinite;}
+  .spin-slow{animation:spin-slow 14s linear infinite;}
+  .stars{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 40% 70%, #a855f7, transparent),
+      radial-gradient(2px 2px at 80% 20%, #ec4899, transparent),
+      radial-gradient(1px 1px at 60% 90%, #06b6d4, transparent),
+      radial-gradient(1px 1px at 10% 60%, #fff, transparent),
+      radial-gradient(1px 1px at 90% 50%, #fff, transparent),
+      radial-gradient(1px 1px at 35% 15%, #a855f7, transparent),
+      radial-gradient(1px 1px at 75% 80%, #06b6d4, transparent);
+    background-size:200% 200%;
+    animation:twinkle 6s ease-in-out infinite alternate;
+  }
+</style>
+</head>
+<body class="flex items-center justify-center p-4 relative">
+  <div class="stars"></div>
+  <div class="relative z-10 max-w-2xl w-full text-center">
+    <div class="mb-8 float">
+      <div class="inline-block p-8 rounded-full bg-gradient-to-br from-purple-600/20 to-pink-600/20 border-2 border-purple-500/50 pulse-glow">
+        <svg class="w-20 h-20 text-purple-400 spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="font-cosmic text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 neon-text mb-3">
+      MAINTENANCE
+    </h1>
+    <h2 class="font-cosmic text-lg md:text-xl text-purple-300 tracking-[0.4em] mb-8">
+      EN COURS...
+    </h2>
+    <div class="rounded-2xl bg-black/40 backdrop-blur-md border border-purple-500/30 neon-border p-8 mb-8">
+      <p class="text-gray-200 text-lg mb-3">Nos ingenieures cosmiques recalibrent les dimensions de la PUFF ZONE.</p>
+      <p class="text-gray-400 text-sm">Le site sera de retour tres bientot. Merci de votre patience.</p>
+      <div class="flex justify-center gap-2 mt-6">
+        <span class="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style="animation-delay:0s"></span>
+        <span class="w-3 h-3 rounded-full bg-pink-500 animate-bounce" style="animation-delay:.15s"></span>
+        <span class="w-3 h-3 rounded-full bg-cyan-500 animate-bounce" style="animation-delay:.3s"></span>
+      </div>
+    </div>
+    <p class="text-gray-600 text-xs font-cosmic tracking-[0.3em]">PUFF ZONE &copy; COSMIC VAPING EXPERIENCE</p>
+    <p class="text-gray-700 text-[10px] mt-4">Verification automatique toutes les 10 secondes...</p>
+  </div>
+  <script>
+    setInterval(async () => {
+      try {
+        const r = await fetch('/', { method: 'HEAD', cache: 'no-store' });
+        if (r.status !== 503) window.location.reload();
+      } catch(e) {}
+    }, 10000);
+  </script>
+</body>
+</html>
