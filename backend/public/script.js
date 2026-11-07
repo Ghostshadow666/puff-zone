@@ -192,6 +192,24 @@ function calculerPrixItem(item) {
     return { total, detail: detail.join(' + ') };
 }
 
+
+    fetch(`${API_URL}/settings/order-window`).then(r => r.json()).then(sched => {
+        const bannerId = 'closed-banner';
+        let banner = document.getElementById(bannerId);
+        if (!sched.isOpen) {
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = bannerId;
+                banner.className = 'bg-red-500/20 border border-red-500/50 text-red-400 text-xs text-center p-2 rounded-lg mb-2 font-bold animate-pulse';
+                banner.innerHTML = `🔒 Commandes fermées. Ouverture à ${sched.start}`;
+                const cartItems = document.getElementById('cart-items');
+                if (cartItems) cartItems.parentNode.insertBefore(banner, cartItems);
+            }
+        } else {
+            if (banner) banner.remove();
+        }
+    }).catch(()=>{});
+
 function updateCartUI() {
     const count = cart.reduce((sum, item) => sum + item.qty, 0); 
     const cc = document.getElementById('cart-count');
@@ -324,6 +342,13 @@ async function applyPromo() {
 }
 
 async function checkout() {
+    try {
+        const sched = await fetch(`${API_URL}/settings/order-window`).then(r => r.json());
+        if (!sched.isOpen) {
+            return alert(`⚠️ Les commandes sont fermées.\n\nNos horaires : ${sched.start} à ${sched.end}.\nRevenez pendant ces heures pour valider votre panier !`);
+        }
+    } catch(e) {} // CLIENT_SCHEDULE_PATCH_V1
+
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
     if(!selectedZone) return alert('Veuillez choisir une zone.');
@@ -345,3 +370,4 @@ async function checkout() {
         } else { alert('Erreur : ' + (data.error || 'inconnue')); btn.disabled = false; }
     } catch(e) { alert('Erreur de connexion.'); btn.disabled = false; }
 }
+// CLIENT_SCHEDULE_PATCH_V1

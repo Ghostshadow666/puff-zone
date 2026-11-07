@@ -15,24 +15,10 @@ app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false 
 app.use(cors());
 
 // ===== TRAFFIC_PATCH_V1 - BEGIN =====
-let liveTraffic = { totalVisits: 0, history: [] };
 // Historique glissant sur 60 secondes (1 point par seconde)
 for (let i = 0; i < 60; i++) liveTraffic.history.push(0);
 
-let currentSecondVisits = 0;
-setInterval(() => {
-  liveTraffic.history.push(currentSecondVisits);
-  if (liveTraffic.history.length > 60) liveTraffic.history.shift();
-  currentSecondVisits = 0;
-}, 1000);
 
-app.use((req, res, next) => {
-  if (req.method === 'GET' && !req.path.startsWith('/api/admin') && !req.path.includes('.')) {
-    liveTraffic.totalVisits++;
-    currentSecondVisits++;
-  }
-  next();
-});
 // ===== TRAFFIC_PATCH_V1 - MIDDLEWARE END =====
 
 
@@ -623,14 +609,7 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
 
 // ===== MAINTENANCE_PATCH_V2 - ROUTES =====
 
-app.get('/api/admin/traffic', authenticateToken, isAdmin, (req, res) => {
-  const recentVisits = liveTraffic.history.reduce((a, b) => a + b, 0);
-  res.json({
-    totalVisits: liveTraffic.totalVisits,
-    history: liveTraffic.history,
-    activeVisitors: recentVisits // Simplification : visites sur la dernière minute
-  });
-});
+
 
 app.get('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) => {
   try {

@@ -123,14 +123,7 @@
                         <div class="text-sm font-bold text-yellow-400" id="maintenanceBtnLabel">ACTIVER MAINTENANCE</div>
                         <div class="text-[9px] text-gray-400 mt-1" id="maintenanceBtnStatus">Site actuellement accessible</div>
                     </button>
-                    <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 mb-6">
-    <h3 class="text-xs font-mono text-nebula-cyan mb-4 flex justify-between">
-        <span>TRAFIC EN DIRECT (60 DERNIÈRES SECONDES)</span>
-        <span id="liveTotalVisits" class="text-white">Total : 0</span>
-    </h3>
-    <canvas id="trafficChart" height="60"></canvas>
-</div>
-<div class="bg-black border border-gray-700 rounded-xl p-4 font-mono text-xs text-green-500 h-48 overflow-y-auto mb-6" id="socTerminal"></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
+                    <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
         </div>
     </div>
 
@@ -198,7 +191,7 @@
             if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').classList.add('hidden'); }
             if(tabId === 'tab-clients') loadClients(); if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
             if(tabId === 'tab-stats') loadStats(); if(tabId === 'tab-ventes') loadVentes();
-            if(tabId === 'tab-logs') loadLogs(); if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); startTraffic(); } else { stopTraffic(); }
+            if(tabId === 'tab-logs') loadLogs(); if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
         let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;
@@ -783,73 +776,7 @@ function renderGroupedCommandeCard(orders) {
         async function loadSecurity() { try { const res = await fetch(`${API_URL}/security/analyse`); const data = await res.json(); document.getElementById('socAttacks').textContent = data.totalAttacks; const lockStatus = document.getElementById('socLockdownStatus'); lockStatus.textContent = data.isLockdown ? 'ACTIF' : 'OFF'; lockStatus.style.color = data.isLockdown ? '#EF4444' : '#10B981'; const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="text-2xl mb-2">🔓</div><div class="text-sm font-bold text-green-400">DÉSACTIVER</div>` : `<div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div>`; const terminal = document.getElementById('socTerminal'); let html = `<div>[SYSTEM] Initialisation...</div>`; if (data.totalAttacks === 0) { html += `<div class="text-green-500">[OK] Aucune menace.</div>`; } else { html += `<div class="text-red-500">[ALERTE] ${data.totalAttacks} menaces !</div>`; data.failedLogins.forEach(log =>{ html += `<div class="text-red-500">[BLOCAGE] ${log.details}</div>`; }); } terminal.innerHTML = html; } catch (e) {} }
         
 
-// ===== TRAFFIC_ADMIN_PATCH - BEGIN =====
-let trafficChart = null;
-let trafficInterval = null;
 
-async function loadTraffic() {
-    try {
-        const res = await fetch(`${API_URL}/admin/traffic`);
-        const data = await res.json();
-        
-        document.getElementById('liveTotalVisits').textContent = 'Total : ' + data.totalVisits;
-        
-        const ctx = document.getElementById('trafficChart').getContext('2d');
-        
-        // Labels 0 à 60
-        const labels = Array.from({length: 60}, (_, i) => i === 59 ? 'Maintenant' : '-' + (59-i) + 's');
-
-        if (!trafficChart) {
-            trafficChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Requêtes / sec',
-                        data: data.history,
-                        borderColor: '#4cc9f0',
-                        backgroundColor: 'rgba(76, 201, 240, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        pointRadius: 0,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 0 },
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: 'rgba(255,255,255,0.05)' }, 
-                            ticks: { color: '#666', stepSize: 1 } 
-                        }
-                    }
-                }
-            });
-        } else {
-            trafficChart.data.datasets[0].data = data.history;
-            trafficChart.update();
-        }
-    } catch(e) { console.error('Traffic error:', e); }
-}
-
-function startTraffic() {
-    if (trafficInterval) clearInterval(trafficInterval);
-    loadTraffic();
-    trafficInterval = setInterval(loadTraffic, 1000);
-}
-
-function stopTraffic() {
-    if (trafficInterval) {
-        clearInterval(trafficInterval);
-        trafficInterval = null;
-    }
-}
-// ===== TRAFFIC_ADMIN_PATCH - END =====
 
 // ===== MAINTENANCE_ADMIN_V2 - BEGIN =====
 async function loadMaintenance() {
