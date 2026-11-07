@@ -205,18 +205,18 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
     // 1. Vérification et verrouillage des stocks + Calcul du vrai prix
     for (const item of cart) { 
-      // On récupère le stock et les prix de la catégorie liée à cette saveur
+      // CORRECTION : On cherche par l'ID de la saveur (item.id) et non par le nom
       const s = await client.query(
         `SELECT s.stock, c.prix_unite, c.prix_lot_5, c.prix_lot_10 
          FROM saveurs s 
          JOIN categories c ON s.categorie_id = c.id 
-         WHERE s.nom = $1 FOR UPDATE`, 
-        [item.nom]
+         WHERE s.id = $1 FOR UPDATE`, 
+        [item.id]
       ); 
 
       if (s.rows.length === 0 || item.qty > s.rows[0].stock) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Stock insuffisant pour "${item.nom}".` }); 
+        return res.status(400).json({ error: `Stock insuffisant ou produit introuvable : "${item.nom}".` }); 
       }
 
       // --- CALCUL DU PRIX CÔTÉ SERVEUR (SÉCURITÉ ANTI-TRICHE) ---
@@ -226,16 +226,19 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
       const p5 = dbItem.prix_lot_5 ? parseFloat(dbItem.prix_lot_5) : null;
       const p10 = dbItem.prix_lot_10 ? parseFloat(dbItem.prix_lot_10) : null;
 
+      // Calcul des lots de 10
       if (p10 && qty >= 10) {
           let nbLots10 = Math.floor(qty / 10);
           calculatedTotal += nbLots10 * p10;
           qty = qty % 10;
       }
+      // Calcul des lots de 5
       if (p5 && qty >= 5) {
           let nbLots5 = Math.floor(qty / 5);
           calculatedTotal += nbLots5 * p5;
           qty = qty % 5;
       }
+      // Calcul du reste à l'unité
       if (qty > 0) {
           calculatedTotal += qty * p1;
       }
@@ -251,16 +254,20 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
     // 3. Création de la commande avec le VRAI total
     const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom) VALUES ($1,$2,$3,$4,$5) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null]); 
     
-    // 4. Ajout des items et déduction du stock
+    // 4. Ajout des items (avec l'ID de la catégorie pour être sûr) et déduction du stock
     for (const item of cart) { 
-      // On garde le prix unitaire de base pour l'historique, mais le total global est juste
-      const s = await client.query('SELECT prix_unite FROM categories c JOIN saveurs s ON c.id = s.categorie_id WHERE s.nom = $1', [item.nom]);
-      await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix) VALUES ($1,$2,$3,$4)', [cmd.rows[0].id, item.nom, item.qty, s.rows[0].prix_unite]); 
-      await client.query('UPDATE saveurs SET stock = stock - $1 WHERE nom = $2', [item.qty, item.nom]); 
+      // On récupère l'ID de la catégorie et le prix unitaire de base pour l'historique
+      const catInfo = await client.query('SELECT s.categorie_id, c.prix_unite, c.nom as cat_nom FROM saveurs s JOIN categories c ON s.categorie_id = c.id WHERE s.id = $1', [item.id]);
+      
+      await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, categorie_nom) VALUES ($1,$2,$3,$4,$5)', 
+          [cmd.rows[0].id, item.nom, item.qty, catInfo.rows[0].prix_unite, catInfo.rows[0].cat_nom]); 
+          
+      // On déduit le stock en utilisant l'ID de la saveur (fiable à 100%)
+      await client.query('UPDATE saveurs SET stock = stock - $1 WHERE id = $2', [item.qty, item.id]); 
     } 
 
     await client.query('COMMIT');
-    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Cmd #${cmd.rows[0].id}`); 
+    await logAction({name: valide_par || 'Client', role: 'client'}, 'Nouvelle Commande', `Cmd #${cmd.rows[0].id} - Total: ${finalTotal.toFixed(2)}€`); 
     res.json({ success: true, commande_id: cmd.rows[0].id, finalTotal }); 
     
   } catch (e) { 
