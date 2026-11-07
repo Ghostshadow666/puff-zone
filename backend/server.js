@@ -106,7 +106,7 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS zones (id SERIAL PRIMARY KEY, nom VARCHAR(100), lat DECIMAL(10,8), lng DECIMAL(11,8), rayon INTEGER, min_commande INTEGER);
       CREATE TABLE IF NOT EXISTS backup_commandes (id SERIAL PRIMARY KEY, date_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP, data JSONB);
       CREATE TABLE IF NOT EXISTS logs_activite (id SERIAL PRIMARY KEY, date_log TIMESTAMP DEFAULT CURRENT_TIMESTAMP, user_name VARCHAR(100), user_role VARCHAR(50), action VARCHAR(255), details TEXT);
-      CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, nom VARCHAR(100), image_url TEXT, prix_unite DECIMAL(10,2), prix_lot_5 DECIMAL(10,2), prix_lot_10 DECIMAL(10,2), is_featured BOOLEAN DEFAULT false);
+      CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, nom VARCHAR(100), image_url TEXT, prix_unite DECIMAL(10,2), prix_lot_5 DECIMAL(10,2), prix_lot_10 DECIMAL(10,2), is_featured BOOLEAN DEFAULT false, ordre INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS saveurs (id SERIAL PRIMARY KEY, categorie_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, nom VARCHAR(100), stock INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS settings (key VARCHAR(50) PRIMARY KEY, value TEXT);
     `);
@@ -119,6 +119,7 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS categorie_nom VARCHAR(100);');
     
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
+    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
     

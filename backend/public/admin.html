@@ -810,6 +810,29 @@ function renderGroupedCommandeCard(orders) {
 
 
 
+
+// ===== CATEGORY_REORDER_PATCH - BEGIN =====
+async function saveCategoryOrder() {
+    const container = document.getElementById('catalogueList');
+    if (!container) return;
+    // On récupère tous les ID des catégories affichées dans l'ordre
+    const categoryElements = container.querySelectorAll('[data-cat-id]');
+    const orderedIds = Array.from(categoryElements).map(el => parseInt(el.getAttribute('data-cat-id')));
+    
+    if (orderedIds.length === 0) return;
+
+    try {
+        await fetch(`${API_URL}/categories/reorder`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderedIds })
+        });
+        console.log('Ordre sauvegardé !');
+    } catch(e) {
+        console.error('Erreur sauvegarde ordre', e);
+    }
+}
+// ===== CATEGORY_REORDER_PATCH - END =====
 // ===== MAINTENANCE_ADMIN_V2 - BEGIN =====
 async function loadMaintenance() {
     try {
