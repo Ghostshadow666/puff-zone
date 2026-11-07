@@ -14,6 +14,28 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
 
+// ===== TRAFFIC_PATCH_V1 - BEGIN =====
+let liveTraffic = { totalVisits: 0, history: [] };
+// Historique glissant sur 60 secondes (1 point par seconde)
+for (let i = 0; i < 60; i++) liveTraffic.history.push(0);
+
+let currentSecondVisits = 0;
+setInterval(() => {
+  liveTraffic.history.push(currentSecondVisits);
+  if (liveTraffic.history.length > 60) liveTraffic.history.shift();
+  currentSecondVisits = 0;
+}, 1000);
+
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api/admin') && !req.path.includes('.')) {
+    liveTraffic.totalVisits++;
+    currentSecondVisits++;
+  }
+  next();
+});
+// ===== TRAFFIC_PATCH_V1 - MIDDLEWARE END =====
+
+
 // ===== MAINTENANCE_PATCH_V2 - BEGIN =====
 let _maintenanceCache = { value: false, timestamp: 0 };
 const _MAINT_TTL = 10000;
@@ -569,11 +591,15 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
     await client.query('BEGIN');
     
     // 1. Récupérer les articles de la commande pour le restock
-    const items = await client.query('SELECT saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
+    const items = await client.query('SELECT saveur_id, saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
     
     // 2. Remettre les stocks
     for (const item of items.rows) {
-      await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]);
+      if (item.saveur_id) {
+        await client.query('UPDATE saveurs SET stock = stock + $1 WHERE id = $2', [item.quantite, item.saveur_id]);
+      } else {
+        await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]); // Fallback anciennes commandes
+      }
     }
     
     // 3. Supprimer les items et la commande
@@ -596,6 +622,16 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
 
 
 // ===== MAINTENANCE_PATCH_V2 - ROUTES =====
+
+app.get('/api/admin/traffic', authenticateToken, isAdmin, (req, res) => {
+  const recentVisits = liveTraffic.history.reduce((a, b) => a + b, 0);
+  res.json({
+    totalVisits: liveTraffic.totalVisits,
+    history: liveTraffic.history,
+    activeVisitors: recentVisits // Simplification : visites sur la dernière minute
+  });
+});
+
 app.get('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query("SELECT value FROM settings WHERE key = 'maintenance_mode' LIMIT 1");
