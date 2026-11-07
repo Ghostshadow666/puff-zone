@@ -925,6 +925,37 @@ async function simulateAttack() { if(!confirm("Simuler ?")) return; await fetch(
         async function toggleLockdown() { if(!confirm("Changer l'état ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ON" : "OFF")); loadSecurity(); }
         async function backupWipe() { if(!confirm("⚠️ TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Confirmer ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
         async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `secu.json`; a.click(); } catch (e) {} }
-    </script>
+    
+        // --- FONCTIONS RESTAUREES ---
+        async function saveSettings() { 
+            const banner_text = document.getElementById('settingBannerText').value; 
+            const start = document.getElementById('orderStartTime').value;
+            const end = document.getElementById('orderEndTime').value;
+            try { 
+                await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banner_text }) }); 
+                await fetch(`${API_URL}/settings/order-window`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end }) }); 
+                alert('✅ Enregistré !'); 
+            } catch(e) { alert('Erreur.'); } 
+        }
+
+        async function loadSettings() { 
+            try { 
+                const res = await fetch(`${API_URL}/settings`); 
+                const data = await res.json(); 
+                if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text; 
+                if(data.order_start_time) document.getElementById('orderStartTime').value = data.order_start_time;
+                if(data.order_end_time) document.getElementById('orderEndTime').value = data.order_end_time;
+            } catch(e) { console.error(e); } 
+        }
+
+        async function loadPromos() { 
+            try { 
+                const res = await fetch(`${API_URL}/promo`); 
+                const promos = await res.json(); 
+                document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); 
+            } catch (e) {} 
+        }
+        // -----------------------------
+</script>
 </body>
 </html>
