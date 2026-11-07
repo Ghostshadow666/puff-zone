@@ -86,7 +86,22 @@
             </div>
         </div>
         <div id="tab-settings" class="tab-content hidden">
-            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">⚙️ Paramètres du Site</h2><div class="space-y-4 max-w-2xl"><div><label class="text-xs font-bold text-gray-400 block mb-1">Texte du bandeau d'annonce</label><input type="text" id="settingBannerText" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white outline-none focus:border-nebula-cyan" placeholder="Entrez le texte du bandeau..."><p class="text-xs text-gray-500 mt-1">Ce texte défilera de droite à gauche sur la page d'accueil.</p></div><button onclick="saveSettings()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer les modifications</button></div></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">⚙️ Paramètres du Site</h2><div class="space-y-4 max-w-2xl"><div><label class="text-xs font-bold text-gray-400 block mb-1">Texte du bandeau d'annonce</label><input type="text" id="settingBannerText" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white outline-none focus:border-nebula-cyan" placeholder="Entrez le texte du bandeau..."><p class="text-xs text-gray-500 mt-1">Ce texte défilera de droite à gauche sur la page d'accueil.</p></div>
+<div class="pt-4 border-t border-white/10 mt-4">
+    <label class="text-xs font-bold text-gray-400 block mb-2">Plage horaire de commande (Heure de Bruxelles)</label>
+    <div class="flex items-center gap-4">
+        <div class="flex-1">
+            <span class="text-xs text-gray-500 mb-1 block">Ouverture</span>
+            <input type="time" id="orderStartTime" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan">
+        </div>
+        <div class="flex-1">
+            <span class="text-xs text-gray-500 mb-1 block">Fermeture</span>
+            <input type="time" id="orderEndTime" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan">
+        </div>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-2">Ex: 22:00 à 06:00 (passe minuit). Les clients ne pourront pas valider leur panier hors de cette plage.</p>
+</div>
+<button onclick="saveSettings()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer les modifications</button></div></div>
             <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2><form id="addPromoForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button></form></div>
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">🏷️ Codes actifs</h2><div id="promoList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
         </div>
@@ -542,8 +557,25 @@ function renderGroupedCommandeCard(orders) {
             } catch (e) { alert('Erreur de connexion.'); }
         }
 
-        async function loadSettings() { try { const res = await fetch(`${API_URL}/settings`); const data = await res.json(); if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text; } catch(e) { console.error(e); } }
-        async function saveSettings() { const banner_text = document.getElementById('settingBannerText').value; try { await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ banner_text }) }); alert('✅ Paramètres enregistrés !'); } catch(e) { alert('Erreur.'); } }
+        async function loadSettings() { 
+    try { 
+        const res = await fetch(`${API_URL}/settings`); 
+        const data = await res.json(); 
+        if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text; 
+        if(data.order_start_time) document.getElementById('orderStartTime').value = data.order_start_time;
+        if(data.order_end_time) document.getElementById('orderEndTime').value = data.order_end_time;
+    } catch(e) { console.error(e); } 
+}
+        async function saveSettings() { 
+    const banner_text = document.getElementById('settingBannerText').value; 
+    const start = document.getElementById('orderStartTime').value;
+    const end = document.getElementById('orderEndTime').value;
+    try { 
+        await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banner_text }) }); 
+        await fetch(`${API_URL}/settings/order-window`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end }) }); 
+        alert('✅ Paramètres et horaires enregistrés !'); 
+    } catch(e) { alert('Erreur.'); } 
+}
         
         async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
         document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code:document.getElementById('promoCode').value, pourcentage: parseInt(document.getElementById('promoPct').value) }) }); document.getElementById('addPromoForm').reset(); loadPromos(); });
