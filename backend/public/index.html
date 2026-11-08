@@ -42,6 +42,34 @@
     #space-stars { display: none; }
   </style>
 </head>
+
+<!-- Bouton flottant Avis -->
+<button onclick="openAvisModal()" class="fixed top-24 right-6 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-nebula-violet/90 to-nebula-cyan/90 text-white font-bold text-sm shadow-[0_0_20px_rgba(76,201,240,0.5)] hover:scale-105 transition-transform backdrop-blur-md border border-white/20">
+    <i data-lucide="star" class="w-4 h-4 text-yellow-300 fill-current"></i>
+    Laisser un avis
+</button>
+
+<!-- Modale Avis -->
+<div id="avis-modal" class="fixed inset-0 z-[10000] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-nebula-cyan/30 relative">
+        <button onclick="closeAvisModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+        <h3 class="text-xl font-cosmic font-bold text-white mb-2 text-center">Votre <span class="text-nebula-cyan">Avis</span></h3>
+        <p class="text-gray-400 text-xs text-center mb-4">Partagez votre experience en toute anonymat.</p>
+        
+        <div class="flex justify-center gap-2 mb-4 text-3xl text-gray-500 cursor-pointer" id="star-rating">
+            <span data-val="1" class="hover:text-yellow-400 transition-colors">â˜…</span>
+            <span data-val="2" class="hover:text-yellow-400 transition-colors">â˜…</span>
+            <span data-val="3" class="hover:text-yellow-400 transition-colors">â˜…</span>
+            <span data-val="4" class="hover:text-yellow-400 transition-colors">â˜…</span>
+            <span data-val="5" class="hover:text-yellow-400 transition-colors">â˜…</span>
+        </div>
+        
+        <textarea id="avis-text" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg p-3 text-white outline-none focus:border-nebula-cyan mb-4 text-sm" placeholder="Qu'avez-vous pense de votre commande ?"></textarea>
+        
+        <button onclick="submitAvis()" class="w-full py-3 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white font-bold text-sm shadow-lg hover:opacity-90 transition">Envoyer mon avis</button>
+    </div>
+</div>
+
 <body class="selection:bg-nebula-violet selection:text-white relative">
 
   <canvas id="bg-canvas"></canvas>
@@ -191,10 +219,25 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=5"></script>
   <script src="bg-animation.js"></script>
   <script>
     lucide.createIcons();
   </script>
+
+<!-- Section Avis (Bas de page - DÃ©pliable) -->
+<section class="max-w-4xl mx-auto px-4 py-10 relative z-10 border-t border-white/10 mt-10">
+    <div class="text-center">
+        <button onclick="toggleAvisList()" class="inline-flex items-center gap-2 text-nebula-cyan hover:text-white transition-colors font-bold text-sm">
+            <span id="avis-toggle-text">Voir les avis de la communaute</span>
+            <i data-lucide="chevron-down" id="avis-toggle-icon" class="w-4 h-4 transition-transform"></i>
+        </button>
+    </div>
+    
+    <div id="avis-list-container" class="hidden mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <p class="text-center text-gray-500 italic text-sm col-span-full">Chargement...</p>
+    </div>
+</section>
+
 </body>
 </html>

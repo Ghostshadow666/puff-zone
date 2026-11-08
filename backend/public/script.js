@@ -371,3 +371,151 @@ async function checkout() {
     } catch(e) { alert('Erreur de connexion.'); btn.disabled = false; }
 }
 // CLIENT_SCHEDULE_PATCH_V1
+
+
+// ===== AVIS_CLIENT =====
+
+
+async function submitAvis() {
+    const text = document.getElementById('avis-text').value.trim();
+    if (selectedNote === 0) return alert("Veuillez selectionner une note (etoiles).");
+    if (!text) return alert("Veuillez ecrire un commentaire.");
+    try {
+        const res = await fetch(`${API_URL}/avis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: selectedNote, commentaire: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('avis-text').value = '';
+            selectedNote = 0;
+            const starSpans = document.querySelectorAll('#star-rating span');
+            starSpans.forEach(s => { s.classList.add('text-gray-500'); s.classList.remove('text-yellow-400'); });
+        } else {
+            alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+    } catch(e) { alert("Erreur reseau."); }
+}
+
+async function loadPublicAvis() {
+    const container = document.getElementById('avis-display');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_URL}/avis/approuves`);
+        const avis = await res.json();
+        if (avis.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 italic">Soyez le premier a laisser un avis !</p>';
+            return;
+        }
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            return `
+            <div class="glass-panel p-4 rounded-xl">
+                <div class="text-yellow-400 text-lg mb-1">${stars}</div>
+                <p class="text-gray-300 text-sm italic mb-2">"${a.commentaire}"</p>
+                <div class="text-xs text-gray-500 text-right">- Client Anonyme</div>
+            </div>`;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur de chargement des avis.'; }
+}
+// =====================
+
+
+
+// ===== AVIS LOGIC V2 =====
+let selectedNote = 0;
+
+function openAvisModal() { 
+    document.getElementById('avis-modal').classList.remove('hidden'); 
+}
+function closeAvisModal() { 
+    document.getElementById('avis-modal').classList.add('hidden'); 
+}
+function toggleAvisList() {
+    const list = document.getElementById('avis-list-container');
+    const icon = document.getElementById('avis-toggle-icon');
+    const text = document.getElementById('avis-toggle-text');
+    if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+        text.textContent = 'Masquer les avis';
+        loadPublicAvis(); // Charger quand on ouvre
+    } else {
+        list.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+        text.textContent = 'Voir les avis de la communaute';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const starSpans = document.querySelectorAll('#star-rating span');
+    if (starSpans.length > 0) {
+        starSpans.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedNote = parseInt(star.getAttribute('data-val'));
+                starSpans.forEach(s => {
+                    if (parseInt(s.getAttribute('data-val')) <= selectedNote) {
+                        s.classList.remove('text-gray-500');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.add('text-gray-500');
+                        s.classList.remove('text-yellow-400');
+                    }
+                });
+            });
+        });
+    }
+});
+
+async function submitAvis() {
+    const text = document.getElementById('avis-text').value.trim();
+    if (selectedNote === 0) return alert("Veuillez selectionner une note (etoiles).");
+    if (!text) return alert("Veuillez ecrire un commentaire.");
+    
+    try {
+        const res = await fetch(`${API_URL}/avis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: selectedNote, commentaire: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            document.getElementById('avis-text').value = '';
+            selectedNote = 0;
+            const starSpans = document.querySelectorAll('#star-rating span');
+            starSpans.forEach(s => { s.classList.add('text-gray-500'); s.classList.remove('text-yellow-400'); });
+            closeAvisModal();
+        } else {
+            alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+    } catch(e) { alert("Erreur reseau."); }
+}
+
+async function loadPublicAvis() {
+    const container = document.getElementById('avis-list-container');
+    if (!container) return;
+    
+    container.innerHTML = '<p class="text-center text-gray-500 italic text-sm col-span-full">Chargement...</p>';
+    
+    try {
+        const res = await fetch(`${API_URL}/avis/approuves`);
+        const avis = await res.json();
+        if (avis.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 italic text-sm col-span-full">Aucun avis pour le moment. Soyez le premier !</p>';
+            return;
+        }
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            return `
+            <div class="glass-panel p-4 rounded-xl border border-white/5">
+                <div class="text-yellow-400 text-lg mb-1">${stars}</div>
+                <p class="text-gray-300 text-sm italic mb-2">"${a.commentaire}"</p>
+                <div class="text-xs text-gray-500 text-right">- Client Anonyme</div>
+            </div>`;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur de chargement.'; }
+}
+// ========================

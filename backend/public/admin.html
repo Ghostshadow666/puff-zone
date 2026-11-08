@@ -53,7 +53,8 @@
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
-                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-avis', this)">Avis</button>
+<button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
             </div>
         </div>
     </header>
@@ -105,7 +106,33 @@
             <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2><form id="addPromoForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button></form></div>
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">🏷️ Codes actifs</h2><div id="promoList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
         </div>
-        <div id="tab-stats" class="tab-content hidden"><div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">📈 CA (7 jours)</h2><canvas id="chartCA7Jours" height="100"></canvas></div><div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📊 Top Saveurs</h2><canvas id="chartTopSaveurs" height="100"></canvas></div></div>
+        <div id="tab-stats" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- CA 7 jours -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">📈 CA (7 jours)</h2>
+                <div class="flex-1 relative min-h-[150px]">
+                    <canvas id="chartCA7Jours"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Saveurs -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">📊 Top Saveurs</h2>
+                <div class="flex-1 relative min-h-[150px]">
+                    <canvas id="chartTopSaveurs"></canvas>
+                </div>
+            </div>
+
+            <!-- Avis -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">⭐ Avis</h2>
+                <div class="flex-1 relative min-h-[150px] flex items-center justify-center">
+                    <canvas id="chartAvisStats"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
         
         <div id="tab-stock" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl mb-6">
@@ -141,6 +168,15 @@
                     <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
         </div>
     </div>
+
+    
+        <!-- ONGLET AVIS (INJECTE DE FORCE) -->
+        <div id="tab-avis" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-space font-bold text-white mb-4">⭐ Moderation des Avis</h2>
+                <div id="avisList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
 
     <!-- MODAL SAVEUR -->
     <div id="flavorModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -197,16 +233,73 @@
 
         function escapeHTML(str) { if(!str) return ''; return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-        function switchTab(tabId, btn) {
-            document.querySelectorAll('.nav-tab').forEach(b => { b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); b.classList.add('glass-panel', 'text-gray-400'); });
+        
+// ===== AVIS_ADMIN =====
+async function loadAvis() {
+    const container = document.getElementById('avisList');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/avis`);
+        const avis = await res.json();
+        if (avis.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Aucun avis pour le moment.</p>';
+            return;
+        }
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            const date = new Date(a.date_creation).toLocaleDateString('fr-FR');
+            const badge = a.approuve
+                ? '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold ml-2">APPROUVE</span>'
+                : '<span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-[10px] font-bold ml-2">EN ATTENTE</span>';
+            return `
+            <div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-yellow-400 text-lg">${stars}</div>
+                        <div class="text-xs text-gray-500">${date} ${badge}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${!a.approuve ? `<button onclick="approveAvis(${a.id})" class="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30">Approuver</button>` : ''}
+                        <button onclick="deleteAvis(${a.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30">Suppr.</button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-200 italic">"${a.commentaire}"</p>
+            </div>`;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+async function approveAvis(id) { await fetch(`${API_URL}/admin/avis/${id}/approve`, {method:'PUT'}); loadAvis(); }
+async function deleteAvis(id) { if(confirm('Supprimer cet avis ?')) { await fetch(`${API_URL}/admin/avis/${id}`, {method:'DELETE'}); loadAvis(); } }
+// =======================
+
+function switchTab(tabId, btn) {
+            document.querySelectorAll('.nav-tab').forEach(b => { 
+                b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 
+                b.classList.add('glass-panel', 'text-gray-400'); 
+            });
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            btn.classList.remove('glass-panel', 'text-gray-400'); btn.classList.add('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white');
-            document.getElementById(tabId).classList.remove('hidden');
+            
+            if(btn) {
+                btn.classList.remove('glass-panel', 'text-gray-400'); 
+                btn.classList.add('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white');
+            }
+            
+            const targetTab = document.getElementById(tabId);
+            if(targetTab) {
+                targetTab.classList.remove('hidden');
+            } else {
+                console.error("Onglet introuvable : " + tabId);
+            }
+
             if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
             if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').classList.add('hidden'); }
-            if(tabId === 'tab-clients') loadClients(); if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
-            if(tabId === 'tab-stats') loadStats(); if(tabId === 'tab-ventes') loadVentes();
-            if(tabId === 'tab-logs') loadLogs(); if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
+            if(tabId === 'tab-clients') loadClients(); 
+            if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
+            if(tabId === 'tab-stats') loadStats(); 
+            if(tabId === 'tab-ventes') loadVentes();
+            if(tabId === 'tab-logs') loadLogs(); 
+            if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
+            if(tabId === 'tab-avis') loadAvis();
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
         let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;
@@ -582,7 +675,59 @@ function renderGroupedCommandeCard(orders) {
         async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
         
         let chartTop = null, chartCA = null;
-        async function loadStats() { try { const res = await fetch(`${API_URL}/stats`); const data = await res.json(); if (data.ca7jours && data.ca7jours.length > 0) { const labels = data.ca7jours.map(d => d.jour); const values = data.ca7jours.map(d => parseFloat(d.ca)); const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); if (chartCA) chartCA.destroy(); chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); } if (data.topSaveurs && data.topSaveurs.length > 0) { const labels = data.topSaveurs.map(d => d.saveur_nom); const values = data.topSaveurs.map(d => parseInt(d.total_qte)); const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); if (chartTop) chartTop.destroy(); chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantités', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa' } }, y: { grid: { display: false }, ticks: { color: '#aaa' } } } } }); } } catch (e) {} }
+        async function loadStats() { 
+            try { 
+                const res = await fetch(`${API_URL}/stats`); 
+                const data = await res.json(); 
+                
+                if (data.ca7jours && data.ca7jours.length > 0) { 
+                    const labels = data.ca7jours.map(d => d.jour); 
+                    const values = data.ca7jours.map(d => parseFloat(d.ca)); 
+                    const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); 
+                    if (chartCA) chartCA.destroy(); 
+                    chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa', font: {size: 12} } }, x: { grid: { display: false }, ticks: { color: '#aaa', font: {size: 12} } } } } }); 
+                } 
+                
+                if (data.topSaveurs && data.topSaveurs.length > 0) { 
+                    const labels = data.topSaveurs.map(d => d.saveur_nom); 
+                    const values = data.topSaveurs.map(d => parseInt(d.total_qte)); 
+                    const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); 
+                    if (chartTop) chartTop.destroy(); 
+                    chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantités', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa', font: {size: 9} } }, y: { grid: { display: false }, ticks: { color: '#aaa', font: {size: 9} } } } } }); 
+                }
+
+                const resAvis = await fetch(`${API_URL}/admin/avis/stats`);
+                const dataAvis = await resAvis.json();
+                const ctxAvis = document.getElementById('chartAvisStats').getContext('2d');
+                if (window.chartAvisInstance) window.chartAvisInstance.destroy();
+
+                const labelsAvis = ['1★', '2★', '3★', '4★', '5★'];
+                const valuesAvis = [0, 0, 0, 0, 0];
+                dataAvis.forEach(item => {
+                    if (item.note >= 1 && item.note <= 5) valuesAvis[item.note - 1] = parseInt(item.count);
+                });
+
+                window.chartAvisInstance = new Chart(ctxAvis, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsAvis,
+                        datasets: [{ data: valuesAvis, backgroundColor: ['#EF4444', '#F59E0B', '#FCD34D', '#34D399', '#10B981'], borderWidth: 0 }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                position: 'right', 
+                                labels: { color: '#aaa', font: {size: 12}, boxWidth: 14 } 
+                            } 
+                        },
+                        cutout: '60%'
+                    }
+                });
+
+            } catch (e) { console.error(e); } 
+        }
         
         function initMap() { map = L.map('map').setView([50.633, 5.567], 8); L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy;OSM France' }).addTo(map); map.on('click', function(e) { selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(map); const rayon = parseInt(document.getElementById('zoneRayon').value) * 1000; currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map); }); }
         async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity:0.2 }).addTo(map); }); document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">📍 ${x.nom}</div><div class="text-xs text-gray-400">dès ${x.min_commande} € | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">🗑️</button></div>`).join(''); } catch(e){ console.error(e); } }

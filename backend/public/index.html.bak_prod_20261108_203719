@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PUFF ZONE | Galaxie Vaping & Nebula Experience</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nebula: { violet: '#9d4edd', magenta: '#f72585', cyan: '#4cc9f0', deep: '#3a0ca3', glow: 'rgba(157, 78, 221, 0.4)' },
+            space: { bg: '#03020a', card: 'rgba(14, 11, 26, 0.55)', surface: 'rgba(22, 17, 43, 0.65)', border: 'rgba(255, 255, 255, 0.12)' }
+          },
+          fontFamily: { space: ['Space Grotesk', 'sans-serif'], sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          animation: { 'float-slow': 'float 6s ease-in-out infinite', 'pulse-nebula': 'nebulaPulse 8s ease-in-out infinite alternate', 'marquee': 'marquee 28s linear infinite' },
+          keyframes: {
+            float: { '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' }, '50%': { transform: 'translateY(-12px) rotate(1deg)' } },
+            nebulaPulse: { '0%': { opacity: 0.4, transform: 'scale(1)' }, '100%': { opacity: 0.8, transform: 'scale(1.15)' } },
+            marquee: { '0%': { transform: 'translateX(0%)' }, '100%': { transform: 'translateX(-50%)' } }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    body { background-color: #03020a; color: #f1f0fb; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+    .glass-panel { background: rgba(14, 11, 26, 0.45); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 12px 40px 0 rgba(3, 2, 10, 0.6); }
+    .glass-panel:hover { border-color: rgba(157, 78, 221, 0.45); box-shadow: 0 0 30px rgba(157, 78, 221, 0.25); }
+    .glass-nav { background: rgba(3, 2, 10, 0.7); backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .text-glow-nebula { text-shadow: 0 0 16px rgba(157, 78, 221, 0.7), 0 0 30px rgba(247, 37, 133, 0.4); }
+    .text-glow-cyan { text-shadow: 0 0 14px rgba(76, 201, 240, 0.8); }
+    #space-stars { display: none; }
+  </style>
+</head>
+
+<!-- Bouton flottant Avis -->
+<button onclick="openAvisModal()" class="fixed top-24 right-6 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-nebula-violet/90 to-nebula-cyan/90 text-white font-bold text-sm shadow-[0_0_20px_rgba(76,201,240,0.5)] hover:scale-105 transition-transform backdrop-blur-md border border-white/20">
+    <i data-lucide="star" class="w-4 h-4 text-yellow-300 fill-current"></i>
+    Laisser un avis
+</button>
+
+<!-- Modale Avis -->
+<div id="avis-modal" class="fixed inset-0 z-[10000] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-nebula-cyan/30 relative">
+        <button onclick="closeAvisModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+        <h3 class="text-xl font-cosmic font-bold text-white mb-2 text-center">Votre <span class="text-nebula-cyan">Avis</span></h3>
+        <p class="text-gray-400 text-xs text-center mb-4">Partagez votre experience en toute anonymat.</p>
+        
+        <div class="flex justify-center gap-2 mb-4 text-3xl text-gray-500 cursor-pointer" id="star-rating">
+            <span data-val="1" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="2" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="3" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="4" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="5" class="hover:text-yellow-400 transition-colors">★</span>
+        </div>
+        
+        <textarea id="avis-text" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg p-3 text-white outline-none focus:border-nebula-cyan mb-4 text-sm" placeholder="Qu'avez-vous pense de votre commande ?"></textarea>
+        
+        <button onclick="submitAvis()" class="w-full py-3 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white font-bold text-sm shadow-lg hover:opacity-90 transition">Envoyer mon avis</button>
+    </div>
+</div>
+
+<body class="selection:bg-nebula-violet selection:text-white relative">
+
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="fixed top-[-10%] left-[-10%] w-[600px] h-[600px] bg-nebula-deep/30 rounded-full blur-[160px] pointer-events-none z-0 animate-pulse-nebula"></div>
+  <div class="fixed top-[40%] right-[-10%] w-[500px] h-[500px] bg-nebula-magenta/20 rounded-full blur-[150px] pointer-events-none z-0 animate-pulse-nebula" style="animation-delay: 3s;"></div>
+
+  <!-- BANDEAU ANNONCE -->
+  <div class="relative z-50 bg-gradient-to-r from-nebula-deep/80 via-nebula-magenta/70 to-nebula-deep/80 backdrop-blur-md text-white text-xs font-semibold py-2.5 border-b border-white/10 overflow-hidden">
+    <div class="inline-flex whitespace-nowrap animate-marquee gap-10 items-center" id="promo-marquee">
+      <span class="flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-nebula-cyan"></i> LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE &amp; BELGIQUE</span>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40 glass-nav transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-20">
+        
+        <div class="flex items-center gap-3 cursor-pointer group" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-nebula-magenta via-nebula-violet to-nebula-cyan p-0.5 flex items-center justify-center shadow-[0_0_20px_rgba(157,78,221,0.5)]">
+            <div class="w-full h-full bg-space-bg/80 rounded-[14px] flex items-center justify-center backdrop-blur-md">
+              <i data-lucide="orbit" class="w-6 h-6 text-nebula-cyan"></i>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-space font-extrabold text-2xl tracking-wider text-white">PUFF<span class="text-nebula-cyan text-glow-cyan">ZONE</span></span>
+            <span class="text-[9px] tracking-[0.3em] text-nebula-violet font-semibold uppercase">Cosmic Vaping</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="/livreur.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all uppercase tracking-wider"><i data-lucide="truck" class="w-3.5 h-3.5"></i> Livreur</a>
+          <a href="/admin.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all uppercase tracking-wider"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin</a>
+          <div id="user-greeting" class="text-xs font-space font-bold text-gray-300 hidden md:block px-2"></div>
+          <a href="/compte.html" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all">
+    <i data-lucide="user" class="w-4 h-4 text-nebula-cyan"></i>
+    <span class="hidden sm:inline">Mon Compte</span>
+</a>
+          
+          <button onclick="toggleCart()" class="relative p-3 rounded-2xl bg-space-surface hover:bg-space-card border border-white/15 text-white transition-all group">
+            <i data-lucide="shopping-bag" class="w-5 h-5 group-hover:text-nebula-cyan transition-colors"></i>
+            <span id="cart-count" class="absolute -top-1.5 -right-1.5 bg-gradient-to-r from-nebula-magenta to-nebula-violet text-white text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center border border-space-bg">0</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="hero" class="relative min-h-[70vh] flex items-center justify-center z-10 py-12">
+    <div class="max-w-7xl mx-auto px-4 text-center z-10">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-space-surface border border-nebula-violet/40 text-nebula-cyan text-xs font-space font-semibold tracking-widest uppercase mb-6">
+        <i data-lucide="sparkles" class="w-4 h-4 text-nebula-magenta"></i> NOUVELLE COLLECTION NEBULA
+      </div>
+      <h1 class="font-space font-extrabold text-4xl sm:text-6xl lg:text-7xl leading-tight tracking-tight text-white mb-6">
+        EXPLORE LA <br>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white via-nebula-cyan to-nebula-magenta text-glow-nebula">GALAXIE DU VAPE</span>
+      </h1>
+      <p class="text-gray-300 text-base sm:text-lg max-w-2xl mx-auto mb-10">
+        Plongez dans des ar&ocirc;mes cosmiques intenses avec des dispositifs haute autonomie, un design futuriste et une exp&eacute;dition stellaire express.
+      </p>
+      <button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-nebula-magenta via-nebula-violet to-nebula-deep hover:opacity-90 text-white font-space font-bold text-center tracking-wider shadow-[0_0_30px_rgba(247,37,133,0.5)] transition-all">
+        D&Eacute;COUVRIR LE CATALOGUE &#128640;
+      </button>
+    </div>
+  </section>
+
+  <!-- CATALOGUE -->
+  <section id="shop" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+      <div>
+        <h2 class="font-space font-extrabold text-3xl sm:text-5xl text-white">CATALOGUE <span class="text-transparent bg-clip-text bg-gradient-to-r from-nebula-violet via-nebula-cyan to-nebula-magenta">PUFF ZONE</span></h2>
+      </div>
+    </div>
+
+    <!-- GRILLE PRODUITS -->
+    <div id="product-list" class="space-y-6">
+      <div class="text-center py-10">
+         <i data-lucide="loader" class="w-8 h-8 text-nebula-cyan animate-spin mx-auto mb-2"></i>
+         <p class="text-gray-400 text-sm font-space">Chargement de la galaxie...</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANIER DRAWER -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 pointer-events-none transition-opacity duration-300 opacity-0">
+    <div id="cart-backdrop" onclick="toggleCart()" class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-md glass-panel border-l border-white/15 shadow-2xl pointer-events-auto flex flex-col transform translate-x-full transition-transform duration-300" id="cart-panel">
+      
+      <div class="p-6 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shopping-bag" class="w-5 h-5 text-nebula-cyan"></i>
+          <h3 class="font-space font-bold text-lg text-white">PANIER SPATIAL</h3>
+        </div>
+        <button onclick="toggleCart()" class="p-2 text-gray-400 hover:text-white rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="p-4 bg-space-surface/50 border-b border-white/10 space-y-3">
+        <select id="zone-select" onchange="applyZone()" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-nebula-cyan">
+            <option value="">-- Choisir votre zone --</option>
+        </select>
+        <div id="zone-msg" class="text-[10px] text-red-400 font-bold"></div>
+        
+        <div class="flex gap-2">
+            <input type="text" id="promo-input" placeholder="CODE PROMO" class="flex-1 bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-xs text-white uppercase focus:outline-none focus:border-nebula-magenta">
+            <button onclick="applyPromo()" class="bg-nebula-magenta text-white font-bold text-xs px-4 py-2 rounded-lg">OK</button>
+        </div>
+        <div id="promo-msg" class="text-[10px] text-green-400 font-bold"></div>
+      </div>
+
+      <div id="cart-items" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+
+      <div class="p-6 border-t border-white/10 bg-space-surface/40 space-y-4">
+        <div class="flex justify-between text-lg font-bold border-t border-white/10 pt-2">
+          <span class="text-white">TOTAL</span>
+          <span id="cart-total-price" class="text-nebula-cyan text-glow-cyan">0.00 &euro;</span>
+        </div>
+        <button id="checkout-btn" onclick="checkout()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-nebula-violet via-nebula-magenta to-nebula-deep hover:opacity-90 text-white font-space font-bold text-xs tracking-wider shadow-[0_0_20px_rgba(157,78,221,0.5)] transition-all">VALIDER LA COMMANDE &#128640;</button>
+        <button onclick="logout()" class="w-full text-center text-xs text-red-400 hover:text-red-300 mt-2">Se d&eacute;connecter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DE CONNEXION -->
+  <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3, 2, 10, 0.9); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
+    <div class="glass-panel" style="padding:40px; border-radius:20px; width:90%; max-width:400px; text-align:center;">
+        <h2 class="font-space font-bold text-2xl text-white mb-6">PUFF ZONE</h2>
+        <div id="step-choice">
+            <button onclick="showLoginForm()" class="w-full py-3 rounded-xl bg-nebula-violet text-white font-bold mb-3">Se Connecter</button>
+            <button onclick="showRegisterForm()" class="w-full py-3 rounded-xl border border-nebula-violet text-nebula-violet font-bold mb-3">Cr&eacute;er un compte</button>
+        </div>
+        <div id="step-phone" style="display: none;">
+            <input type="text" id="phone-input" placeholder="T&eacute;l&eacute;phone" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none">
+            <button onclick="checkPhone()" class="w-full py-3 rounded-xl bg-nebula-cyan text-black font-bold mb-3">Continuer</button>
+            <button onclick="backToChoice()" class="text-xs text-gray-400">Retour</button>
+        </div>
+        <div id="step-info" style="display:none;">
+            <input type="text" id="name-input" placeholder="Nom" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
+            <input type="text" id="phone-input-reg" placeholder="T&eacute;l&eacute;phone" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
+            <input type="text" id="address-input" placeholder="Adresse" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
+            <input type="text" id="whatsapp-input" placeholder="WhatsApp" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none">
+            <button onclick="saveProfile()" class="w-full py-3 rounded-xl bg-nebula-magenta text-white font-bold mb-3">S'inscrire</button>
+            <button onclick="backToChoice()" class="text-xs text-gray-400">Retour</button>
+        </div>
+    </div>
+  </div>
+
+  <script src="script.js?v=3"></script>
+  <script src="bg-animation.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+
+<!-- Section Avis (Bas de page - Dépliable) -->
+<section class="max-w-4xl mx-auto px-4 py-10 relative z-10 border-t border-white/10 mt-10">
+    <div class="text-center">
+        <button onclick="toggleAvisList()" class="inline-flex items-center gap-2 text-nebula-cyan hover:text-white transition-colors font-bold text-sm">
+            <span id="avis-toggle-text">Voir les avis de la communaute</span>
+            <i data-lucide="chevron-down" id="avis-toggle-icon" class="w-4 h-4 transition-transform"></i>
+        </button>
+    </div>
+    
+    <div id="avis-list-container" class="hidden mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <p class="text-center text-gray-500 italic text-sm col-span-full">Chargement...</p>
+    </div>
+</section>
+
+</body>
+</html>
