@@ -53,7 +53,7 @@
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
-                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-avis', this)">Avis</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all relative" onclick="switchTab('tab-avis', this)">Avis <span id="notif-avis-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] hidden">0</span></button>
 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
             </div>
         </div>
@@ -299,7 +299,7 @@ function switchTab(tabId, btn) {
             if(tabId === 'tab-ventes') loadVentes();
             if(tabId === 'tab-logs') loadLogs(); 
             if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
-            if(tabId === 'tab-avis') loadAvis();
+            if(tabId === 'tab-avis') { loadAvis(); markAvisAsSeen(); }
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
         let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;
@@ -1012,6 +1012,73 @@ async function simulateAttack() { if(!confirm("Simuler ?")) return; await fetch(
         async function toggleLockdown() { if(!confirm("Changer l'état ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ON" : "OFF")); loadSecurity(); }
         async function backupWipe() { if(!confirm("⚠️ TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Confirmer ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
         async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `secu.json`; a.click(); } catch (e) {} }
-    </script>
+    
+// ===== NOTIF AVIS =====
+let lastAvisId = parseInt(localStorage.getItem('lastAvisId')) || 0;
+
+async function checkAvisNotif() {
+    try {
+        const res = await fetch(`${API_URL}/admin/avis`);
+        if (!res.ok) return;
+        const avis = await res.json();
+        
+        // On ne garde que les avis non approuves
+        const enAttente = avis.filter(a => !a.approuve);
+        if (enAttente.length === 0) {
+            const badge = document.getElementById('notif-avis-badge');
+            if (badge) badge.classList.add('hidden');
+            return;
+        }
+
+        const maxId = Math.max(...enAttente.map(a => a.id));
+        const badge = document.getElementById('notif-avis-badge');
+
+        // Si on detecte de nouveaux avis par rapport a la derniere visite
+        if (lastAvisId !== 0 && maxId > lastAvisId) {
+            // Jouer le son
+            if (typeof playSound === 'function') playSound();
+            
+            // Afficher le badge
+            if (badge) {
+                badge.textContent = enAttente.length;
+                badge.classList.remove('hidden');
+            }
+        } else if (lastAvisId === 0) {
+            // Premier chargement : on memorise sans notifier
+            lastAvisId = maxId;
+            localStorage.setItem('lastAvisId', lastAvisId);
+        }
+
+        // Mettre a jour le badge meme si pas de nouveau (pour l'afficher en permanence)
+        if (badge && enAttente.length > 0) {
+             badge.textContent = enAttente.length;
+             badge.classList.remove('hidden');
+        }
+
+    } catch (e) { /* Silencieux */ }
+}
+
+// Mettre a jour la date de derniere visite quand on ouvre l'onglet
+function markAvisAsSeen() {
+    const badge = document.getElementById('notif-avis-badge');
+    if (badge) badge.classList.add('hidden');
+    
+    // On recupere le max actuel pour ne plus notifier pour ceux-la
+    fetch(`${API_URL}/admin/avis`)
+        .then(r => r.json())
+        .then(avis => {
+            const enAttente = avis.filter(a => !a.approuve);
+            if (enAttente.length > 0) {
+                const maxId = Math.max(...enAttente.map(a => a.id));
+                lastAvisId = maxId;
+                localStorage.setItem('lastAvisId', lastAvisId);
+            }
+        }).catch(()=>{});
+}
+
+setInterval(checkAvisNotif, 15000); // Toutes les 15s
+// =========================
+
+</script>
 </body>
 </html>
