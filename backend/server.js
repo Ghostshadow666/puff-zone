@@ -13,6 +13,9 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ===== TIME_HELPERS =====
 function getBrusselsTime() {
   return new Intl.DateTimeFormat('fr-BE', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12:false }).format(new Date());
@@ -31,15 +34,6 @@ async function isOrderingOpen() {
   } catch (e) { return true; }
 }
 // ========================
-
-
-
-// ===== TRAFFIC_PATCH_V1 - BEGIN =====
-// Historique glissant sur 60 secondes (1 point par seconde)
-
-
-// ===== TRAFFIC_PATCH_V1 - MIDDLEWARE END =====
-
 
 // ===== MAINTENANCE_PATCH_V2 - BEGIN =====
 let _maintenanceCache = { value: false, timestamp: 0 };
@@ -77,9 +71,6 @@ app.use(async (req, res, next) => {
 });
 // ===== MAINTENANCE_PATCH_V2 - MIDDLEWARE END =====
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
-
 let isLockdown = false;
 app.use((req, res, next) => {
   if (isLockdown && req.method !== 'GET' && !req.path.includes('/login') && !req.path.includes('/security')) {
@@ -114,17 +105,15 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS promo_code VARCHAR(50);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS zone_nom VARCHAR(100);');
-    
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS prix_achat DECIMAL(10,2) DEFAULT 0;');
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS categorie_nom VARCHAR(100);');
-    
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
-    await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
+    await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;');
     
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
     await pool.query("INSERT INTO settings (key, value) VALUES ('maintenance_mode', 'false') ON CONFLICT (key) DO NOTHING");
-
+    await pool.query("INSERT INTO settings (key, value) VALUES ('order_start_time', '22:00'), ('order_end_time', '06:00') ON CONFLICT (key) DO NOTHING");
     await pool.query("INSERT INTO settings (key, value) VALUES ('lockdown', 'false') ON CONFLICT (key) DO NOTHING");
     const lockRes = await pool.query("SELECT value FROM settings WHERE key = 'lockdown'");
     isLockdown = lockRes.rows[0].value === 'true';
@@ -134,7 +123,6 @@ const initDB = async () => {
 };
 initDB();
 
-// --- SETTINGS ---
 app.get('/api/settings', async (req, res) => {
   try { const r = await pool.query('SELECT * FROM settings'); const settings = {}; r.rows.forEach(row => settings[row.key] = row.value); res.json(settings); } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
@@ -145,6 +133,29 @@ app.put('/api/settings', authenticateToken, isAdmin, async (req, res) => {
     await logAction(req.user, 'Modification Paramètres', 'Bandeau mis à jour');
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.get('/api/settings/order-window', async (req, res) => {
+  try {
+    const r = await pool.query("SELECT key, value FROM settings WHERE key IN ('order_start_time', 'order_end_time')");
+    let start = '22:00', end = '06:00';
+    r.rows.forEach(row => {
+      if (row.key === 'order_start_time') start = row.value;
+      if (row.key === 'order_end_time') end = row.value;
+    });
+    const isOpen = await isOrderingOpen();
+    res.json({ start, end, isOpen });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.put('/api/settings/order-window', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { start, end } = req.body;
+    await pool.query("UPDATE settings SET value = $1 WHERE key = 'order_start_time'", [start]);
+    await pool.query("UPDATE settings SET value = $1 WHERE key = 'order_end_time'", [end]);
+    await logAction(req.user, 'Modification Horaires', `${start} -> ${end}`);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
 });
 
 app.get('/api/health', async (req, res) => { try { await pool.query('SELECT 1'); res.json({ status: 'ok' }); } catch(e) { res.status(500).json({ status: 'error' }); } });
@@ -273,9 +284,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
     let calculatedTotal = 0;
 
-    // 1. Vérification et verrouillage des stocks + Calcul du vrai prix
     for (const item of cart) { 
-      // CORRECTION : On cherche par l'ID de la saveur (item.id) et non par le nom
       const s = await client.query(
         `SELECT s.stock, c.prix_unite, c.prix_lot_5, c.prix_lot_10 
          FROM saveurs s 
@@ -289,50 +298,41 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
         return res.status(400).json({ error: `Stock insuffisant ou produit introuvable : "${item.nom}".` }); 
       }
 
-      // --- CALCUL DU PRIX CÔTÉ SERVEUR (SÉCURITÉ ANTI-TRICHE) ---
       const dbItem = s.rows[0];
       let qty = item.qty;
       const p1 = parseFloat(dbItem.prix_unite);
       const p5 = dbItem.prix_lot_5 ? parseFloat(dbItem.prix_lot_5) : null;
       const p10 = dbItem.prix_lot_10 ? parseFloat(dbItem.prix_lot_10) : null;
 
-      // Calcul des lots de 10
       if (p10 && qty >= 10) {
           let nbLots10 = Math.floor(qty / 10);
           calculatedTotal += nbLots10 * p10;
           qty = qty % 10;
       }
-      // Calcul des lots de 5
       if (p5 && qty >= 5) {
           let nbLots5 = Math.floor(qty / 5);
           calculatedTotal += nbLots5 * p5;
           qty = qty % 5;
       }
-      // Calcul du reste à l'unité
       if (qty > 0) {
           calculatedTotal += qty * p1;
       }
     } 
 
-    // 2. Application du code promo sur le total recalculé
     let finalTotal = calculatedTotal; 
     if (promo_code) { 
       const p = await client.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1)', [promo_code]); 
       if (p.rows.length > 0) finalTotal -= (finalTotal * (p.rows[0].pourcentage / 100)); 
     } 
 
-    // 3. Création de la commande avec le VRAI total
     const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom) VALUES ($1,$2,$3,$4,$5) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null]); 
     
-    // 4. Ajout des items (avec l'ID de la catégorie pour être sûr) et déduction du stock
     for (const item of cart) { 
-      // On récupère l'ID de la catégorie et le prix unitaire de base pour l'historique
       const catInfo = await client.query('SELECT s.categorie_id, c.prix_unite, c.nom as cat_nom FROM saveurs s JOIN categories c ON s.categorie_id = c.id WHERE s.id = $1', [item.id]);
       
       await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, categorie_nom) VALUES ($1,$2,$3,$4,$5)', 
           [cmd.rows[0].id, item.nom, item.qty, catInfo.rows[0].prix_unite, catInfo.rows[0].cat_nom]); 
           
-      // On déduit le stock en utilisant l'ID de la saveur (fiable à 100%)
       await client.query('UPDATE saveurs SET stock = stock - $1 WHERE id = $2', [item.qty, item.id]); 
     } 
 
@@ -377,6 +377,30 @@ app.put('/api/commandes/:id/assign', authenticateToken, isAdmin, async (req, res
     res.json({ success: true }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
+
+// ===== ROUTE SUPPRESSION COMMANDE (RESTOCK PROPRE) =====
+app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const items = await client.query('SELECT saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
+    for (const item of items.rows) {
+      await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]);
+    }
+    await client.query('DELETE FROM commande_items WHERE commande_id = $1', [req.params.id]);
+    await client.query('DELETE FROM commandes WHERE id = $1', [req.params.id]);
+    await client.query('COMMIT');
+    await logAction(req.user, 'Suppression Commande', `Cmd #${req.params.id} supprimée (Stock restauré)`);
+    res.json({ success: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.status(500).json({ error: 'Erreur lors de la suppression.' });
+  } finally {
+    client.release();
+  }
+});
+// ==================================================
 
 app.get('/api/commandes/livreur/:id', authenticateToken, async (req, res) => { 
   try { 
@@ -469,10 +493,8 @@ app.delete('/api/zones/:id', authenticateToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-
-// --- NOUVEL ORDRE DES CATÉGORIES ---
 app.put('/api/categories/reorder', authenticateToken, isAdmin, async (req, res) => {
-  const { order } = req.body; // Tableau d'IDs dans le nouvel ordre
+  const { order } = req.body; 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -593,48 +615,6 @@ app.get('/api/logs', authenticateToken, isAdmin, async (req, res) => {
   try { const r = await pool.query('SELECT * FROM logs_activite ORDER BY date_log DESC LIMIT 200'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-
-// ===== DELETE_ORDER_PATCH - BEGIN =====
-app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    
-    // 1. Récupérer les articles de la commande pour le restock
-    const items = await client.query('SELECT saveur_id, saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
-    
-    // 2. Remettre les stocks
-    for (const item of items.rows) {
-      if (item.saveur_id) {
-        await client.query('UPDATE saveurs SET stock = stock + $1 WHERE id = $2', [item.quantite, item.saveur_id]);
-      } else {
-        await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]); // Fallback anciennes commandes
-      }
-    }
-    
-    // 3. Supprimer les items et la commande
-    await client.query('DELETE FROM commande_items WHERE commande_id = $1', [req.params.id]);
-    await client.query('DELETE FROM commandes WHERE id = $1', [req.params.id]);
-    
-    await client.query('COMMIT');
-    
-    await logAction(req.user, 'Suppression Commande', `Cmd #${req.params.id} supprimée (Stock restauré)`);
-    res.json({ success: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    console.error(e);
-    res.status(500).json({ error: 'Erreur lors de la suppression.' });
-  } finally {
-    client.release();
-  }
-});
-// ===== DELETE_ORDER_PATCH - END =====
-
-
-// ===== MAINTENANCE_PATCH_V2 - ROUTES =====
-
-
-
 app.get('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) => {
   try {
     const r = await pool.query("SELECT value FROM settings WHERE key = 'maintenance_mode' LIMIT 1");
@@ -660,7 +640,6 @@ app.post('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) 
     res.status(500).json({ error: 'Erreur' });
   }
 });
-// ===== MAINTENANCE_PATCH_V2 - ROUTES END =====
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
