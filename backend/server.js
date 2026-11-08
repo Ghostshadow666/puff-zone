@@ -106,10 +106,9 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS zones (id SERIAL PRIMARY KEY, nom VARCHAR(100), lat DECIMAL(10,8), lng DECIMAL(11,8), rayon INTEGER, min_commande INTEGER);
       CREATE TABLE IF NOT EXISTS backup_commandes (id SERIAL PRIMARY KEY, date_backup TIMESTAMP DEFAULT CURRENT_TIMESTAMP, data JSONB);
       CREATE TABLE IF NOT EXISTS logs_activite (id SERIAL PRIMARY KEY, date_log TIMESTAMP DEFAULT CURRENT_TIMESTAMP, user_name VARCHAR(100), user_role VARCHAR(50), action VARCHAR(255), details TEXT);
-      CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, nom VARCHAR(100), image_url TEXT, prix_unite DECIMAL(10,2), prix_lot_5 DECIMAL(10,2), prix_lot_10 DECIMAL(10,2), is_featured BOOLEAN DEFAULT false, ordre INTEGER DEFAULT 0);
+      CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, nom VARCHAR(100), image_url TEXT, prix_unite DECIMAL(10,2), prix_lot_5 DECIMAL(10,2), prix_lot_10 DECIMAL(10,2), is_featured BOOLEAN DEFAULT false);
       CREATE TABLE IF NOT EXISTS saveurs (id SERIAL PRIMARY KEY, categorie_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, nom VARCHAR(100), stock INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS settings (key VARCHAR(50) PRIMARY KEY, value TEXT);
-      CREATE TABLE IF NOT EXISTS avis (id SERIAL PRIMARY KEY, note INTEGER, commentaire TEXT, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP, approuve BOOLEAN DEFAULT false);
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
@@ -120,7 +119,6 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS categorie_nom VARCHAR(100);');
     
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
-    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;'); // Initialisation de l'ordre pour les anciennes catégories
     
@@ -664,85 +662,5 @@ app.post('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) 
 });
 // ===== MAINTENANCE_PATCH_V2 - ROUTES END =====
 
-
-// ===== AVIS_PATCH_V1 - BEGIN =====
-// Client : Soumettre un avis
-app.post('/api/avis', async (req, res) => {
-  const { note, commentaire } = req.body;
-  try {
-    await pool.query('INSERT INTO avis (note, commentaire) VALUES ($1, $2)', [note, commentaire]);
-    res.json({ success: true, message: 'Merci ! Votre avis sera visible après validation.' });
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-// Client : Voir les avis approuvés
-app.get('/api/avis/approuves', async (req, res) => {
-  try {
-    const r = await pool.query('SELECT id, note, commentaire, date_creation FROM avis WHERE approuve = true ORDER BY date_creation DESC LIMIT 10');
-    res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-// Admin : Voir tous les avis
-app.get('/api/admin/avis', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    const r = await pool.query('SELECT * FROM avis ORDER BY date_creation DESC');
-    res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-// Admin : Approuver un avis
-app.put('/api/admin/avis/:id/approve', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    await pool.query('UPDATE avis SET approuve = true WHERE id = $1', [req.params.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-// Admin : Supprimer un avis
-app.delete('/api/admin/avis/:id', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM avis WHERE id = $1', [req.params.id]);
-    res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
-});
-// ===== AVIS_PATCH_V1 - END =====
-
-
-// --- ROUTES HORAIRES SECURISEES ---
-app.get('/api/settings/order-window', async (req, res) => {
-  try {
-    const r = await pool.query("SELECT key, value FROM settings WHERE key IN ('order_start_time', 'order_end_time')");
-    let start = '22:00', end = '06:00';
-    r.rows.forEach(row => {
-      if (row.key === 'order_start_time') start = row.value;
-      if (row.key === 'order_end_time') end = row.value;
-    });
-    const now = new Intl.DateTimeFormat('fr-BE', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
-    let isOpen = false;
-    if (start <= end) isOpen = now >= start && now <= end;
-    else isOpen = now >= start || now <= end;
-    
-    res.json({ start, end, isOpen });
-  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
-});
-
-app.put('/api/settings/order-window', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    const { start, end } = req.body;
-    await pool.query("INSERT INTO settings (key, value) VALUES ('order_start_time', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [start]);
-    await pool.query("INSERT INTO settings (key, value) VALUES ('order_end_time', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", [end]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
-});
-// ----------------------------------
-
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-
-// --- FORCAGE BDD AU DEMARRAGE ---
-pool.query("INSERT INTO settings (key, value) VALUES ('order_start_time', '22:00'), ('order_end_time', '06:00') ON CONFLICT (key) DO NOTHING")
-  .then(() => console.log("✅ Horaires par défaut vérifiés en BDD"))
-  .catch(err => console.error("Erreur insertion horaires:", err));
-// --------------------------------
-
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
