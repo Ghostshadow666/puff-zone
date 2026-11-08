@@ -347,7 +347,8 @@ function switchTab(tabId, btn) {
         }
         setInterval(checkNotifications, 3000);
         setInterval(() => { const commandesTab = document.getElementById('tab-commandes'); if (commandesTab && !commandesTab.classList.contains('hidden')) { loadCommandes(); } }, 10000);
-        document.addEventListener('DOMContentLoaded', () => { loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAvisNotif(); loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
 
         async function loadDrivers() { try { const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); if(!Array.isArray(d)) return; allLivreurs = d; const el = document.getElementById('driverList'); if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; } el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">🛵 ${x.name}</div><div class="text-xs text-gray-400 mt-1">📦 Livraisons: ${x.total_livraisons} | 💰 CA: ${parseFloat(x.total_ca).toFixed(2)} €</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join(''); } catch(e) { console.error(e); } }
         async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
@@ -1014,7 +1015,7 @@ async function simulateAttack() { if(!confirm("Simuler ?")) return; await fetch(
         async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `secu.json`; a.click(); } catch (e) {} }
     
 // ===== NOTIF AVIS =====
-let lastAvisId = parseInt(localStorage.getItem('lastAvisId')) || 0;
+let lastAvisId = parseInt(localStorage.getItem('lastAvisId')) || -1;
 
 async function checkAvisNotif() {
     try {
@@ -1079,6 +1080,9 @@ function markAvisAsSeen() {
 setInterval(checkAvisNotif, 15000); // Toutes les 15s
 // =========================
 
+
+// Verification immediate au chargement
+setTimeout(checkAvisNotif, 1000);
 </script>
 </body>
 </html>
