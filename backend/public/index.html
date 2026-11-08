@@ -209,64 +209,7 @@
 
 
 
-<script>
-window.addEventListener('load', function() {
-    const clockEl = document.getElementById('timer-clock');
-    const labelEl = document.getElementById('timer-label');
-    if (!clockEl || !labelEl) return;
 
-    // Valeurs par défaut si l'API ne répond pas
-    let shopData = { start: '22:00', end: '06:00', isOpen: false };
-
-    fetch('/api/settings/order-window')
-        .then(res => {
-            if(!res.ok) throw new Error('API Error');
-            return res.json();
-        })
-        .then(data => {
-            if (data.start) shopData = data;
-            startTimer();
-        })
-        .catch(err => {
-            console.warn("Horaires non chargés, utilisation des valeurs par défaut.");
-            startTimer(); // On lance quand même le timer avec les valeurs par défaut !
-        });
-
-    function startTimer() {
-        function update() {
-            const now = new Date();
-            // Heure de Bruxelles
-            const nowBxl = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
-            let target = new Date(nowBxl);
-            
-            const [startH, startM] = shopData.start.split(':').map(Number);
-            const [endH, endM] = shopData.end.split(':').map(Number);
-
-            if (shopData.isOpen) {
-                labelEl.textContent = "Fermeture dans";
-                target.setHours(endH, endM, 0, 0);
-                if (target <= nowBxl) target.setDate(target.getDate() + 1);
-            } else {
-                labelEl.textContent = "Ouverture dans";
-                target.setHours(startH, startM, 0, 0);
-                if (target <= nowBxl) target.setDate(target.getDate() + 1);
-            }
-
-            const diff = target - nowBxl;
-            if (diff <= 0) { clockEl.textContent = "00:00:00"; return; }
-
-            const h = Math.floor(diff / (1000 * 60 * 60));
-            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const s = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            clockEl.textContent = String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
-        }
-
-        update();
-        setInterval(update, 1000);
-    }
-});
-</script>
 
 </body>
 </html>

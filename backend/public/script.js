@@ -376,7 +376,6 @@ async function checkout() {
 // ===== TIMER_AVIS_JS_PATCH - BEGIN =====
 
 // --- 1. LOGIQUE DU TIMER COSMIQUE ---
-let timerInterval = null;
 async function initCosmicTimer() {
     const clockEl = document.getElementById('timer-clock');
     const labelEl = document.getElementById('timer-label');
@@ -502,53 +501,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// --- LOGIQUE DU TIMER COSMIQUE ---
-let timerInterval = null;
-async function initCosmicTimer() {
-    const clockEl = document.getElementById('timer-clock');
-    const labelEl = document.getElementById('timer-label');
-    if(!clockEl || !labelEl) return;
 
-    let data = { start: '22:00', end: '06:00', isOpen: false };
-
-    try {
-        const res = await fetch(`${API_URL}/settings/order-window`);
-        const json = await res.json();
-        if (json.start) data = json;
-    } catch(e) { console.warn("Horaires non chargés, utilisation des valeurs par défaut."); }
-    
-    if (timerInterval) clearInterval(timerInterval);
-
-    function updateClock() {
-        const now = new Date();
-        const nowBrussels = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Brussels"}));
-        
-        let targetTime = new Date(nowBrussels);
-        const [startH, startM] = data.start.split(':').map(Number);
-        const [endH, endM] = data.end.split(':').map(Number);
-
-        if (data.isOpen) {
-            labelEl.textContent = "Fermeture dans";
-            targetTime.setHours(endH, endM, 0, 0);
-            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
-        } else {
-            labelEl.textContent = "Ouverture dans";
-            targetTime.setHours(startH, startM, 0, 0);
-            if (targetTime <= nowBrussels) targetTime.setDate(targetTime.getDate() + 1);
-        }
-
-        const diff = targetTime - nowBrussels;
-        if (diff <= 0) { clockEl.textContent = "00:00:00"; return; }
-
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-        clockEl.textContent = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    updateClock();
-    timerInterval = setInterval(updateClock, 1000);
-    setTimeout(initCosmicTimer, 60000); 
-}
 // ---------------------------------
