@@ -501,7 +501,7 @@ async function loadSondage() {
         } else {
             // Afficher les options
             optionsContainer.innerHTML = '';
-            const options = JSON.parse(currentSondage.options);
+            const options = typeof currentSondage.options === 'string' ? JSON.parse(currentSondage.options) : currentSondage.options;
             options.forEach((opt, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'w-full text-left p-3 rounded-xl bg-space-surface/60 border border-white/10 hover:border-nebula-cyan transition-all text-sm text-white';

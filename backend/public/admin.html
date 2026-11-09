@@ -320,7 +320,7 @@ async function loadSondages() {
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2 mt-2">
-                    ${JSON.parse(s.options).map(o => `<span class="text-xs bg-black/40 px-2 py-1 rounded text-gray-300">${escapeHTML(o)}</span>`).join('')}
+                    ${(typeof s.options === 'string' ? JSON.parse(s.options) : s.options).map(o => `<span class="text-xs bg-black/40 px-2 py-1 rounded text-gray-300">${escapeHTML(o)}</span>`).join('')}
                 </div>
                 <div id="sondage-results-${s.id}" class="hidden mt-3 p-3 bg-black/20 rounded-lg"></div>
             </div>
@@ -382,7 +382,7 @@ async function viewSondageResults(id) {
             container.innerHTML = '<p class="text-xs text-gray-500">Aucun vote pour le moment.</p>';
             return;
         }
-        const options = JSON.parse(data.sondage.options);
+        const options = typeof data.sondage.options === 'string' ? JSON.parse(data.sondage.options) : data.sondage.options;
         container.innerHTML = options.map((opt, i) => {
             const result = data.results.find(r => r.option_index === i);
             const count = result ? result.count : 0;
