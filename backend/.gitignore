@@ -1,0 +1,19 @@
+# Backups locaux (ne jamais commiter)
+*.bak
+*.bak_*
+*.bak.*
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
