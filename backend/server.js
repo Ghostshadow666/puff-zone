@@ -355,40 +355,50 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
 
     let calculatedTotal = 0;
 
-    for (const item of cart) { 
-      const s = await client.query(
-        `SELECT s.stock, c.prix_unite, c.prix_lot_5, c.prix_lot_10 
-         FROM saveurs s 
-         JOIN categories c ON s.categorie_id = c.id 
-         WHERE s.id = $1 FOR UPDATE`, 
-        [item.id]
-      ); 
+    // --- NOUVEAU CALCUL : REGROUPEMENT PAR CATÉGORIE POUR LOTS MIXTES ---
+    const itemsByCategory = {};
+    for (const item of cart) {
+        const catInfo = await client.query('SELECT s.stock, s.categorie_id, c.prix_unite, c.prix_lot_5, c.prix_lot_10, c.nom as cat_nom FROM saveurs s JOIN categories c ON s.categorie_id = c.id WHERE s.id = $1 FOR UPDATE', [item.id]);
+        
+        if (catInfo.rows.length === 0 || item.qty > catInfo.rows[0].stock) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: `Stock insuffisant ou produit introuvable : "${item.nom}".` });
+        }
 
-      if (s.rows.length === 0 || item.qty > s.rows[0].stock) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: `Stock insuffisant ou produit introuvable : "${item.nom}".` }); 
-      }
+        const catData = catInfo.rows[0];
+        const catId = catData.categorie_id;
+        
+        if (!itemsByCategory[catId]) {
+            itemsByCategory[catId] = {
+                prix_unite: parseFloat(catData.prix_unite),
+                prix_lot_5: catData.prix_lot_5 ? parseFloat(catData.prix_lot_5) : null,
+                prix_lot_10: catData.prix_lot_10 ? parseFloat(catData.prix_lot_10) : null,
+                total_qty: 0,
+                items: []
+            };
+        }
+        itemsByCategory[catId].total_qty += item.qty;
+        itemsByCategory[catId].items.push(item);
+    }
 
-      const dbItem = s.rows[0];
-      let qty = item.qty;
-      const p1 = parseFloat(dbItem.prix_unite);
-      const p5 = dbItem.prix_lot_5 ? parseFloat(dbItem.prix_lot_5) : null;
-      const p10 = dbItem.prix_lot_10 ? parseFloat(dbItem.prix_lot_10) : null;
-
-      if (p10 && qty >= 10) {
-          let nbLots10 = Math.floor(qty / 10);
-          calculatedTotal += nbLots10 * p10;
-          qty = qty % 10;
-      }
-      if (p5 && qty >= 5) {
-          let nbLots5 = Math.floor(qty / 5);
-          calculatedTotal += nbLots5 * p5;
-          qty = qty % 5;
-      }
-      if (qty > 0) {
-          calculatedTotal += qty * p1;
-      }
-    } 
+    for (const catId in itemsByCategory) {
+        const cat = itemsByCategory[catId];
+        let qty = cat.total_qty;
+        
+        if (cat.prix_lot_10 && qty >= 10) {
+            const nbLots10 = Math.floor(qty / 10);
+            calculatedTotal += nbLots10 * cat.prix_lot_10;
+            qty = qty % 10;
+        }
+        if (cat.prix_lot_5 && qty >= 5) {
+            const nbLots5 = Math.floor(qty / 5);
+            calculatedTotal += nbLots5 * cat.prix_lot_5;
+            qty = qty % 5;
+        }
+        if (qty > 0) {
+            calculatedTotal += qty * cat.prix_unite;
+        }
+    }
 
     let finalTotal = calculatedTotal; 
     if (promo_code) { 
@@ -454,8 +464,17 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
 app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => { 
   const { statut } = req.body; 
   try { 
-    const c = await pool.query('SELECT statut FROM commandes WHERE id=$1', [req.params.id]); 
+    const c = await pool.query('SELECT statut, livreur_id FROM commandes WHERE id=$1', [req.params.id]); 
+    if (c.rows.length === 0) return res.status(404).json({ error: 'Commande introuvable' });
     if (c.rows[0].statut === 'livre') return res.status(400).json({ error: 'Déjà livrée' }); 
+    
+    // Si l'utilisateur est un livreur, on vérifie que la commande lui est bien assignée
+    if (req.user.role === 'livreur') {
+      if (c.rows[0].livreur_id !== req.user.id) {
+        return res.status(403).json({ error: 'Cette commande ne vous est pas assignée.' });
+      }
+    }
+    
     await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); 
     await logAction(req.user, 'Statut Commande', `Cmd #${req.params.id} -> ${statut}`); 
     res.json({ success: true }); 
