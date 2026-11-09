@@ -1209,7 +1209,8 @@ function renderGroupedCommandeCard(orders) {
         ? `<button class="px-1.5 py-1 bg-red-500/20 text-red-400 rounded text-[10px] hover:bg-red-500/30" onclick="event.stopPropagation(); toggleCategoryVisibility(\${cat.id})" title="Categorie masquee - cliquer pour afficher">🚫</button>`
         : `<button class="px-1.5 py-1 bg-green-500/20 text-green-400 rounded text-[10px] hover:bg-green-500/30" onclick="event.stopPropagation(); toggleCategoryVisibility(\${cat.id})" title="Categorie visible - cliquer pour masquer">👁️</button>`
     }
-    <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
+    <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" title="Masquer/Afficher" class="px-1.5 py-1 bg-amber-500/20 text-amber-400 rounded text-[10px] hover:bg-amber-500/30 mr-1">👁️</button>
+                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
                                 <button class="px-1.5 py-1 text-red-400 text-[10px] hover:text-red-300" onclick="event.stopPropagation(); deleteCategory(${cat.id})">🗑️</button>
                             </div>
                         </div>

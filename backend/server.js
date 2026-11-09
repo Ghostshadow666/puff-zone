@@ -245,7 +245,7 @@ app.get('/api/clients', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // ===== ROUTES CATALOGUE =====
-app.get('/api/catalogue', async (req, res) => { try { const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories ORDER BY ordre ASC, id ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]); res.json({ categories: cats.rows, saveurs: savs.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
+app.get('/api/catalogue', async (req, res) => { try { const [cats, savs] = await Promise.all([ pool.query('SELECT * FROM categories WHERE visible_client = true ORDER BY ordre ASC, id ASC'), pool.query('SELECT * FROM saveurs ORDER BY nom ASC') ]); res.json({ categories: cats.rows, saveurs: savs.rows }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
 
 app.get('/api/categories', authenticateToken, isAdmin, async (req, res) => { 
   try { const r = await pool.query('SELECT * FROM categories ORDER BY ordre ASC, id ASC'); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 

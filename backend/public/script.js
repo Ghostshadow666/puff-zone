@@ -50,7 +50,7 @@ async function loadCatalogue() {
     try {
         const res = await fetch(`${API_URL}/catalogue`);
         const data = await res.json();
-        allCategories = data.categories || [];
+        allCategories = (data.categories || []).filter(c => c.visible_client !== false);
         allFlavors = data.saveurs || [];
         renderCatalogue();
     } catch (e) { 
