@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const crypto = require('crypto');
 const { Pool } = require('pg');
 const { authenticateToken, isAdmin, checkPassword, generateToken } = require('./auth');
 
@@ -95,6 +96,8 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS saveurs (id SERIAL PRIMARY KEY, categorie_id INTEGER REFERENCES categories(id) ON DELETE CASCADE, nom VARCHAR(100), stock INTEGER DEFAULT 0);
       CREATE TABLE IF NOT EXISTS settings (key VARCHAR(50) PRIMARY KEY, value TEXT);
       CREATE TABLE IF NOT EXISTS avis (id SERIAL PRIMARY KEY, note INTEGER NOT NULL, commentaire TEXT NOT NULL, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP, approuve BOOLEAN DEFAULT false);
+      CREATE TABLE IF NOT EXISTS sondages (id SERIAL PRIMARY KEY, question TEXT NOT NULL, options JSONB NOT NULL, actif BOOLEAN DEFAULT true, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE IF NOT EXISTS sondage_votes (id SERIAL PRIMARY KEY, sondage_id INTEGER REFERENCES sondages(id) ON DELETE CASCADE, option_index INTEGER NOT NULL, ip_hash VARCHAR(64), date_vote TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');
@@ -584,6 +587,113 @@ app.delete('/api/admin/avis/:id', authenticateToken, isAdmin, async (req, res) =
     await pool.query('DELETE FROM avis WHERE id = $1', [req.params.id]);
     await logAction(req.user, 'Avis Supprime', 'ID: ' + req.params.id);
     res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// ===== ROUTES SONDAGES =====
+app.get('/api/sondage/actif', async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM sondages WHERE actif = true ORDER BY date_creation DESC LIMIT 1');
+    if (r.rows.length === 0) return res.json({ sondage: null });
+    res.json({ sondage: r.rows[0] });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.post('/api/sondage/:id/vote', publicLimiter, async (req, res) => {
+  const { option_index } = req.body;
+  const sondageId = req.params.id;
+  if (option_index === undefined || option_index === null) {
+    return res.status(400).json({ error: 'Option requise.' });
+  }
+
+  // Hash de l'IP (pour éviter les votes multiples sans stocker l'IP)
+  const ip = req.ip || req.connection.remoteAddress || '';
+  const ipHash = crypto.createHash('sha256').update(ip + sondageId).digest('hex');
+
+  try {
+    // Vérifier si cette IP a déjà voté pour ce sondage
+    const check = await pool.query('SELECT id FROM sondage_votes WHERE sondage_id = $1 AND ip_hash = $2', [sondageId, ipHash]);
+    if (check.rows.length > 0) {
+      return res.status(409).json({ error: 'Vous avez déjà voté pour ce sondage.' });
+    }
+
+    await pool.query('INSERT INTO sondage_votes (sondage_id, option_index, ip_hash) VALUES ($1, $2, $3)', [sondageId, option_index, ipHash]);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Erreur vote:', e);
+    res.status(500).json({ error: 'Erreur' });
+  }
+});
+
+app.get('/api/sondage/:id/resultats', async (req, res) => {
+  try {
+    const sondage = await pool.query('SELECT * FROM sondages WHERE id = $1', [req.params.id]);
+    if (sondage.rows.length === 0) return res.status(404).json({ error: 'Sondage introuvable' });
+    
+    const votes = await pool.query('SELECT option_index, COUNT(*) as count FROM sondage_votes WHERE sondage_id = $1 GROUP BY option_index ORDER BY option_index ASC', [req.params.id]);
+    const results = votes.rows.map(v => ({ option_index: v.option_index, count: parseInt(v.count) }));
+    res.json({ sondage: sondage.rows[0], results });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+// ===== ROUTES ADMIN SONDAGES =====
+app.get('/api/admin/sondages', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM sondages ORDER BY date_creation DESC');
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.post('/api/admin/sondages', authenticateToken, isAdmin, async (req, res) => {
+  const { question, options } = req.body;
+  if (!question || !options || !Array.isArray(options) || options.length < 2) {
+    return res.status(400).json({ error: 'Question et au moins 2 options requises.' });
+  }
+  try {
+    // Désactiver les anciens sondages
+    await pool.query('UPDATE sondages SET actif = false WHERE actif = true');
+    // Créer le nouveau
+    const r = await pool.query('INSERT INTO sondages (question, options, actif) VALUES ($1, $2, true) RETURNING *', [question, JSON.stringify(options)]);
+    await logAction(req.user, 'Creation Sondage', question);
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erreur' });
+  }
+});
+
+app.delete('/api/admin/sondages/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM sondages WHERE id = $1', [req.params.id]);
+    await logAction(req.user, 'Suppression Sondage', 'ID: ' + req.params.id);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.put('/api/admin/sondages/:id/toggle', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const sondage = await pool.query('SELECT actif FROM sondages WHERE id = $1', [req.params.id]);
+    if (sondage.rows.length === 0) return res.status(404).json({ error: 'Sondage introuvable' });
+    
+    const newState = !sondage.rows[0].actif;
+    if (newState) {
+      // Si on active, on désactive les autres
+      await pool.query('UPDATE sondages SET actif = false WHERE actif = true');
+    }
+    await pool.query('UPDATE sondages SET actif = $1 WHERE id = $2', [newState, req.params.id]);
+    await logAction(req.user, 'Toggle Sondage', `ID: ${req.params.id} -> ${newState ? 'ACTIF' : 'INACTIF'}`);
+    res.json({ success: true, actif: newState });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.get('/api/admin/sondages/:id/resultats', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const sondage = await pool.query('SELECT * FROM sondages WHERE id = $1', [req.params.id]);
+    if (sondage.rows.length === 0) return res.status(404).json({ error: 'Sondage introuvable' });
+    
+    const votes = await pool.query('SELECT option_index, COUNT(*) as count FROM sondage_votes WHERE sondage_id = $1 GROUP BY option_index ORDER BY option_index ASC', [req.params.id]);
+    const results = votes.rows.map(v => ({ option_index: v.option_index, count: parseInt(v.count) }));
+    res.json({ sondage: sondage.rows[0], results });
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
 

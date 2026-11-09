@@ -54,7 +54,8 @@
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all relative" onclick="switchTab('tab-avis', this)">Avis <span id="notif-avis-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] hidden">0</span></button>
-<button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-sondages', this)">Sondages</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
             </div>
         </div>
     </header>
@@ -168,13 +169,34 @@
                     <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
         </div>
     </div>
-
     
         <!-- ONGLET AVIS (INJECTE DE FORCE) -->
         <div id="tab-avis" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl">
                 <h2 class="text-xl font-space font-bold text-white mb-4">⭐ Moderation des Avis</h2>
                 <div id="avisList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- ONGLET SONDAGES -->
+        <div id="tab-sondages" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6">
+                <h2 class="text-xl font-space font-bold text-white mb-4">📊 Créer un Sondage</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Question</label>
+                        <input type="text" id="sondageQuestion" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="Ex: Quelle nouveauté voulez-vous ?">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Options (une par ligne)</label>
+                        <textarea id="sondageOptions" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="Puff XXL&#10;Elf Bar&#10;Crystal&#10;Autre"></textarea>
+                    </div>
+                    <button onclick="createSondage()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer et Activer</button>
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-space font-bold text-white mb-4">📋 Sondages existants</h2>
+                <div id="sondagesList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
         </div>
 
@@ -272,6 +294,115 @@ async function approveAvis(id) { await fetch(`${API_URL}/admin/avis/${id}/approv
 async function deleteAvis(id) { if(confirm('Supprimer cet avis ?')) { await fetch(`${API_URL}/admin/avis/${id}`, {method:'DELETE'}); loadAvis(); } }
 // =======================
 
+// ===== SONDAGES_ADMIN =====
+async function loadSondages() {
+    const container = document.getElementById('sondagesList');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages`);
+        const sondages = await res.json();
+        if (sondages.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Aucun sondage pour le moment.</p>';
+            return;
+        }
+        container.innerHTML = sondages.map(s => `
+            <div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="font-bold text-white">${escapeHTML(s.question)}</div>
+                        <div class="text-xs text-gray-400">${new Date(s.date_creation).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${s.actif ? '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold">ACTIF</span>' : '<span class="bg-gray-500/20 text-gray-400 px-2 py-1 rounded text-[10px] font-bold">INACTIF</span>'}
+                        <button onclick="toggleSondage(${s.id})" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs font-bold">${s.actif ? 'Désactiver' : 'Activer'}</button>
+                        <button onclick="viewSondageResults(${s.id})" class="px-2 py-1 bg-nebula-cyan/20 text-nebula-cyan rounded text-xs font-bold">Résultats</button>
+                        <button onclick="deleteSondage(${s.id})" class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold">🗑️</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    ${JSON.parse(s.options).map(o => `<span class="text-xs bg-black/40 px-2 py-1 rounded text-gray-300">${escapeHTML(o)}</span>`).join('')}
+                </div>
+                <div id="sondage-results-${s.id}" class="hidden mt-3 p-3 bg-black/20 rounded-lg"></div>
+            </div>
+        `).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+
+async function createSondage() {
+    const question = document.getElementById('sondageQuestion').value.trim();
+    const optionsText = document.getElementById('sondageOptions').value.trim();
+    if (!question || !optionsText) return alert('Question et options requises.');
+    const options = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+    if (options.length < 2) return alert('Au moins 2 options requises.');
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, options })
+        });
+        if (res.ok) {
+            alert('✅ Sondage créé et activé !');
+            document.getElementById('sondageQuestion').value = '';
+            document.getElementById('sondageOptions').value = '';
+            loadSondages();
+        } else {
+            alert('Erreur lors de la création.');
+        }
+    } catch(e) { alert('Erreur réseau.'); }
+}
+
+async function toggleSondage(id) {
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages/${id}/toggle`, { method: 'PUT' });
+        if (res.ok) loadSondages();
+    } catch(e) {}
+}
+
+async function deleteSondage(id) {
+    if (!confirm('Supprimer ce sondage ? (Les votes seront perdus)')) return;
+    try {
+        await fetch(`${API_URL}/admin/sondages/${id}`, { method: 'DELETE' });
+        loadSondages();
+    } catch(e) {}
+}
+
+async function viewSondageResults(id) {
+    const container = document.getElementById(`sondage-results-${id}`);
+    if (!container.classList.contains('hidden')) {
+        container.classList.add('hidden');
+        return;
+    }
+    container.classList.remove('hidden');
+    container.innerHTML = 'Chargement...';
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages/${id}/resultats`);
+        const data = await res.json();
+        const total = data.results.reduce((sum, r) => sum + r.count, 0);
+        if (total === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-500">Aucun vote pour le moment.</p>';
+            return;
+        }
+        const options = JSON.parse(data.sondage.options);
+        container.innerHTML = options.map((opt, i) => {
+            const result = data.results.find(r => r.option_index === i);
+            const count = result ? result.count : 0;
+            const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+            return `
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-white">${escapeHTML(opt)}</span>
+                        <span class="text-gray-400">${count} vote${count > 1 ? 's' : ''} (${pct}%)</span>
+                    </div>
+                    <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-nebula-violet to-nebula-cyan" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+// ========================
+
 function switchTab(tabId, btn) {
             document.querySelectorAll('.nav-tab').forEach(b => { 
                 b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 
@@ -300,6 +431,7 @@ function switchTab(tabId, btn) {
             if(tabId === 'tab-logs') loadLogs(); 
             if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
             if(tabId === 'tab-avis') { loadAvis(); markAvisAsSeen(); }
+            if(tabId === 'tab-sondages') loadSondages();
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
         let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;
@@ -953,7 +1085,6 @@ function renderGroupedCommandeCard(orders) {
         async function exportLogs() { try { const res = await fetch(`${API_URL}/admin/export-logs`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `logs.json`; a.click(); } catch (e) {} }
         async function loadSecurity() { try { const res = await fetch(`${API_URL}/security/analyse`); const data = await res.json(); document.getElementById('socAttacks').textContent = data.totalAttacks; const lockStatus = document.getElementById('socLockdownStatus'); lockStatus.textContent = data.isLockdown ? 'ACTIF' : 'OFF'; lockStatus.style.color = data.isLockdown ? '#EF4444' : '#10B981'; const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="text-2xl mb-2">🔓</div><div class="text-sm font-bold text-green-400">DÉSACTIVER</div>` : `<div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div>`; const terminal = document.getElementById('socTerminal'); let html = `<div>[SYSTEM] Initialisation...</div>`; if (data.totalAttacks === 0) { html += `<div class="text-green-500">[OK] Aucune menace.</div>`; } else { html += `<div class="text-red-500">[ALERTE] ${data.totalAttacks} menaces !</div>`; data.failedLogins.forEach(log =>{ html += `<div class="text-red-500">[BLOCAGE] ${log.details}</div>`; }); } terminal.innerHTML = html; } catch (e) {} }
         
-
 
 
 // ===== MAINTENANCE_ADMIN_V2 - BEGIN =====

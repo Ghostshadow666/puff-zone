@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPromos();
     loadCatalogue();
     loadZones();
+    loadSondage(); // Charger le sondage actif
 });
 
 async function loadSettings() {
@@ -25,7 +26,7 @@ async function loadSettings() {
         const data = await res.json();
         const marquee = document.getElementById('promo-marquee');
         if (marquee && data.banner_text) {
-            // On duplique le texte pour un dÃ©filement infini fluide
+            // On duplique le texte pour un défilement infini fluide
             let html = '';
             for(let i=0; i<8; i++) {
                 html += `<span class="flex items-center gap-2 mx-4"><i data-lucide="sparkles" class="w-4 h-4 text-nebula-cyan"></i> ${data.banner_text}</span>`;
@@ -40,8 +41,8 @@ async function loadPromos() {
     try {
         const res = await fetch(`${API_URL}/promo/public`);
         const promos = await res.json();
-        // Les promos peuvent Ãªtre ajoutÃ©es au bandeau plus tard si besoin, 
-        // pour l'instant on gÃ¨re uniquement le texte personnalisÃ©.
+        // Les promos peuvent être ajoutées au bandeau plus tard si besoin, 
+        // pour l'instant on gère uniquement le texte personnalisé.
     } catch(e) { console.error(e); }
 }
 
@@ -203,11 +204,10 @@ function updateCartUI() {
         return; 
     }
     
-    // --- NOUVEAU CALCUL PAR CATÉGORIE (LOTS MIXTES) ---
-    // 1. On regroupe les items par catégorie
+    // --- CALCUL PAR CATÉGORIE (LOTS MIXTES) ---
     const itemsByCategory = {};
     cart.forEach(item => {
-        const catName = item.categorie; // Le nom de la catégorie
+        const catName = item.categorie;
         if (!itemsByCategory[catName]) {
             itemsByCategory[catName] = {
                 prix_unite: parseFloat(item.prix),
@@ -221,7 +221,6 @@ function updateCartUI() {
         itemsByCategory[catName].items.push(item);
     });
 
-    // 2. On calcule le total par catégorie avec les lots mixtes
     let total = 0;
     let detailsHtml = '';
 
@@ -250,7 +249,6 @@ function updateCartUI() {
 
         total += catTotal;
 
-        // On génère l'affichage pour cette catégorie
         detailsHtml += `<div class="mb-3 p-2 bg-black/20 rounded-lg border border-white/5">
             <div class="text-[10px] font-bold text-nebula-cyan uppercase mb-1">${catName}</div>`;
         
@@ -317,11 +315,11 @@ function backToChoice() { document.getElementById('step-choice').style.display =
 
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
-    if(!phone || phone.length < 8) return alert('Num\u00e9ro invalide');
+    if(!phone || phone.length < 8) return alert('Numéro invalide');
     try {
         const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) });
         if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
-        else { alert('Num\u00e9ro non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; }
+        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; }
     } catch(e) { alert('Erreur serveur.'); }
 }
 
@@ -334,7 +332,7 @@ async function saveProfile() {
     try {
         const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) });
         const data = await res.json();
-        if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte cr\u00e9\u00e9 !'); }
+        if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte créé !'); }
     } catch(e) { alert('Erreur.'); }
 }
 
@@ -373,7 +371,7 @@ async function checkout() {
         if (!sched.isOpen) {
             return alert(`⚠️ Les commandes sont fermées.\n\nNos horaires : ${sched.start} à ${sched.end}.\nRevenez pendant ces heures pour valider votre panier !`);
         }
-    } catch(e) {} // CLIENT_SCHEDULE_PATCH_V1
+    } catch(e) {}
 
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
@@ -388,7 +386,7 @@ async function checkout() {
         const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: zoneNom }) });
         const data = await res.json();
         if(res.ok && data.success) {
-            alert('\u2705 Commande envoy\u00e9e avec succ\u00e8s !');
+            alert('✅ Commande envoyée avec succès !');
             cart = []; window.appliedPromoCode = null; window.appliedPromoPct = 0;
             if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
             if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
@@ -396,62 +394,11 @@ async function checkout() {
         } else { alert('Erreur : ' + (data.error || 'inconnue')); btn.disabled = false; }
     } catch(e) { alert('Erreur de connexion.'); btn.disabled = false; }
 }
-// CLIENT_SCHEDULE_PATCH_V1
 
-
-// ===== AVIS_CLIENT =====
-
-
-async function submitAvis() {
-    const text = document.getElementById('avis-text').value.trim();
-    if (selectedNote === 0) return alert("Veuillez selectionner une note (etoiles).");
-    if (!text) return alert("Veuillez ecrire un commentaire.");
-    try {
-        const res = await fetch(`${API_URL}/avis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ note: selectedNote, commentaire: text })
-        });
-        const data = await res.json();
-        if (data.success) {
-            alert(data.message);
-            document.getElementById('avis-text').value = '';
-            selectedNote = 0;
-            const starSpans = document.querySelectorAll('#star-rating span');
-            starSpans.forEach(s => { s.classList.add('text-gray-500'); s.classList.remove('text-yellow-400'); });
-        } else {
-            alert('Erreur: ' + (data.error || 'inconnue'));
-        }
-    } catch(e) { alert("Erreur reseau."); }
-}
-
-async function loadPublicAvis() {
-    const container = document.getElementById('avis-display');
-    if (!container) return;
-    try {
-        const res = await fetch(`${API_URL}/avis/approuves`);
-        const avis = await res.json();
-        if (avis.length === 0) {
-            container.innerHTML = '<p class="text-center text-gray-500 italic">Soyez le premier a laisser un avis !</p>';
-            return;
-        }
-        container.innerHTML = avis.map(a => {
-            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
-            return `
-            <div class="glass-panel p-4 rounded-xl">
-                <div class="text-yellow-400 text-lg mb-1">${stars}</div>
-                <p class="text-gray-300 text-sm italic mb-2">"${a.commentaire}"</p>
-                <div class="text-xs text-gray-500 text-right">- Client Anonyme</div>
-            </div>`;
-        }).join('');
-    } catch(e) { container.innerHTML = 'Erreur de chargement des avis.'; }
-}
-// =====================
-
-
-
-// ===== AVIS LOGIC V2 =====
+// ===== AVIS CLIENT =====
 let selectedNote = 0;
+let currentSondage = null;
+let selectedSondageOption = null;
 
 function openAvisModal() { 
     document.getElementById('avis-modal').classList.remove('hidden'); 
@@ -467,33 +414,13 @@ function toggleAvisList() {
         list.classList.remove('hidden');
         icon.style.transform = 'rotate(180deg)';
         text.textContent = 'Masquer les avis';
-        loadPublicAvis(); // Charger quand on ouvre
+        loadPublicAvis();
     } else {
         list.classList.add('hidden');
         icon.style.transform = 'rotate(0deg)';
         text.textContent = 'Voir les avis de la communaute';
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const starSpans = document.querySelectorAll('#star-rating span');
-    if (starSpans.length > 0) {
-        starSpans.forEach(star => {
-            star.addEventListener('click', () => {
-                selectedNote = parseInt(star.getAttribute('data-val'));
-                starSpans.forEach(s => {
-                    if (parseInt(s.getAttribute('data-val')) <= selectedNote) {
-                        s.classList.remove('text-gray-500');
-                        s.classList.add('text-yellow-400');
-                    } else {
-                        s.classList.add('text-gray-500');
-                        s.classList.remove('text-yellow-400');
-                    }
-                });
-            });
-        });
-    }
-});
 
 async function submitAvis() {
     const text = document.getElementById('avis-text').value.trim();
@@ -544,4 +471,142 @@ async function loadPublicAvis() {
         }).join('');
     } catch(e) { container.innerHTML = 'Erreur de chargement.'; }
 }
-// ========================
+
+// ===== SONDAGE CLIENT =====
+async function loadSondage() {
+    try {
+        const res = await fetch(`${API_URL}/sondage/actif`);
+        const data = await res.json();
+        if (!data.sondage) {
+            document.getElementById('sondage-container').classList.add('hidden');
+            return;
+        }
+        currentSondage = data.sondage;
+        document.getElementById('sondage-container').classList.remove('hidden');
+        document.getElementById('sondage-question').textContent = currentSondage.question;
+        
+        // Vérifier si l'utilisateur a déjà voté (localStorage)
+        const hasVoted = localStorage.getItem('sondage_voted_' + currentSondage.id);
+        
+        const optionsContainer = document.getElementById('sondage-options');
+        const resultsContainer = document.getElementById('sondage-results');
+        const voteBtn = document.getElementById('sondage-vote-btn');
+        const msg = document.getElementById('sondage-msg');
+        
+        if (hasVoted) {
+            // Afficher les résultats
+            optionsContainer.innerHTML = '';
+            voteBtn.classList.add('hidden');
+            await loadSondageResults(currentSondage.id);
+        } else {
+            // Afficher les options
+            optionsContainer.innerHTML = '';
+            const options = JSON.parse(currentSondage.options);
+            options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-3 rounded-xl bg-space-surface/60 border border-white/10 hover:border-nebula-cyan transition-all text-sm text-white';
+                btn.textContent = opt;
+                btn.onclick = () => {
+                    // Désélectionner les autres
+                    optionsContainer.querySelectorAll('button').forEach(b => b.classList.remove('border-nebula-cyan', 'bg-nebula-cyan/10'));
+                    btn.classList.add('border-nebula-cyan', 'bg-nebula-cyan/10');
+                    selectedSondageOption = i;
+                    voteBtn.classList.remove('hidden');
+                    msg.textContent = '';
+                };
+                optionsContainer.appendChild(btn);
+            });
+            resultsContainer.classList.add('hidden');
+            voteBtn.classList.remove('hidden');
+        }
+    } catch (e) {
+        console.error('Erreur chargement sondage:', e);
+    }
+}
+
+async function submitVote() {
+    if (selectedSondageOption === null || !currentSondage) return alert('Sélectionnez une option.');
+    
+    try {
+        const res = await fetch(`${API_URL}/sondage/${currentSondage.id}/vote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ option_index: selectedSondageOption })
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+            // Marquer comme voté dans localStorage
+            localStorage.setItem('sondage_voted_' + currentSondage.id, 'true');
+            document.getElementById('sondage-msg').textContent = '✅ Merci pour votre vote !';
+            document.getElementById('sondage-msg').className = 'text-xs text-center mt-2 text-green-400';
+            
+            // Afficher les résultats
+            document.getElementById('sondage-options').innerHTML = '';
+            document.getElementById('sondage-vote-btn').classList.add('hidden');
+            await loadSondageResults(currentSondage.id);
+        } else {
+            alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+    } catch (e) {
+        alert('Erreur réseau.');
+    }
+}
+
+async function loadSondageResults(sondageId) {
+    try {
+        const res = await fetch(`${API_URL}/sondage/${sondageId}/resultats`);
+        const data = await res.json();
+        
+        const options = JSON.parse(data.sondage.options);
+        const total = data.results.reduce((sum, r) => sum + r.count, 0);
+        
+        const resultsContainer = document.getElementById('sondage-results');
+        resultsContainer.classList.remove('hidden');
+        
+        if (total === 0) {
+            resultsContainer.innerHTML = '<p class="text-xs text-gray-500 text-center">Aucun vote pour le moment.</p>';
+            return;
+        }
+        
+        resultsContainer.innerHTML = options.map((opt, i) => {
+            const result = data.results.find(r => r.option_index === i);
+            const count = result ? result.count : 0;
+            const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+            return `
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-white">${opt}</span>
+                        <span class="text-gray-400">${count} vote${count > 1 ? 's' : ''} (${pct}%)</span>
+                    </div>
+                    <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-nebula-violet to-nebula-cyan" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Erreur résultats sondage:', e);
+    }
+}
+
+// ===== INITIALISATION =====
+document.addEventListener('DOMContentLoaded', () => {
+    const starSpans = document.querySelectorAll('#star-rating span');
+    if (starSpans.length > 0) {
+        starSpans.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedNote = parseInt(star.getAttribute('data-val'));
+                starSpans.forEach(s => {
+                    if (parseInt(s.getAttribute('data-val')) <= selectedNote) {
+                        s.classList.remove('text-gray-500');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.add('text-gray-500');
+                        s.classList.remove('text-yellow-400');
+                    }
+                });
+            });
+        });
+    }
+});

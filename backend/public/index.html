@@ -57,11 +57,11 @@
         <p class="text-gray-400 text-xs text-center mb-4">Partagez votre experience en toute anonymat.</p>
         
         <div class="flex justify-center gap-2 mb-4 text-3xl text-gray-500 cursor-pointer" id="star-rating">
-            <span data-val="1" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="2" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="3" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="4" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="5" class="hover:text-yellow-400 transition-colors">â˜…</span>
+            <span data-val="1" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="2" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="3" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="4" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="5" class="hover:text-yellow-400 transition-colors">★</span>
         </div>
         
         <textarea id="avis-text" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg p-3 text-white outline-none focus:border-nebula-cyan mb-4 text-sm" placeholder="Qu'avez-vous pense de votre commande ?"></textarea>
@@ -123,6 +123,21 @@
   <!-- HERO SECTION -->
   <section id="hero" class="relative min-h-[70vh] flex items-center justify-center z-10 py-12">
     <div class="max-w-7xl mx-auto px-4 text-center z-10">
+      
+      <!-- SONDAGE (dans la zone rouge) -->
+      <div id="sondage-container" class="mb-8 hidden">
+        <div class="glass-panel p-6 rounded-2xl border border-nebula-cyan/30 max-w-md mx-auto text-left">
+            <h3 class="font-space font-bold text-white mb-3 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-nebula-cyan"></i>
+                <span id="sondage-question">Chargement...</span>
+            </h3>
+            <div id="sondage-options" class="space-y-2 mb-4"></div>
+            <div id="sondage-results" class="hidden space-y-2"></div>
+            <button id="sondage-vote-btn" onclick="submitVote()" class="hidden w-full py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white font-bold text-sm">Voter</button>
+            <p id="sondage-msg" class="text-xs text-center mt-2 text-gray-400"></p>
+        </div>
+      </div>
+
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-space-surface border border-nebula-violet/40 text-nebula-cyan text-xs font-space font-semibold tracking-widest uppercase mb-6">
         <i data-lucide="sparkles" class="w-4 h-4 text-nebula-magenta"></i> NOUVELLE COLLECTION NEBULA
       </div>
@@ -219,13 +234,13 @@
     </div>
   </div>
 
-  <script src="script.js?v=7"></script>
+  <script src="script.js?v=8"></script>
   <script src="bg-animation.js"></script>
   <script>
     lucide.createIcons();
   </script>
 
-<!-- Section Avis (Bas de page - DÃƒÂ©pliable) -->
+<!-- Section Avis (Bas de page - Dépliable) -->
 <section class="max-w-4xl mx-auto px-4 py-10 relative z-10 border-t border-white/10 mt-10">
     <div class="text-center">
         <button onclick="toggleAvisList()" class="inline-flex items-center gap-2 text-nebula-cyan hover:text-white transition-colors font-bold text-sm">
