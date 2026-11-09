@@ -75,7 +75,7 @@
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste du personnel</h2><div id="userList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
         </div>
         <div id="tab-commandes" class="tab-content hidden">
-            <div class="glass-panel p-6 rounded-2xl mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2><button class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all" onclick="loadCommandes()">Actualiser</button></div><div id="commandesEnCours" class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2><button class="px-4 py-2 rounded-lg bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2" onclick="loadCommandes()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Actualiser</button></div><div id="commandesEnCours" class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">✅ Historique</h2><div id="commandesTerminees" class="grid grid-cols-1 lg:grid-cols-2 gap-3"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
         </div>
         <div id="tab-clients" class="tab-content hidden">
@@ -512,7 +512,8 @@ function switchTab(tabId, btn) {
             } catch (e) { console.error(e); }
         }
         setInterval(checkNotifications, 3000);
-        setInterval(() => { const commandesTab = document.getElementById('tab-commandes'); if (commandesTab && !commandesTab.classList.contains('hidden')) { loadCommandes(); } }, 10000);
+        // NOTE: Le rafraichissement automatique de la liste des commandes a ete desactive
+// pour eviter le remontage de page. Utilise le bouton "Actualiser" manuellement.
         document.addEventListener('DOMContentLoaded', () => {
             checkAvisNotif(); loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
 
