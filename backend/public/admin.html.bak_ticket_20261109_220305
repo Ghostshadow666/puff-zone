@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUFF ZONE &mdash; Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { nebula: { violet: '#9d4edd', magenta: '#f72585', cyan: '#4cc9f0', deep: '#3a0ca3' }, space: { bg: '#03020a', card: 'rgba(14, 11, 26, 0.55)', surface: 'rgba(22, 17, 43, 0.65)', border: 'rgba(255, 255, 255, 0.12)' } }, fontFamily: { space: ['Space Grotesk', 'sans-serif'], sans: ['Plus Jakarta Sans', 'sans-serif'] } } } }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #03020a; color: #f1f0fb; font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; }
+        .glass-panel { background: rgba(14, 11, 26, 0.45); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 12px 40px 0 rgba(3, 2, 10, 0.6); }
+        .glass-panel:hover { border-color: rgba(157, 78, 221, 0.45); box-shadow: 0 0 30px rgba(157, 78, 221, 0.25); }
+        .glass-nav { background: rgba(3, 2, 10, 0.7); backdrop-filter: blur(24px); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        #map { height: 400px; border-radius: 15px; z-index: 1; margin-bottom: 20px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #03020a; }
+        ::-webkit-scrollbar-thumb { background: #251c44; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9d4edd; }
+    </style>
+</head>
+<body class="relative">
+    <canvas id="bg-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></canvas>
+
+    <header class="sticky top-0 z-40 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-nebula-magenta to-nebula-cyan flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="font-space font-bold text-xl text-white">PUFF<span class="text-nebula-cyan">ZONE</span> Admin</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="logoutAdmin()" class="px-4 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-all">Déconnexion</button>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+            <div class="flex flex-wrap gap-2">
+                <button class="nav-tab active glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-white transition-all" onclick="switchTab('tab-livreurs', this)">Livreurs</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-zones', this)">Zones</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-personnel', this)">Personnel</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all relative" onclick="switchTab('tab-commandes', this)">Commandes <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] hidden">0</span></button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-clients', this)">Clients</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-stats', this)">Stats</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-stock', this)">Stock</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all relative" onclick="switchTab('tab-avis', this)">Avis <span id="notif-avis-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] hidden">0</span></button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-sondages', this)">Sondages</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-securite', this)">Sécurité</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-10 relative z-10">
+        <div id="tab-livreurs" class="tab-content active"><div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste des livreurs</h2><div id="driverList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div></div>
+        <div id="tab-zones" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">📍 Zones de livraison</h2><div id="map"></div>
+                <form id="addZoneForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Nom de la zone</label><input type="text" id="zoneName" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="ex: Liège centre" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Minimum (€)</label><input type="number" id="zoneMin" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" value="50" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Rayon (KM)</label><input type="number" id="zoneRayon" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" value="20" min="1" required></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Ajouter</button></form>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📋 Zones enregistrées</h2><div id="zoneList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
+        </div>
+        <div id="tab-personnel" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un compte</h2>
+                <form id="addUserForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Nom</label><input type="text" id="userName" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Mot de passe</label><input type="password" id="userPassword" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Rôle</label><select id="userRole" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"><option value="vendeur">Vendeur</option><option value="admin">Admin</option><option value="dev">Dev</option><option value="livreur">Livreur</option></select></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button></form>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste du personnel</h2><div id="userList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
+        </div>
+        <div id="tab-commandes" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2><button class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all" onclick="loadCommandes()">Actualiser</button></div><div id="commandesEnCours" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">✅ Historique</h2><div id="commandesTerminees" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
+        </div>
+        <div id="tab-clients" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-space font-bold text-white">🔒 Clients</h2>
+                    <button onclick="openDuplicatesModal()" class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all border border-nebula-cyan/30">🔍 Doublons</button>
+                </div>
+                <div id="clientsList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
+        <div id="tab-settings" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">⚙️ Paramètres du Site</h2><div class="space-y-4 max-w-2xl"><div><label class="text-xs font-bold text-gray-400 block mb-1">Texte du bandeau d'annonce</label><input type="text" id="settingBannerText" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white outline-none focus:border-nebula-cyan" placeholder="Entrez le texte du bandeau..."><p class="text-xs text-gray-500 mt-1">Ce texte défilera de droite à gauche sur la page d'accueil.</p></div>
+<div class="pt-4 border-t border-white/10 mt-4">
+    <label class="text-xs font-bold text-gray-400 block mb-2">Plage horaire de commande (Heure de Bruxelles)</label>
+    <div class="flex items-center gap-4">
+        <div class="flex-1">
+            <span class="text-xs text-gray-500 mb-1 block">Ouverture</span>
+            <input type="time" id="orderStartTime" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan">
+        </div>
+        <div class="flex-1">
+            <span class="text-xs text-gray-500 mb-1 block">Fermeture</span>
+            <input type="time" id="orderEndTime" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan">
+        </div>
+    </div>
+    <p class="text-[10px] text-gray-500 mt-2">Ex: 22:00 à 06:00 (passe minuit). Les clients ne pourront pas valider leur panier hors de cette plage.</p>
+</div>
+<button onclick="saveSettings()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer les modifications</button></div></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2><form id="addPromoForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button></form></div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">🏷️ Codes actifs</h2><div id="promoList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
+        </div>
+        <div id="tab-stats" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- CA 7 jours -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">📈 CA (7 jours)</h2>
+                <div class="flex-1 relative min-h-[150px]">
+                    <canvas id="chartCA7Jours"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Saveurs -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">📊 Top Saveurs</h2>
+                <div class="flex-1 relative min-h-[150px]">
+                    <canvas id="chartTopSaveurs"></canvas>
+                </div>
+            </div>
+
+            <!-- Avis -->
+            <div class="glass-panel p-6 rounded-2xl flex flex-col">
+                <h2 class="text-sm font-space font-bold text-white mb-4 uppercase tracking-wider">⭐ Avis</h2>
+                <div class="flex-1 relative min-h-[150px] flex items-center justify-center">
+                    <canvas id="chartAvisStats"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+        
+        <div id="tab-stock" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6">
+                <h2 id="catFormTitle" class="text-xl font-space font-bold text-white mb-4">➕ Créer une Catégorie</h2>
+                <input type="hidden" id="editCatId">
+                <form id="addCategoryForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom</label><input type="text" id="catNom" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Photo</label><input type="file" id="catImage" accept="image/*" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Prix unitaire (€)</label><input type="number" id="catPrix1" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" value="0" required></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 5 (€)</label><input type="number" id="catPrix5" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
+                        <div><label class="text-xs font-bold text-gray-400 block mb-1">Lot 10 (€)</label><input type="number" id="catPrix10" step="0.01" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Optionnel"></div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" id="submitCatBtn" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer</button>
+                        <button type="button" id="cancelCatBtn" onclick="resetCategoryForm()" class="px-6 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hidden">Annuler</button>
+                    </div>
+                </form>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📁 Catalogue</h2><div id="catalogueList">Chargement...</div></div>
+        </div>
+        
+        <div id="tab-ventes" class="tab-content hidden"><div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">📊 Ventes</h2><div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center mb-6"><div class="text-xs font-bold text-gray-400 uppercase">Chiffre d'Affaires</div><div id="totalCA" class="text-3xl font-extrabold text-green-400 mt-2">0.00 €</div></div><div id="ventesList" class="text-center text-gray-400 text-sm italic">Chargement...</div><div class="mt-6 text-right flex justify-end gap-3"><button onclick="exportVentes()" class="px-6 py-2 rounded-xl border border-nebula-cyan text-nebula-cyan text-xs font-bold hover:bg-nebula-cyan/10">Exporter</button><button onclick="resetVentes()" class="px-6 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/10">Réinitialiser</button></div></div></div>
+        <div id="tab-logs" class="tab-content hidden"><div class="glass-panel p-6 rounded-2xl border border-nebula-cyan/30"><div class="flex justify-between items-center mb-6"><h2 class="text-xl font-space font-bold text-nebula-cyan">📜 Journal d'Activité</h2><div class="flex gap-2"><input type="text" id="logSearch" onkeyup="filterLogs()" placeholder="Rechercher..." class="bg-space-bg border border-nebula-cyan/30 rounded-lg py-2 px-3 text-xs text-white outline-none"><button onclick="exportLogs()" class="px-4 py-2 rounded-lg border border-nebula-cyan/30 text-nebula-cyan text-xs font-bold hover:bg-nebula-cyan/10">Exporter</button></div></div><div class="overflow-y-auto max-h-[500px]"><table class="w-full text-left text-xs font-mono text-gray-300"><thead class="sticky top-0 bg-space-bg"><tr class="border-b border-nebula-cyan/30 text-nebula-cyan"><th class="p-3">Date</th><th class="p-3">Utilisateur</th><th class="p-3">Rôle</th><th class="p-3">Action</th><th class="p-3">Détails</th><th class="p-3">IP</th></tr></thead><tbody id="logsList"><tr><td colspan="6" class="text-center p-6">Chargement...</td></tr></tbody></table></div></div></div>
+        <div id="tab-securite" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl border border-red-500/30 bg-red-500/5"><h2 class="text-xl font-space font-bold text-red-400 mb-6">⚠️ Crisis Room</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"><button onclick="simulateAttack()" class="p-4 rounded-xl bg-space-surface border border-nebula-cyan/30 hover:bg-nebula-cyan/10 transition-all text-center"><div class="text-2xl mb-2">🛡️</div><div class="text-sm font-bold text-white">Simuler Attaque</div></button><button onclick="toggleLockdown()" id="lockdownBtn" class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div></button><button onclick="toggleMaintenance()" id="maintenanceBtn" class="col-span-full p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 transition-all text-center">
+                        <div class="text-2xl mb-2">&#128295;</div>
+                        <div class="text-sm font-bold text-yellow-400" id="maintenanceBtnLabel">ACTIVER MAINTENANCE</div>
+                        <div class="text-[9px] text-gray-400 mt-1" id="maintenanceBtnStatus">Site actuellement accessible</div>
+                    </button>
+                    <button onclick="backupWipe()" class="col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center"><div class="text-2xl mb-2">🗑️</div><div class="text-sm font-bold text-red-400">PROTOCOLE ZERO-DAY (Backup + Wipe)</div></button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4 flex flex-col items-center justify-center"><h3 class="text-xs font-mono text-nebula-cyan mb-4">SCAN RÉSEAU</h3><div class="w-32 h-32 rounded-full border-2 border-nebula-cyan/50 relative overflow-hidden"><div class="absolute inset-0 bg-gradient-to-tr from-transparent to-nebula-cyan/50 animate-spin" style="animation-duration: 3s;"></div></div><div class="text-xs text-green-400 font-mono mt-4">[SÉCURISÉ]</div></div><div class="bg-black/50 border border-nebula-cyan/30 rounded-xl p-4"><h3 class="text-xs font-mono text-nebula-cyan mb-4">TÉLÉMÉTRIE</h3><div class="grid grid-cols-2 gap-2 text-center"><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg">ONLINE</div><div class="text-[9px] text-gray-400">DB</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-green-400 font-bold text-lg" id="socLockdownStatus">OFF</div><div class="text-[9px] text-gray-400">LOCKDOWN</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-red-400 font-bold text-lg" id="socAttacks">0</div><div class="text-[9px] text-gray-400">MENACES</div></div><div class="bg-white/5 p-2 rounded-lg"><div class="text-nebula-violet font-bold text-lg">100%</div><div class="text-[9px] text-gray-400">INTÉGRITÉ</div></div></div></div></div><div class="bg-black/50 border border-red-500/30 rounded-xl p-4"><h3 class="text-xs font-mono text-red-400 mb-4 uppercase tracking-wider font-bold">📘 Guide des risques expliqués</h3><div class="space-y-3"><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">1. Brute Force</div><div class="text-xs text-gray-400">Un pirate teste des milliers de mots de passe. <strong class="text-white">Défense :</strong> Bloqué après 10 essais.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">2. Injection SQL</div><div class="text-xs text-gray-400">Un pirate entre du code dans un champ. <strong class="text-white">Défense :</strong> Requêtes préparées.</div></div><div class="border-l-2 border-red-500 pl-3"><div class="text-sm font-bold text-red-400">3. Lockdown</div><div class="text-xs text-gray-400">Si piratage avéré, bloque toutes les écritures pour protéger les données.</div></div></div></div></div>
+        </div>
+    </div>
+    
+        <!-- ONGLET AVIS (INJECTE DE FORCE) -->
+        <div id="tab-avis" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-space font-bold text-white mb-4">⭐ Moderation des Avis</h2>
+                <div id="avisList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
+
+        <!-- ONGLET SONDAGES -->
+        <div id="tab-sondages" class="tab-content hidden">
+            <div class="glass-panel p-6 rounded-2xl mb-6">
+                <h2 class="text-xl font-space font-bold text-white mb-4">📊 Créer un Sondage</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Question</label>
+                        <input type="text" id="sondageQuestion" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="Ex: Quelle nouveauté voulez-vous ?">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 block mb-1">Options (une par ligne)</label>
+                        <textarea id="sondageOptions" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none focus:border-nebula-cyan" placeholder="Puff XXL&#10;Elf Bar&#10;Crystal&#10;Autre"></textarea>
+                    </div>
+                    <button onclick="createSondage()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer et Activer</button>
+                </div>
+            </div>
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-space font-bold text-white mb-4">📋 Sondages existants</h2>
+                <div id="sondagesList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
+            </div>
+        </div>
+
+    <!-- MODAL SAVEUR -->
+    <div id="flavorModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-nebula-cyan/30">
+            <h2 id="flavorModalTitle" class="text-lg font-bold text-nebula-cyan mb-4">➕ Saveur</h2>
+            <input type="hidden" id="flavorCatId"><input type="hidden" id="editFlavorId">
+            <div class="space-y-4">
+                <div><label class="text-xs font-bold text-gray-400 block mb-1">Nom</label><input type="text" id="flavNom" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
+                <div><label class="text-xs font-bold text-gray-400 block mb-1">Stock</label><input type="number" id="flavStock" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" value="0" required></div>
+                <div class="flex gap-2">
+                    <button class="flex-1 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold" onclick="saveFlavor()">Sauvegarder</button>
+                    <button class="flex-1 py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-bold" onclick="document.getElementById('flavorModal').classList.add('hidden')">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DOUBLONS -->
+    <div id="duplicatesModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-nebula-cyan/30">
+            <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                <h2 class="text-xl font-bold text-nebula-cyan flex items-center gap-2">🔍 Vérificateur de doublons</h2>
+                <button onclick="document.getElementById('duplicatesModal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <p class="text-xs text-gray-400 mb-4">Comptes clients avec le même nom.</p>
+            <div id="duplicatesList" class="overflow-y-auto pr-2 space-y-4">
+                <!-- Injecté par JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="bg-animation.js"></script>
+    <script>
+        lucide.createIcons();
+        const originalFetch = window.fetch;
+        window.fetch = function() {
+            let [resource, config] = arguments;
+            const token = localStorage.getItem('token');
+            if (token && token !== 'undefined' && token !== 'null') { config = config || {}; config.headers = config.headers || {}; config.headers['Authorization'] = 'Bearer ' + token; }
+            return originalFetch(resource, config).then(response => {
+                if (response.status === 401) { localStorage.removeItem('token'); localStorage.removeItem('puff_staff'); window.location.href = 'admin-login.html'; }
+                return response;
+            });
+        };
+        const staff = JSON.parse(localStorage.getItem('puff_staff'));
+        if (!staff || (staff.role !== 'admin' && staff.role !== 'dev')) { window.location.href = '/admin-login.html'; }
+        const API_URL = '/api';
+        let map = null, currentMarker = null, currentCircle = null, selectedCoords = null;
+        let allCategories = [], allFlavors = [], allLivreurs = [], allZones = [], currentBase64Image = null;
+        let editingZoneId = null;
+        let allClientsData = [];
+
+        function escapeHTML(str) { if(!str) return ''; return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        
+// ===== AVIS_ADMIN =====
+async function loadAvis() {
+    const container = document.getElementById('avisList');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/avis`);
+        const avis = await res.json();
+        if (avis.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Aucun avis pour le moment.</p>';
+            return;
+        }
+        container.innerHTML = avis.map(a => {
+            const stars = '★'.repeat(a.note) + '☆'.repeat(5 - a.note);
+            const date = new Date(a.date_creation).toLocaleDateString('fr-FR');
+            const badge = a.approuve
+                ? '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold ml-2">APPROUVE</span>'
+                : '<span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-[10px] font-bold ml-2">EN ATTENTE</span>';
+            return `
+            <div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex flex-col gap-2">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <div class="text-yellow-400 text-lg">${stars}</div>
+                        <div class="text-xs text-gray-500">${date} ${badge}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${!a.approuve ? `<button onclick="approveAvis(${a.id})" class="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-bold hover:bg-green-500/30">Approuver</button>` : ''}
+                        <button onclick="deleteAvis(${a.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-xs font-bold hover:bg-red-500/30">Suppr.</button>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-200 italic">"${a.commentaire}"</p>
+            </div>`;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+async function approveAvis(id) { await fetch(`${API_URL}/admin/avis/${id}/approve`, {method:'PUT'}); loadAvis(); }
+async function deleteAvis(id) { if(confirm('Supprimer cet avis ?')) { await fetch(`${API_URL}/admin/avis/${id}`, {method:'DELETE'}); loadAvis(); } }
+// =======================
+
+// ===== SONDAGES_ADMIN =====
+async function loadSondages() {
+    const container = document.getElementById('sondagesList');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages`);
+        const sondages = await res.json();
+        if (sondages.length === 0) {
+            container.innerHTML = '<p class="text-gray-500">Aucun sondage pour le moment.</p>';
+            return;
+        }
+        container.innerHTML = sondages.map(s => `
+            <div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <div class="font-bold text-white">${escapeHTML(s.question)}</div>
+                        <div class="text-xs text-gray-400">${new Date(s.date_creation).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        ${s.actif ? '<span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold">ACTIF</span>' : '<span class="bg-gray-500/20 text-gray-400 px-2 py-1 rounded text-[10px] font-bold">INACTIF</span>'}
+                        <button onclick="toggleSondage(${s.id})" class="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs font-bold">${s.actif ? 'Désactiver' : 'Activer'}</button>
+                        <button onclick="viewSondageResults(${s.id})" class="px-2 py-1 bg-nebula-cyan/20 text-nebula-cyan rounded text-xs font-bold">Résultats</button>
+                        <button onclick="deleteSondage(${s.id})" class="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold">🗑️</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    ${(typeof s.options === 'string' ? JSON.parse(s.options) : s.options).map(o => `<span class="text-xs bg-black/40 px-2 py-1 rounded text-gray-300">${escapeHTML(o)}</span>`).join('')}
+                </div>
+                <div id="sondage-results-${s.id}" class="hidden mt-3 p-3 bg-black/20 rounded-lg"></div>
+            </div>
+        `).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+
+async function createSondage() {
+    const question = document.getElementById('sondageQuestion').value.trim();
+    const optionsText = document.getElementById('sondageOptions').value.trim();
+    if (!question || !optionsText) return alert('Question et options requises.');
+    const options = optionsText.split('\n').map(o => o.trim()).filter(o => o.length > 0);
+    if (options.length < 2) return alert('Au moins 2 options requises.');
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, options })
+        });
+        if (res.ok) {
+            alert('✅ Sondage créé et activé !');
+            document.getElementById('sondageQuestion').value = '';
+            document.getElementById('sondageOptions').value = '';
+            loadSondages();
+        } else {
+            alert('Erreur lors de la création.');
+        }
+    } catch(e) { alert('Erreur réseau.'); }
+}
+
+async function toggleSondage(id) {
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages/${id}/toggle`, { method: 'PUT' });
+        if (res.ok) loadSondages();
+    } catch(e) {}
+}
+
+async function deleteSondage(id) {
+    if (!confirm('Supprimer ce sondage ? (Les votes seront perdus)')) return;
+    try {
+        await fetch(`${API_URL}/admin/sondages/${id}`, { method: 'DELETE' });
+        loadSondages();
+    } catch(e) {}
+}
+
+async function viewSondageResults(id) {
+    const container = document.getElementById(`sondage-results-${id}`);
+    if (!container.classList.contains('hidden')) {
+        container.classList.add('hidden');
+        return;
+    }
+    container.classList.remove('hidden');
+    container.innerHTML = 'Chargement...';
+    try {
+        const res = await fetch(`${API_URL}/admin/sondages/${id}/resultats`);
+        const data = await res.json();
+        const total = data.results.reduce((sum, r) => sum + r.count, 0);
+        if (total === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-500">Aucun vote pour le moment.</p>';
+            return;
+        }
+        const options = typeof data.sondage.options === 'string' ? JSON.parse(data.sondage.options) : data.sondage.options;
+        container.innerHTML = options.map((opt, i) => {
+            const result = data.results.find(r => r.option_index === i);
+            const count = result ? result.count : 0;
+            const pct = total > 0 ? (count / total * 100).toFixed(1) : 0;
+            return `
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-white">${escapeHTML(opt)}</span>
+                        <span class="text-gray-400">${count} vote${count > 1 ? 's' : ''} (${pct}%)</span>
+                    </div>
+                    <div class="h-2 bg-black/40 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-nebula-violet to-nebula-cyan" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch(e) { container.innerHTML = 'Erreur.'; }
+}
+// ========================
+
+
+// ===== BANISSEMENT ADMIN =====
+async function banClient(id) {
+    const reason = prompt('Raison du bannissement (visible par le client) :', 'Comportement inapproprie');
+    if (reason === null) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/clients/${id}/ban`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
+        if (res.ok) {
+            alert('✅ Client banni.');
+            loadClients();
+        } else {
+            alert('Erreur.');
+        }
+    } catch(e) { alert('Erreur reseau.'); }
+}
+
+async function unbanClient(id) {
+    if (!confirm('Débannir ce client ?')) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/clients/${id}/unban`, { method: 'PUT' });
+        if (res.ok) {
+            alert('✅ Client débanni.');
+            loadClients();
+        } else {
+            alert('Erreur.');
+        }
+    } catch(e) { alert('Erreur reseau.'); }
+}
+// ==============================
+
+function switchTab(tabId, btn) {
+            document.querySelectorAll('.nav-tab').forEach(b => { 
+                b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 
+                b.classList.add('glass-panel', 'text-gray-400'); 
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            
+            if(btn) {
+                btn.classList.remove('glass-panel', 'text-gray-400'); 
+                btn.classList.add('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white');
+            }
+            
+            const targetTab = document.getElementById(tabId);
+            if(targetTab) {
+                targetTab.classList.remove('hidden');
+            } else {
+                console.error("Onglet introuvable : " + tabId);
+            }
+
+            if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
+            if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').classList.add('hidden'); }
+            if(tabId === 'tab-clients') loadClients(); 
+            if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
+            if(tabId === 'tab-stats') loadStats(); 
+            if(tabId === 'tab-ventes') loadVentes();
+            if(tabId === 'tab-logs') loadLogs(); 
+            if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
+            if(tabId === 'tab-avis') { loadAvis(); markAvisAsSeen(); }
+            if(tabId === 'tab-sondages') loadSondages();
+        }
+        function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }
+        let lastOrderId = parseInt(localStorage.getItem('lastOrderId')) || 0; let audioCtx;
+        function playSound() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); }
+        async function checkNotifications() {
+            try {
+                const res = await fetch(`${API_URL}/commandes`); 
+                if (!res.ok) return;
+                const commandes = await res.json(); 
+                if (commandes.length === 0) return;
+                
+                const maxId = Math.max(...commandes.map(c => c.id)); 
+                const badge = document.getElementById('notif-badge');
+                
+                // Si c'est le premier chargement, on enregistre l'ID sans notifier
+                if (lastOrderId === 0) { 
+                    lastOrderId = maxId; 
+                    localStorage.setItem('lastOrderId', lastOrderId); 
+                    return;
+                }
+
+                // Si on détecte une nouvelle commande
+                if (maxId > lastOrderId) { 
+                    playSound(); 
+                    const nouvelles = commandes.filter(c => c.id > lastOrderId && c.statut !== 'livre').length; 
+                    
+                    if (badge && nouvelles > 0) { 
+                        badge.textContent = nouvelles; 
+                        badge.classList.remove('hidden'); 
+                        // On s'assure que le parent est bien en 'relative' pour que le badge se place bien
+                        badge.parentElement.classList.add('relative'); 
+                    } 
+                    
+                    // On met à jour le lastOrderId pour ne pas re-sonner pour la même commande
+                    lastOrderId = maxId; 
+                    localStorage.setItem('lastOrderId', lastOrderId);
+                    
+                    // On recharge la liste si on est sur l'onglet commandes
+                    const commandesTab = document.getElementById('tab-commandes'); 
+                    if (commandesTab && !commandesTab.classList.contains('hidden')) { 
+                        loadCommandes(); 
+                    }
+                } 
+            } catch (e) { console.error(e); }
+        }
+        setInterval(checkNotifications, 3000);
+        setInterval(() => { const commandesTab = document.getElementById('tab-commandes'); if (commandesTab && !commandesTab.classList.contains('hidden')) { loadCommandes(); } }, 10000);
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAvisNotif(); loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
+
+        async function loadDrivers() { try { const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); if(!Array.isArray(d)) return; allLivreurs = d; const el = document.getElementById('driverList'); if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; } el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">🛵 ${x.name}</div><div class="text-xs text-gray-400 mt-1">📦 Livraisons: ${x.total_livraisons} | 💰 CA: ${parseFloat(x.total_ca).toFixed(2)} €</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join(''); } catch(e) { console.error(e); } }
+        async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
+        async function loadCommandes() {
+            try {
+                // Sauvegarder la position de scroll
+                const scrollPos = window.scrollY;
+                const containerScroll = document.getElementById('commandesEnCours')?.scrollTop || 0;
+
+                const res = await fetch(`${API_URL}/commandes`); 
+                const commandes = await res.json(); 
+                if(!Array.isArray(commandes)) return;
+                
+                const enCours = commandes.filter(c => c.statut !== 'livre'); 
+                const terminees = commandes.filter(c => c.statut === 'livre');
+                
+                const groupedEnCours = {};
+                enCours.forEach(cmd => {
+                    const key = cmd.telephone;
+                    if (!groupedEnCours[key]) groupedEnCours[key] = [];
+                    groupedEnCours[key].push(cmd);
+                });
+                
+                const enCoursHtml = Object.values(groupedEnCours).map(clientOrders => renderGroupedCommandeCard(clientOrders)).join('');
+                document.getElementById('commandesEnCours').innerHTML = enCours.length === 0 ? '<div class="text-center text-gray-400 text-sm italic py-4">Aucune commande en cours.</div>' : enCoursHtml;
+                
+                document.getElementById('commandesTerminees').innerHTML = terminees.length === 0 ? '<div class="text-center text-gray-400 text-sm italic py-4">Aucune commande terminee.</div>' : terminees.map(cmd => renderCommandeCard(cmd, true)).join('');
+
+                // Restaurer la position de scroll
+                if (document.getElementById('commandesEnCours')) {
+                    document.getElementById('commandesEnCours').scrollTop = containerScroll;
+                }
+                requestAnimationFrame(() => {
+                    window.scrollTo({ top: scrollPos, behavior: 'instant' });
+                });
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('commandesEnCours').innerHTML = 'Erreur.'; 
+            }
+        }
+        
+function renderGroupedCommandeCard(orders) {
+            const firstOrder = orders[0];
+            const totalGrouped = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
+            const tel = (firstOrder.whatsapp || firstOrder.telephone || '').replace(/\D/g, '');
+            const adresse = firstOrder.adresse || '';
+            const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
+            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
+
+            let ordersDetailHtml = '';
+            orders.forEach(cmd => {
+                ordersDetailHtml += `<div class="mb-2 bg-black/30 p-2 rounded-lg border border-white/5">
+                    <div class="flex justify-between items-center mb-1 pb-1 border-b border-white/10">
+                        <span class="text-[10px] font-bold text-nebula-cyan">Cmd #${cmd.id}</span>
+                        <span class="text-xs font-bold text-white">${parseFloat(cmd.total).toFixed(2)} €</span>
+                    </div>`;
+                if (cmd.items && cmd.items.length > 0) {
+                    cmd.items.forEach(i => {
+                        ordersDetailHtml += `<div class="text-[10px] text-gray-300 py-0.5">
+                            ${i.qte}x <strong class="text-white">${escapeHTML(i.nom)}</strong> <span class="text-gray-500">(${escapeHTML(i.categorie || '?')})</span>
+                        </div>`;
+                    });
+                }
+                let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+                ordersDetailHtml += `<div class="flex gap-1.5 mt-1.5">
+                    <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
+                    <button onclick="deleteCommande(${cmd.id})" class="px-2 py-1 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/30 border border-red-500/30">🗑️</button>
+                </div></div>`;
+            });
+
+            let assignLivreurSelect = '';
+            if (orders.length === 1) {
+                const cmd = orders[0];
+                let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
+                assignLivreurSelect = `<select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white w-full outline-none mt-1.5" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>`;
+            }
+
+            return `<div class="p-3 mb-2 bg-space-surface rounded-xl border border-white/10 hover:border-nebula-cyan/30 transition-colors shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-white text-sm flex items-center gap-2 flex-wrap">
+                            <span class="truncate">${escapeHTML(firstOrder.client_nom)}</span>
+                            ${orders.length > 1 ? `<span class="bg-nebula-magenta text-white text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0">${orders.length} cmd</span>` : ''}
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-0.5 truncate">📞 ${firstOrder.telephone} ${adresse ? `| 📍 ${escapeHTML(adresse)}` : ''}</div>
+                        ${firstOrder.zone_nom ? `<div class="text-[10px] text-green-400 mt-0.5">Zone : ${escapeHTML(firstOrder.zone_nom)}</div>` : ''}
+                    </div>
+                    <div class="text-right ml-2 flex-shrink-0">
+                        <div class="font-bold text-nebula-cyan text-base">${totalGrouped.toFixed(2)} €</div>
+                    </div>
+                </div>
+
+                <div class="max-h-64 overflow-y-auto pr-1">${ordersDetailHtml}</div>
+                ${assignLivreurSelect}
+
+                <div class="flex gap-1.5 mt-2">
+                    ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all text-[10px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
+                    ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-[10px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+                </div>
+            </div>`;
+        }
+
+
+        // ===== DELETE_ORDER_ADMIN_PATCH - BEGIN =====
+        async function deleteCommande(id) {
+            if (!confirm('⚠️ Supprimer la commande #' + id + ' ?\n\nLe stock sera automatiquement restauré.')) return;
+            if (!confirm('Confirmer la suppression définitive ?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/commandes/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadCommandes();
+                    alert('Commande supprimée et stock restauré !');
+                } else {
+                    const data = await res.json();
+                    alert('Erreur: ' + (data.error || 'inconnue'));
+                }
+            } catch (e) {
+                alert('Erreur réseau.');
+            }
+        }
+        // ===== DELETE_ORDER_ADMIN_PATCH - END =====
+
+        function renderCommandeCard(cmd, isTerminee) {
+            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
+            const tel = (cmd.whatsapp || cmd.telephone || '').replace(/\D/g, '');
+            const adresse = cmd.adresse || '';
+            const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
+
+            // Detail compact des articles
+            let itemsHtml = '';
+            if (cmd.items && cmd.items.length > 0) {
+                itemsHtml = '<div class="mt-2 bg-black/30 p-2 rounded-lg border border-white/5 text-[11px] text-gray-300 space-y-0.5">';
+                cmd.items.forEach(i => {
+                    itemsHtml += `<div class="flex justify-between">
+                        <span>${i.qte}x <strong class="text-white">${escapeHTML(i.nom)}</strong> ${i.categorie ? `<span class="text-gray-500">(${escapeHTML(i.categorie)})</span>` : ''}</span>
+                        <span class="text-gray-500">${parseFloat(i.prix).toFixed(2)}€</span>
+                    </div>`;
+                });
+                itemsHtml += '</div>';
+            }
+
+            if (isTerminee) {
+                return `<div class="p-2.5 mb-2 bg-green-500/5 rounded-lg border border-green-500/20 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-white text-xs">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div>
+                        <div class="text-[10px] text-gray-500">${new Date(cmd.date_commande).toLocaleDateString()}</div>
+                    </div>
+                    <div class="font-bold text-green-400 text-xs">${parseFloat(cmd.total).toFixed(2)} €</div>
+                </div>`;
+            }
+
+            let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+            let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
+
+            return `<div class="p-3 mb-2 bg-space-surface rounded-xl border border-white/10 hover:border-nebula-cyan/30 transition-colors shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="font-bold text-white text-sm truncate">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div>
+                        <div class="text-[10px] text-gray-400 mt-0.5 truncate">📞 ${cmd.telephone} ${adresse ? `| 📍 ${escapeHTML(adresse)}` : ''}</div>
+                        ${cmd.zone_nom ? `<div class="text-[10px] text-green-400 mt-0.5">Zone : ${escapeHTML(cmd.zone_nom)}</div>` : ''}
+                    </div>
+                    <div class="font-bold text-nebula-cyan text-base ml-2 flex-shrink-0">${parseFloat(cmd.total).toFixed(2)} €</div>
+                </div>
+
+                ${itemsHtml}
+
+                <div class="flex gap-1.5 mt-2">
+                    <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none focus:border-nebula-cyan" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
+                    <select class="bg-space-bg border border-white/10 rounded-lg text-[10px] p-1.5 text-white flex-1 outline-none focus:border-nebula-cyan" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
+                    <button onclick="deleteCommande(${cmd.id})" class="px-2 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/30 transition-all border border-red-500/30 flex-shrink-0" title="Supprimer">🗑️</button>
+                </div>
+
+                <div class="flex gap-1.5 mt-1.5">
+                    ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all text-[10px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
+                    ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all text-[10px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+                </div>
+            </div>`;
+        }
+        async function updateStatut(id, statut) { try { await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); loadCommandes(); } catch (e) {} }
+        async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id })}); alert('Assigné !'); loadCommandes(); } catch (e) {} }
+        
+        async function loadClients() {
+            try {
+                const res = await fetch(`${API_URL}/clients`);
+                allClientsData = await res.json();
+                const container = document.getElementById('clientsList');
+                if (allClientsData.length === 0) { container.innerHTML = 'Aucun client.'; return; }
+
+                container.innerHTML = allClientsData.map(c => {
+                    const tel = (c.whatsapp || c.telephone || '').replace(/\D/g, '');
+                    const adresse = c.adresse || 'Non renseignee';
+                    const adresseEncodee = encodeURIComponent(adresse);
+                    const mapLink = c.adresse ? `https://www.google.com/maps/search/?api=1&query=${adresseEncodee}` : '#';
+                    const isBanned = c.is_banned === true;
+                    const initial = (c.nom || '?').charAt(0).toUpperCase();
+
+                    return `
+                    <div class="mb-3 bg-space-surface rounded-xl border ${isBanned ? 'border-red-500/50' : 'border-white/10'} overflow-hidden hover:border-nebula-cyan/30 transition-colors">
+                        <div class="p-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                            
+                            <!-- Infos client compactes -->
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-nebula-violet to-nebula-cyan flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    ${initial}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-white font-bold text-sm flex items-center gap-2 flex-wrap">
+                                        ${escapeHTML(c.nom) || 'Inconnu'}
+                                        ${isBanned ? '<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] font-bold">BANNI</span>' : ''}
+                                    </div>
+                                    <div class="text-[11px] text-gray-400 flex items-center gap-3 mt-0.5 flex-wrap">
+                                        <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${c.telephone}</span>
+                                        ${c.adresse ? `<span class="flex items-center gap-1 truncate"><i data-lucide="map-pin" class="w-3 h-3 text-nebula-magenta flex-shrink-0"></i> <span class="truncate">${escapeHTML(adresse)}</span></span>` : ''}
+                                    </div>
+                                    ${isBanned && c.ban_reason ? `<div class="text-[10px] text-red-400 mt-1 italic truncate">Raison : ${escapeHTML(c.ban_reason)}</div>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Boutons d'action compacts -->
+                            <div class="flex flex-wrap gap-1.5 w-full md:w-auto">
+                                <button onclick="toggleClientHistory(${c.id})" class="px-2.5 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 hover:bg-purple-500/30 transition-all text-[11px] font-bold flex items-center gap-1"><i data-lucide="history" class="w-3 h-3"></i> Achats</button>
+                                ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all text-[11px] font-bold flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
+                                ${c.adresse ? `<a href="${mapLink}" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all text-[11px] font-bold flex items-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+                                ${isBanned 
+                                    ? `<button onclick="unbanClient(${c.id})" class="px-2.5 py-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-all text-[11px] font-bold flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3"></i> Debannir</button>` 
+                                    : `<button onclick="banClient(${c.id})" class="px-2.5 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all text-[11px] font-bold flex items-center gap-1"><i data-lucide="shield-off" class="w-3 h-3"></i> Bannir</button>`}
+                            </div>
+                        </div>
+                        <div id="client-history-${c.id}" class="hidden p-3 bg-black/20 border-t border-white/5">
+                            <p class="text-xs text-gray-400 italic">Chargement de l'historique...</p>
+                        </div>
+                    </div>`;
+                }).join('');
+                lucide.createIcons();
+            } catch (e) {
+                document.getElementById('clientsList').innerHTML = 'Erreur de chargement.';
+            }
+        }
+
+        async function toggleClientHistory(id) {
+            const el = document.getElementById(`client-history-${id}`);
+            if (!el.classList.contains('hidden')) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.classList.remove('hidden');
+            el.innerHTML = '<p class="text-xs text-gray-400 italic">Chargement...</p>';
+            try {
+                const res = await fetch(`${API_URL}/clients/${id}/commandes`);
+                const commandes = await res.json();
+                if (commandes.length === 0) { el.innerHTML = '<p class="text-xs text-gray-500">Aucune commande pour ce client.</p>'; return; }
+                el.innerHTML = commandes.map(cmd => `
+                    <div class="mb-2 pb-2 border-b border-white/5 last:border-0">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-gray-300">Commande #${cmd.id} - ${new Date(cmd.date_commande).toLocaleDateString()}</span>
+                            <span class="text-green-400">${parseFloat(cmd.total).toFixed(2)} €</span>
+                        </div>
+                        <div class="text-[10px] text-gray-400 mt-1">
+                            ${cmd.items ? cmd.items.map(i => `${i.qte}x ${i.saveur}`).join(', ') : 'Détails indisponibles'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { el.innerHTML = '<p class="text-xs text-red-400">Erreur de chargement.</p>'; }
+        }
+
+        function openDuplicatesModal() {
+            const modal = document.getElementById('duplicatesModal');
+            const list = document.getElementById('duplicatesList');
+            modal.classList.remove('hidden');
+            list.innerHTML = '';
+
+            const groups = {};
+            allClientsData.forEach(c => {
+                const nom = (c.nom || 'Inconnu').trim().toLowerCase();
+                if (!groups[nom]) groups[nom] = [];
+                groups[nom].push(c);
+            });
+
+            let html = '';
+            let count = 0;
+            for (const [nom, clients] of Object.entries(groups)) {
+                if (clients.length > 1) {
+                    count++;
+                    html += `<div class="bg-space-bg/50 p-4 rounded-xl border border-white/10">
+                        <h4 class="text-xs font-bold text-nebula-cyan mb-3 uppercase tracking-wide flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> MÊME NOM : ${escapeHTML(nom)}</h4>
+                        <div class="space-y-2">
+                        ${clients.map(c => `
+                            <div class="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
+                                <div>
+                                    <div class="text-sm text-white font-bold">${escapeHTML(c.nom)}</div>
+                                    <div class="text-[10px] text-gray-400 mt-1 flex flex-col gap-1">
+                                        <span>📞 ${c.telephone}</span>
+                                        <span>📅 Créé le ${new Date(c.created_at).toLocaleDateString('fr-FR')}</span>
+                                    </div>
+                                </div>
+                                <button onclick="deleteClient(${c.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 transition-all">Supprimer</button>
+                            </div>
+                        `).join('')}
+                        </div>
+                    </div>`;
+                }
+            }
+            if (count === 0) list.innerHTML = '<div class="text-center py-8"><i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-2"></i><p class="text-gray-400">Aucun doublon trouvé !</p></div>';
+            else list.innerHTML = `<div class="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs p-3 rounded-xl mb-4">⚠️ ${count} groupes de doublons trouvés. Garde le compte le plus ancien, supprime l'autre.</div>` + html;
+            lucide.createIcons();
+        }
+
+        async function deleteClient(id) {
+            if (!confirm('Supprimer ce client ? (Cette action est irréversible)')) return;
+            try {
+                const res = await fetch(`${API_URL}/clients/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    loadClients();
+                    setTimeout(openDuplicatesModal, 500);
+                } else { alert('Erreur lors de la suppression.'); }
+            } catch (e) { alert('Erreur de connexion.'); }
+        }
+
+        async function loadSettings() { 
+    try { 
+        const res = await fetch(`${API_URL}/settings`); 
+        const data = await res.json(); 
+        if(data.banner_text) document.getElementById('settingBannerText').value = data.banner_text; 
+        if(data.order_start_time) document.getElementById('orderStartTime').value = data.order_start_time;
+        if(data.order_end_time) document.getElementById('orderEndTime').value = data.order_end_time;
+    } catch(e) { console.error(e); } 
+}
+        async function saveSettings() { 
+    const banner_text = document.getElementById('settingBannerText').value; 
+    const start = document.getElementById('orderStartTime').value;
+    const end = document.getElementById('orderEndTime').value;
+    try { 
+        await fetch(`${API_URL}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ banner_text }) }); 
+        await fetch(`${API_URL}/settings/order-window`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end }) }); 
+        alert('✅ Paramètres et horaires enregistrés !'); 
+    } catch(e) { alert('Erreur.'); } 
+}
+        
+        async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
+        document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code:document.getElementById('promoCode').value, pourcentage: parseInt(document.getElementById('promoPct').value) }) }); document.getElementById('addPromoForm').reset(); loadPromos(); });
+        async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
+        
+        let chartTop = null, chartCA = null;
+        async function loadStats() { 
+            try { 
+                const res = await fetch(`${API_URL}/stats`); 
+                const data = await res.json(); 
+                
+                if (data.ca7jours && data.ca7jours.length > 0) { 
+                    const labels = data.ca7jours.map(d => d.jour); 
+                    const values = data.ca7jours.map(d => parseFloat(d.ca)); 
+                    const ctxCA = document.getElementById('chartCA7Jours').getContext('2d'); 
+                    if (chartCA) chartCA.destroy(); 
+                    chartCA = new Chart(ctxCA, { type: 'bar', data: { labels: labels, datasets: [{ label: 'CA (€)', data: values, backgroundColor: 'rgba(34, 211, 238, 0.5)', borderColor: '#22D3EE', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa', font: {size: 12} } }, x: { grid: { display: false }, ticks: { color: '#aaa', font: {size: 12} } } } } }); 
+                } 
+                
+                if (data.topSaveurs && data.topSaveurs.length > 0) { 
+                    const labels = data.topSaveurs.map(d => d.saveur_nom); 
+                    const values = data.topSaveurs.map(d => parseInt(d.total_qte)); 
+                    const ctxTop = document.getElementById('chartTopSaveurs').getContext('2d'); 
+                    if (chartTop) chartTop.destroy(); 
+                    chartTop = new Chart(ctxTop, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Quantités', data: values, backgroundColor: 'rgba(168, 85, 247, 0.5)', borderColor: '#A855F7', borderWidth: 1, borderRadius: 5 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#aaa', font: {size: 9} } }, y: { grid: { display: false }, ticks: { color: '#aaa', font: {size: 9} } } } } }); 
+                }
+
+                const resAvis = await fetch(`${API_URL}/admin/avis/stats`);
+                const dataAvis = await resAvis.json();
+                const ctxAvis = document.getElementById('chartAvisStats').getContext('2d');
+                if (window.chartAvisInstance) window.chartAvisInstance.destroy();
+
+                const labelsAvis = ['1★', '2★', '3★', '4★', '5★'];
+                const valuesAvis = [0, 0, 0, 0, 0];
+                dataAvis.forEach(item => {
+                    if (item.note >= 1 && item.note <= 5) valuesAvis[item.note - 1] = parseInt(item.count);
+                });
+
+                window.chartAvisInstance = new Chart(ctxAvis, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsAvis,
+                        datasets: [{ data: valuesAvis, backgroundColor: ['#EF4444', '#F59E0B', '#FCD34D', '#34D399', '#10B981'], borderWidth: 0 }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                position: 'right', 
+                                labels: { color: '#aaa', font: {size: 12}, boxWidth: 14 } 
+                            } 
+                        },
+                        cutout: '60%'
+                    }
+                });
+
+            } catch (e) { console.error(e); } 
+        }
+        
+        function initMap() { map = L.map('map').setView([50.633, 5.567], 8); L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy;OSM France' }).addTo(map); map.on('click', function(e) { selectedCoords = { lat: e.latlng.lat, lng: e.latlng.lng }; if (currentMarker) map.removeLayer(currentMarker); if (currentCircle) map.removeLayer(currentCircle); currentMarker = L.marker([selectedCoords.lat, selectedCoords.lng]).addTo(map); const rayon = parseInt(document.getElementById('zoneRayon').value) * 1000; currentCircle = L.circle([selectedCoords.lat, selectedCoords.lng], { radius: rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity: 0.2 }).addTo(map); }); }
+        async function loadZones() { try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); map.eachLayer((layer) => { if(layer instanceof L.Circle) map.removeLayer(layer); }); allZones.forEach(z => { L.circle([z.lat, z.lng], { radius: z.rayon, color: '#22D3EE', fillColor: '#22D3EE', fillOpacity:0.2 }).addTo(map); }); document.getElementById('zoneList').innerHTML = allZones.map(x => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">📍 ${x.nom}</div><div class="text-xs text-gray-400">dès ${x.min_commande} € | ${(x.rayon/1000).toFixed(1)} km</div></div><button class="text-red-400" onclick="deleteZone(${x.id})">🗑️</button></div>`).join(''); } catch(e){ console.error(e); } }
+        document.getElementById('addZoneForm').addEventListener('submit', async (e) => { e.preventDefault(); if(!selectedCoords) return alert("Cliquez sur la carte."); await fetch(`${API_URL}/zones`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom: document.getElementById('zoneName').value, lat: selectedCoords.lat, lng: selectedCoords.lng, rayon: parseInt(document.getElementById('zoneRayon').value) * 1000, min_commande: parseInt(document.getElementById('zoneMin').value) }) }); map.removeLayer(currentMarker); map.removeLayer(currentCircle); selectedCoords = null; loadZones(); });
+        async function deleteZone(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/zones/${id}`, { method:'DELETE' }); loadZones(); } }
+        
+        async function loadUsers() { try { const res = await fetch(`${API_URL}/utilisateurs`); const users = await res.json(); document.getElementById('userList').innerHTML = users.map(u => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div class="text-white text-sm">${u.name} <span class="text-[10px] bg-gray-700 px-2 py-0.5 rounded text-gray-300 ml-2 uppercase">${u.role}</span></div><button class="text-red-400" onclick="deleteUser(${u.id})">🗑️</button></div>`).join(''); } catch(e) {} }
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/utilisateurs`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: document.getElementById('userName').value, password: document.getElementById('userPassword').value, role: document.getElementById('userRole').value }) }); document.getElementById('addUserForm').reset(); loadUsers(); loadDrivers(); });
+        async function deleteUser(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/utilisateurs/${id}`, { method: 'DELETE' }); loadUsers(); } }
+
+        // --- CATALOGUE ET IMAGES ---
+        document.getElementById('catImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Vérification du format pour iPhone (HEIC)
+            if (file.type === "image/heic" || file.type === "image/heif") {
+                alert("⚠️ Format HEIC détecté (typique des iPhone).\n\nPour que l'image fonctionne, fais une capture d'écran de ta photo ou va dans les réglages de ton iPhone pour choisir le format 'Le plus compatible'.");
+                document.getElementById('catImage').value = '';
+                currentBase64Image = null;
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 400;
+                    const scale = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scale;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    currentBase64Image = canvas.toDataURL('image/jpeg', 0.7);
+                };
+                img.onerror = function() {
+                    alert("⚠️ Ce format d'image n'est pas supporté par ton navigateur. Essaie avec un fichier .jpg ou .png.");
+                    document.getElementById('catImage').value = '';
+                    currentBase64Image = null;
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function toggleAdminCategory(catId) { 
+            const list = document.getElementById(`admin-flavors-${catId}`); 
+            const arrow = document.getElementById(`admin-arrow-${catId}`); 
+            if (list.classList.contains('hidden')) { 
+                list.classList.remove('hidden'); 
+                arrow.style.transform = 'rotate(0deg)'; 
+            } else { 
+                list.classList.add('hidden'); 
+                arrow.style.transform = 'rotate(-90deg)'; 
+            } 
+        }
+
+        async function loadCatalogue() { 
+            try { 
+                const [rc, rf] = await Promise.all([fetch(`${API_URL}/categories`), fetch(`${API_URL}/saveurs`)]); 
+                allCategories = await rc.json(); 
+                allFlavors = await rf.json(); 
+                renderCatalogue(); 
+            } catch(e){ 
+                document.getElementById('catalogueList').innerHTML='Erreur.'; 
+            } 
+        }
+
+        function renderCatalogue() {
+            const el = document.getElementById('catalogueList'); 
+            if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
+            
+            // Gestion du badge d'alerte global sur l'onglet Stock
+            const lowStockItems = allFlavors.filter(f => f.stock < 2);
+            const stockTabBtn = document.querySelector('button[onclick*="tab-stock"]');
+            
+            if (stockTabBtn) {
+                stockTabBtn.classList.add('relative');
+                let badge = document.getElementById('stock-alert-badge');
+                if (lowStockItems.length > 0) {
+                    if (!badge) {
+                        stockTabBtn.innerHTML += ` <span id="stock-alert-badge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px] font-bold animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]">${lowStockItems.length}</span>`;
+                    } else {
+                        badge.innerText = lowStockItems.length;
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            }
+
+            // On englobe le tout dans une div avec l'ID pour le Drag & Drop
+            let html = '<div id="sortable-categories">';
+
+            html += allCategories.map(cat => {
+                const flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
+                
+                const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%23222%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2224%22>📦</text></svg>';
+                const img = cat.image_url || defaultImg;
+                const safeNom = escapeHTML(cat.nom || 'Inconnu');
+
+                return `<div class="bg-space-surface/50 border border-white/10 rounded-xl mb-4 overflow-hidden" data-id="${cat.id}">
+                    <div class="p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
+                        <!-- Poignée de glissement -->
+                        <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-white p-2">
+                            <i data-lucide="grip-vertical" class="w-5 h-5"></i>
+                        </div>
+                        
+                        <div class="flex-1 flex items-center gap-4 cursor-pointer" onclick="toggleAdminCategory(${cat.id})">
+                            <img src="${img}" class="w-12 h-12 object-cover rounded-lg">
+                            <div>
+                                <div class="font-bold text-white text-sm flex items-center gap-2">${safeNom} <span id="admin-arrow-${cat.id}" class="text-nebula-cyan text-xs transition-transform" style="transform: rotate(-90deg); display: inline-block;">▼</span></div>
+                                <div class="text-xs text-gray-400">U: ${cat.prix_unite}€</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-xs" onclick="openFlavorModal(${cat.id})">+ Saveur</button>
+                            <button class="px-3 py-1 bg-white/10 text-white rounded text-xs" onclick="editCategory(${cat.id})">✏️</button>
+                            <button class="text-red-400 px-2" onclick="deleteCategory(${cat.id})">🗑️</button>
+                        </div>
+                    </div>
+                    <div id="admin-flavors-${cat.id}" class="p-4 border-t border-white/5">
+                        ${flavs.map(f => {
+                            const isLow = f.stock < 2;
+                            const stockClass = isLow ? 'text-red-500 animate-pulse font-extrabold' : 'text-green-400 font-bold';
+                            const alertIcon = isLow ? '⚠️ ' : '';
+                            return `<div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                                <div class="text-sm text-gray-300">${escapeHTML(f.nom)}</div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs ${stockClass}">${alertIcon}(${f.stock})</span>
+                                    <button class="text-nebula-cyan text-xs hover:scale-110 transition-transform" onclick="openFlavorModal(${cat.id}, ${f.id})">✏️</button>
+                                    <button class="text-red-400 text-xs hover:scale-110 transition-transform" onclick="deleteFlavor(${f.id})">🗑️</button>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+            
+            html += '</div>';
+            el.innerHTML = html;
+            
+            lucide.createIcons();
+
+            // Initialisation du Drag & Drop
+            if (document.getElementById('sortable-categories')) {
+                new Sortable(document.getElementById('sortable-categories'), {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'opacity-50',
+                    onEnd: async function (evt) {
+                        const items = Array.from(document.getElementById('sortable-categories').children);
+                        const newOrder = items.map(item => parseInt(item.getAttribute('data-id')));
+                        
+                        // On sauvegarde le nouvel ordre en arrière-plan
+                        try {
+                            await fetch(`${API_URL}/categories/reorder`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ order: newOrder })
+                            });
+                            // On met à jour le tableau local pour garder l'ordre en mémoire
+                            allCategories.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+                        } catch (e) {
+                            console.error("Erreur de sauvegarde de l'ordre", e);
+                        }
+                    }
+                });
+            }
+        }
+
+        document.getElementById('addCategoryForm').addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            const editId = document.getElementById('editCatId').value; 
+            const data = { 
+                nom: document.getElementById('catNom').value, 
+                prix_unite: parseFloat(document.getElementById('catPrix1').value), 
+                prix_lot_5: document.getElementById('catPrix5').value ? parseFloat(document.getElementById('catPrix5').value) : null, 
+                prix_lot_10: document.getElementById('catPrix10').value ? parseFloat(document.getElementById('catPrix10').value) : null 
+            }; 
+            if (currentBase64Image && currentBase64Image.startsWith('data:image')) data.image_url = currentBase64Image;
+            
+            await fetch(editId ? `${API_URL}/categories/${editId}` : `${API_URL}/categories`, { method: editId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); 
+            resetCategoryForm(); 
+            loadCatalogue(); 
+        });
+
+        function editCategory(id) { 
+            const cat = allCategories.find(c => c.id === id); 
+            if(!cat) return; 
+            document.getElementById('catFormTitle').innerHTML = '✏️ Modifier la Catégorie'; 
+            document.getElementById('editCatId').value = cat.id; 
+            document.getElementById('catNom').value = cat.nom; 
+            document.getElementById('catPrix1').value = cat.prix_unite; 
+            document.getElementById('catPrix5').value = cat.prix_lot_5 || ''; 
+            document.getElementById('catPrix10').value = cat.prix_lot_10 || ''; 
+            currentBase64Image = cat.image_url; 
+            document.getElementById('submitCatBtn').innerText = 'Mettre à jour'; 
+            document.getElementById('cancelCatBtn').classList.remove('hidden'); 
+            document.getElementById('catFormTitle').scrollIntoView({ behavior: 'smooth' }); 
+        }
+
+        function resetCategoryForm() { 
+            document.getElementById('addCategoryForm').reset(); 
+            document.getElementById('catFormTitle').innerHTML = '➕ Créer une Catégorie'; 
+            document.getElementById('editCatId').value = ''; 
+            document.getElementById('submitCatBtn').innerText = 'Enregistrer'; 
+            document.getElementById('cancelCatBtn').classList.add('hidden'); 
+            currentBase64Image = null; 
+        }
+
+        async function deleteCategory(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' }); loadCatalogue(); } }
+        function openFlavorModal(catId, flavId = null) { document.getElementById('flavorCatId').value = catId; document.getElementById('editFlavorId').value = flavId|| ''; document.getElementById('flavorModal').classList.remove('hidden'); if (flavId) { const f = allFlavors.find(x => x.id === flavId); document.getElementById('flavorModalTitle').innerText = '✏️ Modifier'; document.getElementById('flavNom').value = f.nom; document.getElementById('flavStock').value= f.stock; } else { document.getElementById('flavorModalTitle').innerText = '➕ Ajouter'; document.getElementById('flavNom').value = ''; document.getElementById('flavStock').value = '0'; } }
+        async function saveFlavor() { const catId = document.getElementById('flavorCatId').value, editId = document.getElementById('editFlavorId').value; const data = { categorie_id: parseInt(catId), nom: document.getElementById('flavNom').value, stock: parseInt(document.getElementById('flavStock').value) }; await fetch(editId ? `${API_URL}/saveurs/${editId}` : `${API_URL}/saveurs`, { method: editId ? 'PUT' :'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); document.getElementById('flavorModal').classList.add('hidden'); loadCatalogue(); }
+        async function deleteFlavor(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/saveurs/${id}`, { method:'DELETE' }); loadCatalogue(); } }
+        
+        async function loadVentes() { try { const r = await fetch(`${API_URL}/ventes`); const data = await r.json(); const el = document.getElementById('ventesList'); if (!data || data.error || typeof data.totalCA === 'undefined') { el.innerHTML = 'Erreur.'; document.getElementById('totalCA').innerText = '0.00 €'; return; } document.getElementById('totalCA').innerText = data.totalCA.toFixed(2) + ' €'; el.innerHTML = data.ventes.map(x => `<div class="p-4 mb-2 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="text-white font-bold text-sm">Cmd #${x.id} - ${x.client_nom}</div><div class="text-xs text-gray-400 mt-1">${x.valide_par ? 'Validé par ' + x.valide_par : ''}</div></div><div class="text-green-400 font-bold">${parseFloat(x.prix_vente_total).toFixed(2)}€</div></div>`).join(''); } catch(e){ document.getElementById('ventesList').innerHTML = 'Erreur.'; } }
+        async function exportVentes() { try { const res = await fetch(`${API_URL}/admin/export-commandes`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `export.json`; a.click(); } catch (e) {} }
+        async function resetVentes() { if (!confirm("⚠️ TOUT supprimer ?")) return; try { await fetch(`${API_URL}/admin/reset-commandes`, { method: 'POST' }); alert("Réinitialisé !"); loadVentes(); } catch (e) {} }
+        async function loadLogs() { try { const res = await fetch(`${API_URL}/logs`); const logs = await res.json(); const tbody = document.getElementById('logsList'); const fixEncoding = (str) => { if(!str) return ''; return str.replace(/Ã©/g, 'é').replace(/Ã /g, 'à').replace(/Ãª/g, 'ê').replace(/â‚¬/g, '€'); }; tbody.innerHTML = logs.map(log => `<tr class="border-b border-white/5 hover:bg-white/5"><td class="p-3 text-gray-400">${new Date(log.date_log).toLocaleString('fr-FR')}</td><td class="p-3 font-bold text-white">${log.user_name}</td><td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-700 text-white">${log.user_role}</span></td><td class="p-3 text-nebula-cyan">${fixEncoding(log.action)}</td><td class="p-3 text-gray-400">${fixEncoding(log.details)}</td><td class="p-3 text-gray-600 font-mono">***.***.***.***</td></tr>`).join(''); } catch (e) { document.getElementById('logsList').innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-400">Erreur.</td></tr>'; } }
+        function filterLogs() { const filter = document.getElementById('logSearch').value.toLowerCase(); const rows = document.getElementById('logsList').getElementsByTagName('tr'); for (let i = 0; i < rows.length; i++) { rows[i].style.display = (rows[i].textContent || rows[i].innerText).toLowerCase().indexOf(filter) > -1 ? '' : 'none'; } }
+        async function exportLogs() { try { const res = await fetch(`${API_URL}/admin/export-logs`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `logs.json`; a.click(); } catch (e) {} }
+        async function loadSecurity() { try { const res = await fetch(`${API_URL}/security/analyse`); const data = await res.json(); document.getElementById('socAttacks').textContent = data.totalAttacks; const lockStatus = document.getElementById('socLockdownStatus'); lockStatus.textContent = data.isLockdown ? 'ACTIF' : 'OFF'; lockStatus.style.color = data.isLockdown ? '#EF4444' : '#10B981'; const btn = document.getElementById('lockdownBtn'); btn.innerHTML = data.isLockdown ? `<div class="text-2xl mb-2">🔓</div><div class="text-sm font-bold text-green-400">DÉSACTIVER</div>` : `<div class="text-2xl mb-2">🔒</div><div class="text-sm font-bold text-red-400">ACTIVER LOCKDOWN</div>`; const terminal = document.getElementById('socTerminal'); let html = `<div>[SYSTEM] Initialisation...</div>`; if (data.totalAttacks === 0) { html += `<div class="text-green-500">[OK] Aucune menace.</div>`; } else { html += `<div class="text-red-500">[ALERTE] ${data.totalAttacks} menaces !</div>`; data.failedLogins.forEach(log =>{ html += `<div class="text-red-500">[BLOCAGE] ${log.details}</div>`; }); } terminal.innerHTML = html; } catch (e) {} }
+        
+
+
+// ===== MAINTENANCE_ADMIN_V2 - BEGIN =====
+async function loadMaintenance() {
+    try {
+        const res = await fetch(`${API_URL}/admin/maintenance`);
+        const data = await res.json();
+        updateMaintenanceBtn(data.enabled);
+    } catch(e) {}
+}
+
+function updateMaintenanceBtn(enabled) {
+    const btn = document.getElementById('maintenanceBtn');
+    const label = document.getElementById('maintenanceBtnLabel');
+    const status = document.getElementById('maintenanceBtnStatus');
+    if (!btn) return;
+    btn.dataset.active = enabled ? 'true' : 'false';
+    if (enabled) {
+        btn.className = 'col-span-full p-4 rounded-xl bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-all text-center';
+        if (label) { label.textContent = 'DESACTIVER MAINTENANCE'; label.className = 'text-sm font-bold text-red-400'; }
+        if (status) { status.textContent = 'MAINTENANCE ACTIVE'; status.className = 'text-[9px] text-red-400 mt-1 font-bold animate-pulse'; }
+    } else {
+        btn.className = 'col-span-full p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 hover:bg-yellow-500/20 transition-all text-center';
+        if (label) { label.textContent = 'ACTIVER MAINTENANCE'; label.className = 'text-sm font-bold text-yellow-400'; }
+        if (status) { status.textContent = 'Site actuellement accessible'; status.className = 'text-[9px] text-gray-400 mt-1'; }
+    }
+}
+
+async function toggleMaintenance() {
+    const btn = document.getElementById('maintenanceBtn');
+    if (!btn) return;
+    const isActive = btn.dataset.active === 'true';
+    const msg = isActive
+        ? 'Desactiver le mode maintenance ? Le site redeviendra accessible aux clients.'
+        : 'Activer le mode maintenance ?\n\nLe site sera bloque pour TOUS les clients (page maintenance affichee).\n\nLe panneau admin reste accessible.';
+    if (!confirm(msg)) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/maintenance`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: !isActive })
+        });
+        const data = await res.json();
+        if (data.success) {
+            updateMaintenanceBtn(data.enabled);
+            alert(data.enabled ? 'Mode maintenance ACTIVE' : 'Site de nouveau accessible !');
+        } else {
+            alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+    } catch(e) {
+        alert('Erreur reseau: ' + e.message);
+    }
+}
+// ===== MAINTENANCE_ADMIN_V2 - END =====
+
+async function simulateAttack() { if(!confirm("Simuler ?")) return; await fetch(`${API_URL}/admin/security/simulate-attack`, { method: 'POST' }); alert("Fait."); loadSecurity(); }
+        async function toggleLockdown() { if(!confirm("Changer l'état ?")) return; const res = await fetch(`${API_URL}/admin/security/toggle-lockdown`, { method: 'POST' }); const data = await res.json(); alert("Lockdown : " + (data.lockdown ? "ON" : "OFF")); loadSecurity(); }
+        async function backupWipe() { if(!confirm("⚠️ TOUT SAUVEGARDER puis EFFACER ?")) return; if(!confirm("Confirmer ?")) return; const res = await fetch(`${API_URL}/admin/security/backup-wipe`, { method: 'POST' }); const data = await res.json(); alert(data.message); loadSecurity(); }
+        async function exportSecurity() { try { const res = await fetch(`${API_URL}/admin/export-security`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `secu.json`; a.click(); } catch (e) {} }
+    
+// ===== NOTIF AVIS =====
+let lastAvisId = parseInt(localStorage.getItem('lastAvisId')) || -1;
+
+async function checkAvisNotif() {
+    try {
+        const res = await fetch(`${API_URL}/admin/avis`);
+        if (!res.ok) return;
+        const avis = await res.json();
+        
+        // On ne garde que les avis non approuves
+        const enAttente = avis.filter(a => !a.approuve);
+        if (enAttente.length === 0) {
+            const badge = document.getElementById('notif-avis-badge');
+            if (badge) badge.classList.add('hidden');
+            return;
+        }
+
+        const maxId = Math.max(...enAttente.map(a => a.id));
+        const badge = document.getElementById('notif-avis-badge');
+
+        // Si on detecte de nouveaux avis par rapport a la derniere visite
+        if (lastAvisId !== 0 && maxId > lastAvisId) {
+            // Jouer le son
+            if (typeof playSound === 'function') playSound();
+            
+            // Afficher le badge
+            if (badge) {
+                badge.textContent = enAttente.length;
+                badge.classList.remove('hidden');
+            }
+        } else if (lastAvisId === 0) {
+            // Premier chargement : on memorise sans notifier
+            lastAvisId = maxId;
+            localStorage.setItem('lastAvisId', lastAvisId);
+        }
+
+        // Mettre a jour le badge meme si pas de nouveau (pour l'afficher en permanence)
+        if (badge && enAttente.length > 0) {
+             badge.textContent = enAttente.length;
+             badge.classList.remove('hidden');
+        }
+
+    } catch (e) { /* Silencieux */ }
+}
+
+// Mettre a jour la date de derniere visite quand on ouvre l'onglet
+function markAvisAsSeen() {
+    const badge = document.getElementById('notif-avis-badge');
+    if (badge) badge.classList.add('hidden');
+    
+    // On recupere le max actuel pour ne plus notifier pour ceux-la
+    fetch(`${API_URL}/admin/avis`)
+        .then(r => r.json())
+        .then(avis => {
+            const enAttente = avis.filter(a => !a.approuve);
+            if (enAttente.length > 0) {
+                const maxId = Math.max(...enAttente.map(a => a.id));
+                lastAvisId = maxId;
+                localStorage.setItem('lastAvisId', lastAvisId);
+            }
+        }).catch(()=>{});
+}
+
+setInterval(checkAvisNotif, 15000); // Toutes les 15s
+// =========================
+
+
+// Verification immediate au chargement
+setTimeout(checkAvisNotif, 1000);
+</script>
+</body>
+</html>
