@@ -161,35 +161,9 @@ function updateQty(index, change) {
 
 
 function calculerPrixItem(item) {
-    let qty = item.qty;
-    let total = 0;
-    let detail = [];
-
-    const p1 = parseFloat(item.prix);
-    const p5 = item.prix_lot_5 ? parseFloat(item.prix_lot_5) : null;
-    const p10 = item.prix_lot_10 ? parseFloat(item.prix_lot_10) : null;
-
-    // Calcul des lots de 10
-    if (p10 && qty >= 10) {
-        let nbLots10 = Math.floor(qty / 10);
-        total += nbLots10 * p10;
-        detail.push(`${nbLots10}x Lot10 (${p10}€)`);
-        qty = qty % 10;
-    }
-    // Calcul des lots de 5
-    if (p5 && qty >= 5) {
-        let nbLots5 = Math.floor(qty / 5);
-        total += nbLots5 * p5;
-        detail.push(`${nbLots5}x Lot5 (${p5}€)`);
-        qty = qty % 5;
-    }
-    // Calcul du reste à l'unité
-    if (qty > 0) {
-        total += qty * p1;
-        detail.push(`${qty}x Unité (${p1}€)`);
-    }
-
-    return { total, detail: detail.join(' + ') };
+    // Cette fonction n'est plus utilisée directement pour le total global
+    // car on regroupe par catégorie. On la garde pour la compatibilité.
+    return { total: item.prix * item.qty, detail: '' };
 }
 
 
@@ -229,25 +203,77 @@ function updateCartUI() {
         return; 
     }
     
-    let html = ''; let total = 0;
-    cart.forEach((item, index) => {
-        const calc = calculerPrixItem(item);
-        total += calc.total;
-        html += `
-        <div class="flex items-center justify-between p-3 rounded-xl bg-space-surface/60 border border-white/10 gap-3">
-            <div>
-                <h4 class="font-space font-bold text-xs text-white">${item.nom}</h4>
-                <p class="text-[10px] text-gray-400">${item.categorie}</p>
-                <span class="text-xs font-bold text-nebula-cyan" title="${calc.detail}">${calc.total.toFixed(2)} €</span>
-            </div>
-            <div class="flex items-center gap-2 bg-space-bg p-1 rounded-lg border border-white/10">
-                <button onclick="updateQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white font-bold">-</button>
-                <span class="text-xs font-bold text-white px-1">${item.qty}</span>
-                <button onclick="updateQty(${index}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white font-bold">+</button>
-            </div>
-        </div>`;
+    // --- NOUVEAU CALCUL PAR CATÉGORIE (LOTS MIXTES) ---
+    // 1. On regroupe les items par catégorie
+    const itemsByCategory = {};
+    cart.forEach(item => {
+        const catName = item.categorie; // Le nom de la catégorie
+        if (!itemsByCategory[catName]) {
+            itemsByCategory[catName] = {
+                prix_unite: parseFloat(item.prix),
+                prix_lot_5: item.prix_lot_5 ? parseFloat(item.prix_lot_5) : null,
+                prix_lot_10: item.prix_lot_10 ? parseFloat(item.prix_lot_10) : null,
+                total_qty: 0,
+                items: []
+            };
+        }
+        itemsByCategory[catName].total_qty += item.qty;
+        itemsByCategory[catName].items.push(item);
     });
-    itemsContainer.innerHTML = html; 
+
+    // 2. On calcule le total par catégorie avec les lots mixtes
+    let total = 0;
+    let detailsHtml = '';
+
+    for (const catName in itemsByCategory) {
+        const cat = itemsByCategory[catName];
+        let qty = cat.total_qty;
+        let catTotal = 0;
+        let catDetail = [];
+
+        if (cat.prix_lot_10 && qty >= 10) {
+            const nbLots10 = Math.floor(qty / 10);
+            catTotal += nbLots10 * cat.prix_lot_10;
+            catDetail.push(`${nbLots10}x Lot10 (${cat.prix_lot_10}€)`);
+            qty = qty % 10;
+        }
+        if (cat.prix_lot_5 && qty >= 5) {
+            const nbLots5 = Math.floor(qty / 5);
+            catTotal += nbLots5 * cat.prix_lot_5;
+            catDetail.push(`${nbLots5}x Lot5 (${cat.prix_lot_5}€)`);
+            qty = qty % 5;
+        }
+        if (qty > 0) {
+            catTotal += qty * cat.prix_unite;
+            catDetail.push(`${qty}x Unité (${cat.prix_unite}€)`);
+        }
+
+        total += catTotal;
+
+        // On génère l'affichage pour cette catégorie
+        detailsHtml += `<div class="mb-3 p-2 bg-black/20 rounded-lg border border-white/5">
+            <div class="text-[10px] font-bold text-nebula-cyan uppercase mb-1">${catName}</div>`;
+        
+        cat.items.forEach(item => {
+            const index = cart.indexOf(item);
+            detailsHtml += `
+            <div class="flex items-center justify-between p-2 rounded-xl bg-space-surface/60 border border-white/10 gap-2 mb-1">
+                <div>
+                    <h4 class="font-space font-bold text-xs text-white">${item.nom}</h4>
+                    <span class="text-xs font-bold text-nebula-cyan">${(item.prix * item.qty).toFixed(2)} €</span>
+                </div>
+                <div class="flex items-center gap-2 bg-space-bg p-1 rounded-lg border border-white/10">
+                    <button onclick="updateQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white font-bold">-</button>
+                    <span class="text-xs font-bold text-white px-1">${item.qty}</span>
+                    <button onclick="updateQty(${index}, 1)" class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-white font-bold">+</button>
+                </div>
+            </div>`;
+        });
+
+        detailsHtml += `<div class="text-[10px] text-gray-400 text-right mt-1">Total ${catName} : <strong class="text-white">${catTotal.toFixed(2)} €</strong> (${catDetail.join(' + ')})</div></div>`;
+    }
+
+    itemsContainer.innerHTML = detailsHtml; 
     
     let finalTotal = total;
     if (window.appliedPromoPct > 0) { finalTotal = total - (total * (window.appliedPromoPct / 100)); }
