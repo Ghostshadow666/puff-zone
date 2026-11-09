@@ -403,6 +403,40 @@ async function viewSondageResults(id) {
 }
 // ========================
 
+
+// ===== BANISSEMENT ADMIN =====
+async function banClient(id) {
+    const reason = prompt('Raison du bannissement (visible par le client) :', 'Comportement inapproprie');
+    if (reason === null) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/clients/${id}/ban`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason })
+        });
+        if (res.ok) {
+            alert('✅ Client banni.');
+            loadClients();
+        } else {
+            alert('Erreur.');
+        }
+    } catch(e) { alert('Erreur reseau.'); }
+}
+
+async function unbanClient(id) {
+    if (!confirm('Débannir ce client ?')) return;
+    try {
+        const res = await fetch(`${API_URL}/admin/clients/${id}/unban`, { method: 'PUT' });
+        if (res.ok) {
+            alert('✅ Client débanni.');
+            loadClients();
+        } else {
+            alert('Erreur.');
+        }
+    } catch(e) { alert('Erreur reseau.'); }
+}
+// ==============================
+
 function switchTab(tabId, btn) {
             document.querySelectorAll('.nav-tab').forEach(b => { 
                 b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 

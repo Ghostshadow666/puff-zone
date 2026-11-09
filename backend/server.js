@@ -107,6 +107,8 @@ const initDB = async () => {
     await pool.query('ALTER TABLE commande_items ADD COLUMN IF NOT EXISTS categorie_nom VARCHAR(100);');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;');
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
+    await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;');
+    await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS ban_reason TEXT;');
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;');
     
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
@@ -199,6 +201,14 @@ app.post('/api/clients/login', async (req, res) => {
   try { 
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]); 
     if (r.rows.length === 0) return res.status(404).json({ error: 'Non reconnu' }); 
+    
+    if (r.rows[0].is_banned) {
+      return res.status(403).json({ 
+        error: 'banned', 
+        reason: r.rows[0].ban_reason || 'Votre compte a ete suspendu.' 
+      });
+    }
+    
     res.json({ success: true, client: r.rows[0] }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
@@ -820,6 +830,26 @@ app.post('/api/admin/maintenance', authenticateToken, isAdmin, async (req, res) 
 });
 
 app.get('/api/health', async (req, res) => { try { await pool.query('SELECT 1'); res.json({ status: 'ok' }); } catch(e) { res.status(500).json({ status: 'error' }); } });
+
+
+// ===== ROUTES BANISSEMENT =====
+app.put('/api/admin/clients/:id/ban', authenticateToken, isAdmin, async (req, res) => {
+  const { reason } = req.body;
+  try {
+    await pool.query('UPDATE clients SET is_banned = true, ban_reason = $1 WHERE id = $2', [reason || 'Aucune raison specifiee', req.params.id]);
+    await logAction(req.user, 'Bannissement Client', `ID: ${req.params.id} - Raison: ${reason || 'Non specifiee'}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.put('/api/admin/clients/:id/unban', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    await pool.query('UPDATE clients SET is_banned = false, ban_reason = NULL WHERE id = $1', [req.params.id]);
+    await logAction(req.user, 'Debannissement Client', `ID: ${req.params.id}`);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// ==============================
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
