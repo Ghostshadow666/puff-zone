@@ -1118,10 +1118,9 @@ function renderGroupedCommandeCard(orders) {
             const el = document.getElementById('catalogueList'); 
             if(!allCategories.length){el.innerHTML='Aucune catégorie.';return;}
             
-            // Gestion du badge d'alerte global sur l'onglet Stock
+            // Badge global alerte stock
             const lowStockItems = allFlavors.filter(f => f.stock < 2);
             const stockTabBtn = document.querySelector('button[onclick*="tab-stock"]');
-            
             if (stockTabBtn) {
                 stockTabBtn.classList.add('relative');
                 let badge = document.getElementById('stock-alert-badge');
@@ -1131,12 +1130,9 @@ function renderGroupedCommandeCard(orders) {
                     } else {
                         badge.innerText = lowStockItems.length;
                     }
-                } else if (badge) {
-                    badge.remove();
-                }
+                } else if (badge) badge.remove();
             }
 
-            // Récupérer les filtres actifs
             const searchTerm = (document.getElementById('stock-search')?.value || '').toLowerCase();
             const activeFilter = window.stockFilter || 'all';
             const sortMode = document.getElementById('stock-sort')?.value || 'name';
@@ -1147,21 +1143,16 @@ function renderGroupedCommandeCard(orders) {
             allCategories.forEach(cat => {
                 let flavs = allFlavors.filter(f=>f.categorie_id===cat.id);
 
-                // Appliquer la recherche
                 if (searchTerm) {
                     flavs = flavs.filter(f => f.nom.toLowerCase().includes(searchTerm));
-                    // Si recherche active et aucune saveur ne matche, on cache la catégorie
                     if (flavs.length === 0) return;
                 }
 
-                // Appliquer le filtre
                 if (activeFilter === 'ok') flavs = flavs.filter(f => f.stock >= 2);
                 else if (activeFilter === 'low') flavs = flavs.filter(f => f.stock < 2 && f.stock > 0);
                 else if (activeFilter === 'rupture') flavs = flavs.filter(f => f.stock === 0);
-
                 if (flavs.length === 0 && activeFilter !== 'all') return;
 
-                // Appliquer le tri
                 if (sortMode === 'stock-asc') flavs.sort((a, b) => a.stock - b.stock);
                 else if (sortMode === 'stock-desc') flavs.sort((a, b) => b.stock - a.stock);
                 else flavs.sort((a, b) => a.nom.localeCompare(b.nom));
@@ -1171,37 +1162,43 @@ function renderGroupedCommandeCard(orders) {
                 const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><rect width=%2260%22 height=%2260%22 fill=%22%23222%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2224%22>📦</text></svg>';
                 const img = cat.image_url || defaultImg;
                 const safeNom = escapeHTML(cat.nom || 'Inconnu');
-                
                 const isOpen = window.openCategories.has(cat.id) || (searchTerm && flavs.length > 0);
                 const lowCount = flavs.filter(f => f.stock < 2).length;
 
-                html += `<div class="mb-3 bg-space-surface/80 rounded-xl border border-white/10 hover:border-nebula-cyan/30 transition-colors overflow-hidden shadow-lg" data-id="${cat.id}">
-                    <div class="p-3 flex items-center gap-3">
-                        <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 hover:text-white p-1 flex-shrink-0">
-                            <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                html += `<div class="mb-3 bg-space-surface/80 rounded-xl border border-white/10 overflow-hidden shadow-lg" data-id="${cat.id}">
+                    
+                    <!-- En-tete carte catégorie : layout mobile-first -->
+                    <div class="p-3">
+                        <!-- Ligne 1 : drag + img + nom + chevron -->
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-500 p-1 flex-shrink-0">
+                                <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                            </div>
+                            <img src="${img}" class="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg flex-shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-white text-sm flex items-center gap-1.5 flex-wrap">
+                                    <span class="truncate">${safeNom}</span>
+                                    ${lowCount > 0 ? `<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0">⚠ ${lowCount}</span>` : ''}
+                                </div>
+                                <div class="text-[11px] text-nebula-cyan font-bold">U: ${cat.prix_unite}€</div>
+                            </div>
+                            <i data-lucide="chevron-down" id="admin-arrow-${cat.id}" class="text-nebula-cyan transition-transform cursor-pointer flex-shrink-0" style="transform: rotate(${isOpen ? '0' : '-90'}deg);" onclick="toggleAdminCategory(${cat.id})"></i>
                         </div>
                         
-                        <img src="${img}" class="w-12 h-12 object-cover rounded-lg flex-shrink-0">
-                        
-                        <div class="flex-1 min-w-0 cursor-pointer" onclick="toggleAdminCategory(${cat.id})">
-                            <div class="font-bold text-white text-sm flex items-center gap-2 flex-wrap">
-                                <span class="truncate">${safeNom}</span>
-                                ${lowCount > 0 ? `<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] font-bold flex-shrink-0">⚠ ${lowCount}</span>` : ''}
-                            </div>
+                        <!-- Ligne 2 : infos + boutons -->
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
                             <div class="text-[11px] text-gray-400">
-                                ${flavs.length} saveur${flavs.length > 1 ? 's' : ''}${lowCount > 0 ? ` · ${lowCount} en alerte` : ''}
+                                ${flavs.length} saveur${flavs.length > 1 ? 's' : ''}${lowCount > 0 ? ` · ${lowCount} alerte${lowCount > 1 ? 's' : ''}` : ''}
                             </div>
-                            <div class="text-[11px] text-nebula-cyan font-bold mt-0.5">U: ${cat.prix_unite}€</div>
-                        </div>
-                        
-                        <div class="flex gap-1.5 items-center flex-shrink-0">
-                            <button class="px-2.5 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-[11px] font-bold hover:bg-nebula-violet/30" onclick="event.stopPropagation(); openFlavorModal(${cat.id})">+ Saveur</button>
-                            <button class="px-2 py-1 bg-white/5 text-white rounded text-[11px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
-                            <button class="text-red-400 px-1.5 py-1 text-[11px] hover:text-red-300" onclick="event.stopPropagation(); deleteCategory(${cat.id})">🗑️</button>
-                            <i data-lucide="chevron-down" id="admin-arrow-${cat.id}" class="text-nebula-cyan transition-transform cursor-pointer" style="transform: rotate(${isOpen ? '0' : '-90'}deg);" onclick="toggleAdminCategory(${cat.id})"></i>
+                            <div class="flex gap-1 items-center flex-shrink-0">
+                                <button class="px-2 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-[10px] font-bold hover:bg-nebula-violet/30" onclick="event.stopPropagation(); openFlavorModal(${cat.id})">+ Saveur</button>
+                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
+                                <button class="px-1.5 py-1 text-red-400 text-[10px] hover:text-red-300" onclick="event.stopPropagation(); deleteCategory(${cat.id})">🗑️</button>
+                            </div>
                         </div>
                     </div>
                     
+                    <!-- Saveurs (si ouvert) -->
                     <div id="admin-flavors-${cat.id}" class="border-t border-white/5 ${isOpen ? '' : 'hidden'}">
                         ${flavs.map(f => {
                             const isLow = f.stock < 2 && f.stock > 0;
@@ -1209,19 +1206,15 @@ function renderGroupedCommandeCard(orders) {
                             const stockClass = isOut ? 'bg-red-500/20 text-red-400' : (isLow ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400');
                             const stockIcon = isOut ? '⚠' : (isLow ? '⚠' : '');
                             
-                            return `<div class="flex items-center justify-between px-3 py-2 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors group">
+                            return `<div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                                 <div class="flex items-center gap-2 min-w-0 flex-1">
-                                    <span class="text-base flex-shrink-0">${isOut ? '🔴' : (isLow ? '🟠' : '🟢')}</span>
-                                    <span class="text-sm text-gray-200 truncate">${escapeHTML(f.nom)}</span>
+                                    <span class="text-sm flex-shrink-0">${isOut ? '🔴' : (isLow ? '🟠' : '🟢')}</span>
+                                    <span class="text-[12px] text-gray-200 truncate">${escapeHTML(f.nom)}</span>
                                 </div>
-                                <div class="flex items-center gap-2 flex-shrink-0">
-                                    <span class="stock-badge ${stockClass} px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer hover:scale-110 transition-transform" 
-                                          onclick="editStockInline(${f.id}, this)" 
-                                          title="Cliquer pour modifier">
-                                        ${stockIcon} ${f.stock}
-                                    </span>
-                                    <button class="text-nebula-cyan text-xs hover:scale-110 transition-transform" onclick="openFlavorModal(${cat.id}, ${f.id})">✏️</button>
-                                    <button class="text-red-400 text-xs hover:scale-110 transition-transform" onclick="deleteFlavor(${f.id})">🗑️</button>
+                                <div class="flex items-center gap-1.5 flex-shrink-0">
+                                    <span class="stock-badge ${stockClass} px-2 py-0.5 rounded text-[11px] font-bold cursor-pointer" onclick="editStockInline(${f.id}, this)" title="Cliquer pour modifier">${stockIcon} ${f.stock}</span>
+                                    <button class="text-nebula-cyan text-[11px] p-1" onclick="openFlavorModal(${cat.id}, ${f.id})">✏️</button>
+                                    <button class="text-red-400 text-[11px] p-1" onclick="deleteFlavor(${f.id})">🗑️</button>
                                 </div>
                             </div>`;
                         }).join('')}
@@ -1236,7 +1229,6 @@ function renderGroupedCommandeCard(orders) {
             el.innerHTML = html;
             lucide.createIcons();
 
-            // Drag & Drop
             if (document.getElementById('catalogueList')) {
                 new Sortable(document.getElementById('catalogueList'), {
                     handle: '.drag-handle',
