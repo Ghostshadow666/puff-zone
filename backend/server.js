@@ -109,6 +109,7 @@ const initDB = async () => {
     await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS ordre INTEGER DEFAULT 0;');
     await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT false;');
     await pool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS ban_reason TEXT;');
+    await pool.query('ALTER TABLE categories ADD COLUMN IF NOT EXISTS visible_client BOOLEAN DEFAULT true;');
     await pool.query('UPDATE categories SET ordre = id WHERE ordre = 0;');
     
     await pool.query("INSERT INTO settings (key, value) VALUES ('banner_text', 'LIVRAISON SPATIALE RAPIDE 24/48H EN FRANCE & BELGIQUE') ON CONFLICT (key) DO NOTHING");
@@ -291,6 +292,17 @@ app.put('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => {
     res.status(500).json({ error: 'Erreur lors de la modification' });
   }
 });
+
+// ===== TOGGLE VISIBILITE CATEGORIE =====
+app.put('/api/admin/categories/:id/visibility', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('UPDATE categories SET visible_client = NOT visible_client WHERE id = $1 RETURNING id, nom, visible_client', [req.params.id]);
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Categorie introuvable' });
+    await logAction(req.user, 'Visibilite Categorie', `ID: ${req.params.id} - ${r.rows[0].visible_client ? 'Visible' : 'Masquee'}`);
+    res.json({ success: true, visible_client: r.rows[0].visible_client });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Erreur' }); }
+});
+// ========================================
 
 app.delete('/api/categories/:id', authenticateToken, isAdmin, async (req, res) => { 
   try { await pool.query('DELETE FROM categories WHERE id=$1', [req.params.id]); await logAction(req.user, 'Suppr Catégorie', `ID: ${req.params.id}`); res.json({ success: true }); } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
