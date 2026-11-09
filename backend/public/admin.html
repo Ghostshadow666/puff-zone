@@ -75,8 +75,8 @@
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">👥 Liste du personnel</h2><div id="userList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
         </div>
         <div id="tab-commandes" class="tab-content hidden">
-            <div class="glass-panel p-6 rounded-2xl mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2><button class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all" onclick="loadCommandes()">Actualiser</button></div><div id="commandesEnCours" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
-            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">✅ Historique</h2><div id="commandesTerminees" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-space font-bold text-white">🟢 Commandes en cours</h2><button class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all" onclick="loadCommandes()">Actualiser</button></div><div id="commandesEnCours" class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
+            <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">✅ Historique</h2><div id="commandesTerminees" class="grid grid-cols-1 lg:grid-cols-2 gap-3"><div class="text-center text-gray-400 text-sm italic py-4 col-span-full">Chargement...</div></div></div>
         </div>
         <div id="tab-clients" class="tab-content hidden">
             <div class="glass-panel p-6 rounded-2xl">
@@ -582,10 +582,10 @@ function renderGroupedCommandeCard(orders) {
                 if (cmd.items && cmd.items.length > 0) {
                     cmd.items.forEach(i => {
                         const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
-                        ordersDetailHtml += `<div class="flex items-baseline justify-between text-[9px] py-0.5 gap-1">
-                            <span class="text-nebula-cyan font-mono flex-shrink-0 w-5">${i.qte}x</span>
+                        ordersDetailHtml += `<div class="flex items-baseline justify-between text-[10px] py-0.5 gap-2">
+                            <span class="text-nebula-cyan font-mono font-bold flex-shrink-0">${i.qte}x</span>
                             <span class="text-gray-300 truncate flex-1 min-w-0">${escapeHTML(i.nom)}</span>
-                            <span class="text-gray-500 font-mono flex-shrink-0 w-10 text-right">${lineTotal}€</span>
+                            <span class="text-white font-mono flex-shrink-0 font-bold text-[10px]">${lineTotal}€</span>
                         </div>`;
                     });
                 }
@@ -687,12 +687,11 @@ function renderGroupedCommandeCard(orders) {
                 cmd.items.forEach(i => {
                     const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
                     const catShort = i.categorie ? i.categorie.substring(0, 3).toUpperCase() : '---';
-                    itemsHtml += `<div class="flex items-baseline justify-between text-[10px] py-0.5 gap-1">
-                        <span class="text-nebula-cyan font-mono flex-shrink-0 w-6">${i.qte}x</span>
+                    itemsHtml += `<div class="flex items-baseline justify-between text-[11px] py-1 gap-2">
+                        <span class="text-nebula-cyan font-mono font-bold flex-shrink-0">${i.qte}x</span>
                         <span class="text-gray-300 truncate flex-1 min-w-0">${escapeHTML(i.nom)}</span>
-                        <span class="text-gray-600 font-mono flex-shrink-0 text-[9px]" title="${escapeHTML(i.categorie || '')}">${catShort}</span>
-                        <span class="text-gray-500 font-mono flex-shrink-0 w-10 text-right">${parseFloat(i.prix).toFixed(2)}</span>
-                        <span class="text-white font-mono flex-shrink-0 w-12 text-right font-bold">${lineTotal}€</span>
+                        <span class="text-gray-500 font-mono flex-shrink-0 text-[10px]">${parseFloat(i.prix).toFixed(2)}€</span>
+                        <span class="text-white font-mono flex-shrink-0 font-bold">${lineTotal}€</span>
                     </div>`;
                 });
                 itemsHtml += '</div>';
