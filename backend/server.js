@@ -197,6 +197,13 @@ app.post('/api/clients/register', publicLimiter, async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
+async function addNotification(client_id, titre, message) {
+  try {
+    if (!client_id) return;
+    await pool.query('INSERT INTO notifications (client_id, titre, message) VALUES ($1, $2, $3)', [client_id, titre, message]);
+  } catch (e) { console.error('Erreur notif:', e); }
+}
+
 app.post('/api/clients/login', async (req, res) => { 
   const { telephone } = req.body; 
   try { 
@@ -489,7 +496,7 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
 app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => { 
   const { statut } = req.body; 
   try { 
-    const c = await pool.query('SELECT statut, livreur_id FROM commandes WHERE id=$1', [req.params.id]); 
+    const c = await pool.query('SELECT statut, livreur_id, client_id FROM commandes WHERE id=$1', [req.params.id]); 
     if (c.rows.length === 0) return res.status(404).json({ error: 'Commande introuvable' });
     if (c.rows[0].statut === 'livre') return res.status(400).json({ error: 'Déjà livrée' }); 
     
@@ -500,7 +507,17 @@ app.put('/api/commandes/:id/statut', authenticateToken, async (req, res) => {
       }
     }
     
-    await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]); 
+    await pool.query('UPDATE commandes SET statut=$1 WHERE id=$2', [statut, req.params.id]);
+    
+    // Generation de la notification pour le client
+    let msgNotif = '';
+    if (statut === 'en_preparation') msgNotif = 'Votre commande est en cours de preparation.';
+    else if (statut === 'en_livraison') msgNotif = 'Bonne nouvelle ! Votre commande est en route vers vous.';
+    else if (statut === 'livre') msgNotif = 'Votre commande a ete livree. Merci de votre confiance !';
+    
+    if (msgNotif) {
+      await addNotification(c.rows[0].client_id, 'Commande #' + req.params.id, msgNotif);
+    } 
     await logAction(req.user, 'Statut Commande', `Cmd #${req.params.id} -> ${statut}`); 
     res.json({ success: true }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
@@ -862,6 +879,23 @@ app.put('/api/admin/clients/:id/unban', authenticateToken, isAdmin, async (req, 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); }
 });
 // ==============================
+
+
+// ===== ROUTES NOTIFICATIONS CLIENT =====
+app.get('/api/client/notifications/:client_id', async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM notifications WHERE client_id = $1 ORDER BY date_creation DESC LIMIT 20', [req.params.client_id]);
+    res.json(r.rows);
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+
+app.put('/api/client/notifications/:client_id/read', async (req, res) => {
+  try {
+    await pool.query('UPDATE notifications SET lu = true WHERE client_id = $1 AND lu = false', [req.params.client_id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// =======================================
 
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
