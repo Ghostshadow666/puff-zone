@@ -59,6 +59,71 @@ async function loadCatalogue() {
     }
 }
 
+
+// ===== DRAWER CATEGORIE LOGIC =====
+function openCategoryDrawer(categoryId) {
+    // On récupère les vraies données depuis les variables globales
+    const cat = allCategories.find(c => c.id === categoryId);
+    if (!cat) return;
+
+    const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
+
+    // Remplissage des infos catégorie
+    document.getElementById('drawerCategoryTitle').textContent = cat.nom;
+    document.getElementById('drawerCategoryImage').src = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">📦</text></svg>';
+    document.getElementById('drawerCategoryCount').textContent = catFlavors.length + ' produit' + (catFlavors.length > 1 ? 's' : '') + ' disponible' + (catFlavors.length > 1 ? 's' : '');
+    document.getElementById('drawerCategoryDesc').textContent = 'U: ' + parseFloat(cat.prix_unite).toFixed(2) + '€' + (cat.prix_lot_5 ? ' | Lot 5: ' + parseFloat(cat.prix_lot_5).toFixed(2) + '€' : '') + (cat.prix_lot_10 ? ' | Lot 10: ' + parseFloat(cat.prix_lot_10).toFixed(2) + '€' : '');
+
+    // Remplissage des saveurs
+    const list = document.getElementById('flavorsList');
+    if (catFlavors.length === 0) {
+        list.innerHTML = '<p class="text-sm text-gray-500 italic text-center py-4">Aucune saveur disponible pour le moment.</p>';
+    } else {
+        list.innerHTML = catFlavors.map(f => {
+            const isOut = f.stock === 0;
+            const isLow = f.stock < 2 && f.stock > 0;
+            const stockBadge = isOut 
+                ? '<span class="text-[9px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded border border-red-500/30">RUPTURE</span>'
+                : (isLow 
+                    ? '<span class="text-[9px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded border border-orange-500/30">STOCK: ' + f.stock + '</span>'
+                    : '<span class="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/30">STOCK: ' + f.stock + '</span>');
+            
+            return `
+            <div class="flex items-center justify-between p-3 rounded-xl bg-space-surface border border-nebula-violet/20 hover:border-nebula-cyan/50 transition-all">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h5 class="text-sm font-medium text-white truncate">${escapeHTML(f.nom)}</h5>
+                        ${stockBadge}
+                    </div>
+                    <span class="text-xs text-nebula-cyan font-semibold">${parseFloat(cat.prix_unite).toFixed(2)}€</span>
+                </div>
+                <button onclick="event.stopPropagation(); addToCart(${f.id})" 
+                        class="w-8 h-8 ml-2 rounded-lg bg-nebula-violet/20 border border-nebula-violet text-nebula-cyan hover:bg-nebula-magenta hover:border-nebula-magenta hover:text-white flex items-center justify-center font-bold text-lg transition-colors ${isOut ? 'opacity-50 cursor-not-allowed' : ''}"
+                        ${isOut ? 'disabled' : ''}>
+                    +
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    // Animation d'ouverture
+    document.getElementById('categoryDrawer').classList.remove('translate-x-full');
+    document.getElementById('drawerBackdrop').classList.remove('opacity-0', 'pointer-events-none');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeCategoryDrawer() {
+    document.getElementById('categoryDrawer').classList.add('translate-x-full');
+    document.getElementById('drawerBackdrop').classList.add('opacity-0', 'pointer-events-none');
+    document.body.classList.remove('overflow-hidden');
+}
+
+// Fermeture avec la touche Echap
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCategoryDrawer();
+});
+// ==================================
+
 function renderCatalogue() {
     const container = document.getElementById('product-list');
     if (!container) return;
@@ -79,7 +144,7 @@ function renderCatalogue() {
         const prix10 = cat.prix_lot_10 ? parseFloat(cat.prix_lot_10).toFixed(2) : null;
 
         html += `
-        <div onclick="openCategory(${cat.id})" class="group relative bg-space-surface rounded-2xl border border-white/10 hover:border-nebula-cyan/50 transition-all duration-300 cursor-pointer overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(76,201,240,0.2)]">
+        <div onclick="openCategoryDrawer(${cat.id})" class="group relative bg-space-surface rounded-2xl border border-white/10 hover:border-nebula-cyan/50 transition-all duration-300 cursor-pointer overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(76,201,240,0.2)]">
             <div class="p-4 flex gap-4 items-center relative z-10">
                 <!-- Image -->
                 <div class="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black/50 group-hover:scale-105 transition-transform duration-300">
