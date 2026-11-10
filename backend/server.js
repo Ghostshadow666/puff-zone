@@ -907,5 +907,15 @@ app.put('/api/client/notifications/:client_id/read', async (req, res) => {
 });
 // =======================================
 
+
+// ===== ROUTE EFFACER NOTIFICATIONS =====
+app.delete('/api/client/notifications/:client_id/clear', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM notifications WHERE client_id = $1', [req.params.client_id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// =======================================
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));

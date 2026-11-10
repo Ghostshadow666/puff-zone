@@ -372,6 +372,18 @@
             }).join('');
         }
 
+        async function clearAllNotifs() {
+            if (!confirm('Effacer toutes vos notifications ?')) return;
+            const clientStr = localStorage.getItem('puff_client');
+            if (!clientStr) return;
+            try {
+                const client = JSON.parse(clientStr);
+                if (!client || !client.id) return;
+                await fetch(`/api/client/notifications/${client.id}/clear`, { method: 'DELETE' });
+                loadClientNotifications();
+            } catch(e) { alert('Erreur réseau.'); }
+        }
+
         async function markNotifsAsRead() {
             const clientStr = localStorage.getItem('puff_client');
             if (!clientStr) return;
