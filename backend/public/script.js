@@ -68,34 +68,25 @@ function renderCatalogue() {
         return;
     }
 
-    // Application de la grille 2 colonnes sur PC
-    container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6';
-
     let html = '';
     
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
         const catImg = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">📦</text></svg>';
         
-        // On formate les prix (unité, lot 5, lot 10)
         const prixU = cat.prix_unite ? parseFloat(cat.prix_unite).toFixed(2) : '0.00';
         const prix5 = cat.prix_lot_5 ? parseFloat(cat.prix_lot_5).toFixed(2) : null;
         const prix10 = cat.prix_lot_10 ? parseFloat(cat.prix_lot_10).toFixed(2) : null;
 
-        // Construction de la carte style "Premium"
         html += `
         <div onclick="openCategory(${cat.id})" class="group relative bg-space-surface rounded-2xl border border-white/10 hover:border-nebula-cyan/50 transition-all duration-300 cursor-pointer overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(76,201,240,0.2)]">
-            
-            <!-- Image de fond (optionnel, si tu veux le style immersif) -->
-            <!-- <div class="absolute inset-0 opacity-20 bg-cover bg-center" style="background-image: url('${catImg}')"></div> -->
-
             <div class="p-4 flex gap-4 items-center relative z-10">
-                <!-- Image de la catégorie -->
+                <!-- Image -->
                 <div class="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black/50 group-hover:scale-105 transition-transform duration-300">
                     <img src="${catImg}" class="w-full h-full object-cover" alt="${cat.nom}">
                 </div>
 
-                <!-- Informations -->
+                <!-- Infos -->
                 <div class="flex-1 min-w-0">
                     <div class="flex justify-between items-start mb-1">
                         <h3 class="text-lg md:text-xl font-space font-bold text-white truncate pr-2 group-hover:text-nebula-cyan transition-colors">${cat.nom}</h3>
@@ -104,7 +95,7 @@ function renderCatalogue() {
                         </span>
                     </div>
                     
-                    <div class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+                    <div class="text-sm text-gray-400 mb-2 flex items-center gap-2">
                         <span class="text-white font-bold text-base">U: ${prixU}€</span>
                     </div>
 
@@ -126,7 +117,6 @@ function renderCatalogue() {
                     </div>
                 </div>
                 
-                <!-- Flèche (indicateur de clic) -->
                 <div class="hidden sm:flex w-8 h-8 rounded-full bg-white/5 items-center justify-center flex-shrink-0 group-hover:bg-nebula-cyan/20 transition-colors">
                     <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-nebula-cyan"></i>
                 </div>
