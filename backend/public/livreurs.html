@@ -71,10 +71,13 @@
   .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 12px; font-size: 0.8rem; }
   .btn-danger:hover { background: rgba(239, 68, 68, 0.25); box-shadow: none; }
   .driver-card {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
     border-radius: 12px; padding: 15px; margin-bottom: 10px;
+  }
+  @media (min-width: 600px) {
+    .driver-card { flex-direction: row; align-items: center; justify-content: space-between; }
   }
   .driver-info { display: flex; flex-direction: column; gap: 4px; }
   .driver-name { font-weight: 900; font-size: 1.1rem; }
@@ -133,7 +136,7 @@
             <span class="driver-name">🛵 ${d.name}</span>
             <span class="driver-details">Voir n° clients : ${d.see_client_phone ? '✅ Oui' : '❌ Non'} · Statut : ${d.active ? '🟢 Actif' : '🔴 Inactif'}</span>
           </div>
-          <button class="btn btn-danger" onclick="deleteDriver(${d.id})">🗑️ Supprimer</button>
+          <button class="btn btn-danger w-full sm:w-auto mt-2 sm:mt-0" onclick="deleteDriver(${d.id})">🗑️ Supprimer</button>
         </div>
       `).join('');
     } catch (err) {
