@@ -61,65 +61,81 @@ async function loadCatalogue() {
 
 function renderCatalogue() {
     const container = document.getElementById('product-list');
-    if(!container) return;
+    if (!container) return;
 
     if (allCategories.length === 0) {
         container.innerHTML = `<div class="text-center py-12 glass-panel rounded-2xl"><h3 class="font-space font-bold text-lg text-white mb-2">Aucune catégorie</h3><p class="text-gray-400 text-sm">La galaxie est en cours de préparation.</p></div>`;
         return;
     }
 
+    // Application de la grille 2 colonnes sur PC
+    container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6';
+
     let html = '';
+    
     allCategories.forEach(cat => {
         const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
         const catImg = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">📦</text></svg>';
+        
+        // On formate les prix (unité, lot 5, lot 10)
+        const prixU = cat.prix_unite ? parseFloat(cat.prix_unite).toFixed(2) : '0.00';
+        const prix5 = cat.prix_lot_5 ? parseFloat(cat.prix_lot_5).toFixed(2) : null;
+        const prix10 = cat.prix_lot_10 ? parseFloat(cat.prix_lot_10).toFixed(2) : null;
 
-        let cardsHtml = '';
-        catFlavors.forEach(f => {
-            const isOut = f.stock <= 0;
-            cardsHtml += `
-            <div class="bg-space-surface/80 border border-white/10 rounded-xl p-2.5 flex flex-col justify-between group hover:border-nebula-cyan/50 transition-all">
-                <div class="flex justify-between items-start mb-1">
-                    <span class="text-[10px] font-bold text-white truncate max-w-[90px]">${f.nom}</span>
-                    <span class="text-[9px] font-bold ${isOut ? 'text-red-400' : 'text-green-400'}">${isOut ? 'RUPTURE' : 'STK:'+f.stock}</span>
-                </div>
-                <div class="flex justify-between items-center mt-2">
-                    <span class="font-bold text-nebula-cyan text-xs">${parseFloat(cat.prix_unite).toFixed(2)}€</span>
-                    ${isOut ? `<button disabled class="px-2 py-1 rounded bg-gray-800 text-gray-500 text-[10px] cursor-not-allowed">&times;</button>` : `<button onclick="addToCart(${f.id})" class="px-2 py-1 rounded-lg bg-gradient-to-r from-nebula-violet to-nebula-magenta text-white shadow-lg hover:opacity-90 flex items-center justify-center transition-transform hover:scale-105"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>`}
-                </div>
-            </div>`;
-        });
-
-        // Génération des badges de prix (U, Lot 5, Lot 10)
-        let pricesHtml = `<div class="flex gap-2 mt-2 flex-wrap">
-            <span class="text-[10px] font-bold text-white bg-black/40 px-2 py-0.5 rounded">U: ${cat.prix_unite}€</span>`;
-        if (cat.prix_lot_5) pricesHtml += `<span class="text-[10px] font-bold text-nebula-cyan bg-nebula-cyan/10 px-2 py-0.5 rounded border border-nebula-cyan/30">Lot 5: ${cat.prix_lot_5}€</span>`;
-        if (cat.prix_lot_10) pricesHtml += `<span class="text-[10px] font-bold text-nebula-magenta bg-nebula-magenta/10 px-2 py-0.5 rounded border border-nebula-magenta/30">Lot 10: ${cat.prix_lot_10}€</span>`;
-        pricesHtml += `</div>`;
-
-        // On génère la catégorie avec la classe 'hidden' par défaut
+        // Construction de la carte style "Premium"
         html += `
-        <div class="glass-panel rounded-2xl overflow-hidden border border-white/10 mb-4">
-            <div class="flex justify-between items-center p-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleCategory(${cat.id})">
-                <div class="flex items-center gap-4">
-                    <img src="${catImg}" class="w-12 h-12 object-cover rounded-lg border border-white/10">
-                    <div>
-                        <h3 class="font-space font-bold text-lg text-white flex items-center gap-3">
-                            ${cat.nom}
-                            <span class="text-xs font-normal bg-nebula-violet/20 text-nebula-cyan px-2 py-0.5 rounded-full border border-nebula-violet/30">${catFlavors.length} produit${catFlavors.length > 1 ? 's' : ''}</span>
-                        </h3>
-                        ${pricesHtml}
+        <div onclick="openCategory(${cat.id})" class="group relative bg-space-surface rounded-2xl border border-white/10 hover:border-nebula-cyan/50 transition-all duration-300 cursor-pointer overflow-hidden shadow-lg hover:shadow-[0_0_20px_rgba(76,201,240,0.2)]">
+            
+            <!-- Image de fond (optionnel, si tu veux le style immersif) -->
+            <!-- <div class="absolute inset-0 opacity-20 bg-cover bg-center" style="background-image: url('${catImg}')"></div> -->
+
+            <div class="p-4 flex gap-4 items-center relative z-10">
+                <!-- Image de la catégorie -->
+                <div class="w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 border border-white/10 bg-black/50 group-hover:scale-105 transition-transform duration-300">
+                    <img src="${catImg}" class="w-full h-full object-cover" alt="${cat.nom}">
+                </div>
+
+                <!-- Informations -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-start mb-1">
+                        <h3 class="text-lg md:text-xl font-space font-bold text-white truncate pr-2 group-hover:text-nebula-cyan transition-colors">${cat.nom}</h3>
+                        <span class="bg-nebula-violet/30 text-nebula-cyan border border-nebula-violet/50 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0">
+                            ${catFlavors.length} PRODUITS
+                        </span>
+                    </div>
+                    
+                    <div class="text-sm text-gray-400 mb-3 flex items-center gap-2">
+                        <span class="text-white font-bold text-base">U: ${prixU}€</span>
+                    </div>
+
+                    <!-- Badges des lots -->
+                    <div class="flex flex-wrap gap-2">
+                        ${prix5 ? `
+                        <div class="flex items-center gap-1.5 px-2 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-[10px] font-bold text-cyan-400">
+                            <i data-lucide="package" class="w-3 h-3"></i>
+                            <span>LOT 5: ${prix5}€</span>
+                        </div>
+                        ` : ''}
+                        
+                        ${prix10 ? `
+                        <div class="flex items-center gap-1.5 px-2 py-1 bg-pink-500/10 border border-pink-500/30 rounded-lg text-[10px] font-bold text-pink-400">
+                            <i data-lucide="package" class="w-3 h-3"></i>
+                            <span>LOT 10: ${prix10}€</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
-                <i data-lucide="chevron-down" id="arrow-${cat.id}" class="text-nebula-cyan transition-transform duration-300" style="transform: rotate(-90deg);"></i>
-            </div>
-            <div id="cat-grid-${cat.id}" class="p-4 border-t border-white/10 hidden">
-                ${catFlavors.length > 0 ? `<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">${cardsHtml}</div>` : `<div class="text-center text-gray-500 text-sm italic py-4">Bientôt disponible...</div>`}
+                
+                <!-- Flèche (indicateur de clic) -->
+                <div class="hidden sm:flex w-8 h-8 rounded-full bg-white/5 items-center justify-center flex-shrink-0 group-hover:bg-nebula-cyan/20 transition-colors">
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-nebula-cyan"></i>
+                </div>
             </div>
         </div>`;
     });
 
     container.innerHTML = html;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    lucide.createIcons();
 }
 
 function toggleCategory(catId) {
