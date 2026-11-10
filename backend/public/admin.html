@@ -660,79 +660,83 @@ function switchTab(tabId, btn) {
         }
         
 function renderGroupedCommandeCard(orders) {
-            const firstOrder = orders[0];
-            const totalGrouped = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
-            const tel = (firstOrder.whatsapp || firstOrder.telephone || '').replace(/\D/g, '');
-            const adresse = firstOrder.adresse || '';
-            const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
-            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
-            const dateFormatted = new Date(firstOrder.date_commande).toLocaleDateString('fr-FR');
+    const firstOrder = orders[0];
+    const totalGrouped = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
+    const tel = (firstOrder.whatsapp || firstOrder.telephone || '').replace(/\D/g, '');
+    const adresse = firstOrder.adresse || '';
+    const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
+    const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
+    const dateFormatted = new Date(firstOrder.date_commande).toLocaleDateString('fr-FR');
 
-            let ordersDetailHtml = '';
-            orders.forEach(cmd => {
-                ordersDetailHtml += `<div class="mb-1.5 pb-1.5 border-b border-dashed border-white/10 last:border-0 last:mb-0 last:pb-0">
-                    <div class="flex justify-between items-baseline mb-0.5">
-                        <span class="text-[10px] font-mono text-nebula-cyan font-bold">#${cmd.id}</span>
-                        <span class="text-[10px] font-mono text-white font-bold">${parseFloat(cmd.total).toFixed(2)}€</span>
-                    </div>`;
-                if (cmd.items && cmd.items.length > 0) {
-                    cmd.items.forEach(i => {
-                        const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
-                        ordersDetailHtml += `<div class="flex items-baseline justify-between text-[10px] py-0.5 gap-2">
-                            <span class="text-nebula-cyan font-mono font-bold flex-shrink-0">${i.qte}x</span>
-                            <span class="text-gray-300 truncate flex-1 min-w-0">${escapeHTML(i.nom)}</span>
-                            <span class="text-white font-mono flex-shrink-0 font-bold text-[10px]">${lineTotal}€</span>
-                        </div>`;
-                    });
-                }
-                let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
-                ordersDetailHtml += `<div class="flex gap-1 mt-1">
-                    <select class="bg-space-bg border border-white/10 rounded text-[9px] p-1 text-white flex-1 outline-none min-w-0" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
-                    <button onclick="deleteCommande(${cmd.id})" class="px-1.5 py-1 bg-red-500/15 text-red-400 rounded border border-red-500/30 text-[9px] font-bold">🗑</button>
-                </div></div>`;
-            });
-
-            let assignLivreurSelect = '';
-            if (orders.length === 1) {
-                const cmd = orders[0];
-                let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
-                assignLivreurSelect = `<select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none mt-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>`;
-            }
-
-            return `<div class="bg-[#0a0a14] rounded-md border border-white/15 shadow-lg overflow-hidden font-mono">
-                <!-- En-tete ticket -->
-                <div class="bg-gradient-to-r from-nebula-violet/20 to-nebula-cyan/20 border-b border-dashed border-white/20 px-2.5 py-1.5">
-                    <div class="flex justify-between items-baseline">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-wider">${orders.length > 1 ? orders.length + ' Cmds' : 'Cmd'}</span>
-                        <span class="text-white font-bold text-xs">#${orders.length === 1 ? firstOrder.id : orders.map(o => o.id).join(',')}</span>
-                    </div>
-                    <div class="flex justify-between items-baseline mt-0.5">
-                        <span class="text-[10px] text-gray-400">${dateFormatted}</span>
-                        <span class="text-nebula-cyan font-bold text-sm">${totalGrouped.toFixed(2)}€</span>
-                    </div>
-                </div>
-
-                <!-- Client -->
-                <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
-                    <div class="text-white font-bold truncate">${escapeHTML(firstOrder.client_nom)}</div>
-                    <div class="text-gray-400 truncate">📞 ${firstOrder.telephone}</div>
-                    ${adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : ''}
-                    ${firstOrder.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(firstOrder.zone_nom)}</div>` : ''}
-                </div>
-
-                <!-- Commandes / Articles -->
-                <div class="px-2.5 py-1 max-h-56 overflow-y-auto">
-                    ${ordersDetailHtml}
-                </div>
-                ${assignLivreurSelect ? `<div class="px-2 pb-1">${assignLivreurSelect}</div>` : ''}
-
-                <!-- Contact -->
-                <div class="px-2 py-1.5 bg-black/40 border-t border-dashed border-white/15 flex gap-1">
-                    ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
-                    ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
-                </div>
+    let ordersDetailHtml = '';
+    orders.forEach(cmd => {
+        ordersDetailHtml += `<div class="mb-1.5 pb-1.5 border-b border-dashed border-white/10 last:border-0 last:mb-0 last:pb-0">
+            <div class="flex justify-between items-baseline mb-0.5">
+                <span class="text-[10px] font-mono text-nebula-cyan font-bold">#${cmd.id}</span>
+                <span class="text-[10px] font-mono text-white font-bold">${parseFloat(cmd.total).toFixed(2)}€</span>
             </div>`;
+        if (cmd.items && cmd.items.length > 0) {
+            cmd.items.forEach(i => {
+                const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
+                let catNom = i.categorie;
+                if (!catNom) {
+                    const fMatch = allFlavors.find(f => f.nom === i.nom);
+                    if (fMatch) catNom = allCategories.find(c => c.id === fMatch.categorie_id)?.nom;
+                }
+                ordersDetailHtml += `<div class="flex flex-col text-[10px] py-0.5 gap-0.5">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-nebula-cyan font-mono font-bold flex-shrink-0">${i.qte}x</span>
+                        <span class="text-gray-300 truncate flex-1 min-w-0 pl-1">${escapeHTML(i.nom)}</span>
+                        <span class="text-white font-mono flex-shrink-0 font-bold text-[10px] pl-1">${lineTotal}€</span>
+                    </div>
+                    ${catNom ? `<div class="text-nebula-cyan text-[9px] font-bold uppercase tracking-wider pl-5">${escapeHTML(catNom)}</div>` : ''}
+                </div>`;
+            });
         }
+        let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+        ordersDetailHtml += `<div class="flex gap-1 mt-1">
+            <select class="bg-space-bg border border-white/10 rounded text-[9px] p-1 text-white flex-1 outline-none min-w-0" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
+            <button onclick="deleteCommande(${cmd.id})" class="px-1.5 py-1 bg-red-500/15 text-red-400 rounded border border-red-500/30 text-[9px] font-bold">🗑</button>
+        </div></div>`;
+    });
+
+    let assignLivreurSelect = '';
+    if (orders.length === 1) {
+        const cmd = orders[0];
+        let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
+        assignLivreurSelect = `<select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none mt-1" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>`;
+    }
+
+    return `<div class="bg-[#0a0a14] rounded-md border border-white/15 shadow-lg overflow-hidden font-mono">
+        <div class="bg-gradient-to-r from-nebula-violet/20 to-nebula-cyan/20 border-b border-dashed border-white/20 px-2.5 py-1.5">
+            <div class="flex justify-between items-baseline">
+                <span class="text-[10px] text-gray-400 uppercase tracking-wider">${orders.length > 1 ? orders.length + ' Cmds' : 'Cmd'}</span>
+                <span class="text-white font-bold text-xs">#${orders.length === 1 ? firstOrder.id : orders.map(o => o.id).join(',')}</span>
+            </div>
+            <div class="flex justify-between items-baseline mt-0.5">
+                <span class="text-[10px] text-gray-400">${dateFormatted}</span>
+                <span class="text-nebula-cyan font-bold text-sm">${totalGrouped.toFixed(2)}€</span>
+            </div>
+        </div>
+
+        <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
+            <div class="text-white font-bold truncate">${escapeHTML(firstOrder.client_nom)}</div>
+            <div class="text-gray-400 truncate">📞 ${firstOrder.telephone}</div>
+            ${adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : ''}
+            ${firstOrder.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(firstOrder.zone_nom)}</div>` : ''}
+        </div>
+
+        <div class="px-2.5 py-1 max-h-56 overflow-y-auto">
+            ${ordersDetailHtml}
+        </div>
+        ${assignLivreurSelect ? `<div class="px-2 pb-1">${assignLivreurSelect}</div>` : ''}
+
+        <div class="px-2 py-1.5 bg-black/40 border-t border-dashed border-white/15 flex gap-1">
+            ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
+            ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+        </div>
+    </div>`;
+}
 
 
         // ===== DELETE_ORDER_ADMIN_PATCH - BEGIN =====
@@ -756,87 +760,87 @@ function renderGroupedCommandeCard(orders) {
         // ===== DELETE_ORDER_ADMIN_PATCH - END =====
 
         function renderCommandeCard(cmd, isTerminee) {
-            const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
-            const tel = (cmd.whatsapp || cmd.telephone || '').replace(/\D/g, '');
-            const adresse = cmd.adresse || '';
-            const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
-            const dateFormatted = new Date(cmd.date_commande).toLocaleDateString('fr-FR');
+    const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
+    const tel = (cmd.whatsapp || cmd.telephone || '').replace(/\D/g, '');
+    const adresse = cmd.adresse || '';
+    const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
+    const dateFormatted = new Date(cmd.date_commande).toLocaleDateString('fr-FR');
 
-            // Version historique compacte
-            if (isTerminee) {
-                return `<div class="p-2 mb-1.5 bg-green-500/5 rounded border border-green-500/20 flex justify-between items-center">
-                    <div class="min-w-0 flex-1">
-                        <div class="font-bold text-white text-[11px] truncate">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div>
-                        <div class="text-[9px] text-gray-500">${dateFormatted}</div>
-                    </div>
-                    <div class="font-bold text-green-400 text-[11px] ml-2 flex-shrink-0">${parseFloat(cmd.total).toFixed(2)} €</div>
-                </div>`;
+    if (isTerminee) {
+        return `<div class="p-2 mb-1.5 bg-green-500/5 rounded border border-green-500/20 flex justify-between items-center">
+            <div class="min-w-0 flex-1">
+                <div class="font-bold text-white text-[11px] truncate">Cmd #${cmd.id} - ${escapeHTML(cmd.client_nom)}</div>
+                <div class="text-[9px] text-gray-500">${dateFormatted}</div>
+            </div>
+            <div class="font-bold text-green-400 text-[11px] ml-2 flex-shrink-0">${parseFloat(cmd.total).toFixed(2)} €</div>
+        </div>`;
+    }
+
+    let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
+    let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
+
+    let itemsHtml = '';
+    if (cmd.items && cmd.items.length > 0) {
+        itemsHtml = '<div class="border-t border-dashed border-white/15 mt-1 pt-1 mb-1">';
+        cmd.items.forEach(i => {
+            const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
+            let catNom = i.categorie;
+            if (!catNom) {
+                const fMatch = allFlavors.find(f => f.nom === i.nom);
+                if (fMatch) catNom = allCategories.find(c => c.id === fMatch.categorie_id)?.nom;
             }
-
-            let optionsStatut = Object.keys(statuts).map(s => `<option value="${s}" ${cmd.statut === s ? 'selected' : ''}>${statuts[s]}</option>`).join('');
-            let optionsLivreur = `<option value="">-- Assigner --</option>` + allLivreurs.map(l => `<option value="${l.id}" ${cmd.livreur_id === l.id ? 'selected' : ''}>${escapeHTML(l.name)}</option>`).join('');
-
-            // Articles avec prix unitaire et total par ligne
-            let itemsHtml = '';
-            if (cmd.items && cmd.items.length > 0) {
-                itemsHtml = '<div class="border-t border-dashed border-white/15 mt-1 pt-1 mb-1">';
-                cmd.items.forEach(i => {
-                    const lineTotal = (parseFloat(i.prix) * i.qte).toFixed(2);
-                    const catShort = i.categorie ? i.categorie.substring(0, 3).toUpperCase() : '---';
-                    itemsHtml += `<div class="flex items-baseline justify-between text-[11px] py-1 gap-2">
-                        <span class="text-nebula-cyan font-mono font-bold flex-shrink-0">${i.qte}x</span>
-                        <span class="text-gray-300 truncate flex-1 min-w-0">${escapeHTML(i.nom)}</span>
-                        <span class="text-gray-500 font-mono flex-shrink-0 text-[10px]">${parseFloat(i.prix).toFixed(2)}€</span>
-                        <span class="text-white font-mono flex-shrink-0 font-bold">${lineTotal}€</span>
-                    </div>`;
-                });
-                itemsHtml += '</div>';
-            }
-
-            return `<div class="bg-[#0a0a14] rounded-md border border-white/15 shadow-lg overflow-hidden font-mono">
-                <!-- En-tete ticket -->
-                <div class="bg-gradient-to-r from-nebula-violet/20 to-nebula-cyan/20 border-b border-dashed border-white/20 px-2.5 py-1.5">
-                    <div class="flex justify-between items-baseline">
-                        <span class="text-[10px] text-gray-400 uppercase tracking-wider">Cmd</span>
-                        <span class="text-white font-bold text-xs">#${cmd.id}</span>
-                    </div>
-                    <div class="flex justify-between items-baseline mt-0.5">
-                        <span class="text-[10px] text-gray-400">${dateFormatted}</span>
-                        <span class="text-nebula-cyan font-bold text-sm">${parseFloat(cmd.total).toFixed(2)}€</span>
-                    </div>
+            itemsHtml += `<div class="flex flex-col text-[11px] py-1 border-b border-white/5 last:border-0">
+                <div class="flex justify-between items-baseline">
+                    <span class="text-nebula-cyan font-mono font-bold">${i.qte}x</span>
+                    <span class="text-gray-200 truncate flex-1 min-w-0 pl-2 font-bold">${escapeHTML(i.nom)}</span>
+                    <span class="text-gray-500 font-mono flex-shrink-0 text-[10px] pl-2">${parseFloat(i.prix).toFixed(2)}€</span>
+                    <span class="text-white font-mono flex-shrink-0 font-bold pl-2">${lineTotal}€</span>
                 </div>
-
-                <!-- Client -->
-                <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
-                    <div class="text-white font-bold truncate">${escapeHTML(cmd.client_nom)}</div>
-                    <div class="text-gray-400 truncate">📞 ${cmd.telephone}</div>
-                    ${adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : ''}
-                    ${cmd.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(cmd.zone_nom)}</div>` : ''}
-                </div>
-
-                <!-- En-tete articles -->
-                <div class="px-2.5 py-0.5 flex justify-between text-[9px] text-nebula-violet uppercase tracking-wider">
-                    <span>Article</span>
-                    <span>P.U. / Total</span>
-                </div>
-
-                <!-- Articles -->
-                <div class="px-2.5">
-                    ${itemsHtml}
-                </div>
-
-                <!-- Actions -->
-                <div class="px-2 py-1.5 bg-black/40 border-t border-dashed border-white/15 space-y-1">
-                    <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
-                    <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
-                    <div class="flex gap-1">
-                        ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WA</a>` : ''}
-                        ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
-                        <button onclick="deleteCommande(${cmd.id})" class="px-2 py-1 bg-red-500/15 text-red-400 rounded border border-red-500/30 text-[9px] font-bold">🗑</button>
-                    </div>
-                </div>
+                ${catNom ? `<div class="text-nebula-cyan text-[9px] font-bold uppercase tracking-wider pl-6 pb-0.5">${escapeHTML(catNom)}</div>` : ''}
             </div>`;
-        }
+        });
+        itemsHtml += '</div>';
+    }
+
+    return `<div class="bg-[#0a0a14] rounded-md border border-white/15 shadow-lg overflow-hidden font-mono">
+        <div class="bg-gradient-to-r from-nebula-violet/20 to-nebula-cyan/20 border-b border-dashed border-white/20 px-2.5 py-1.5">
+            <div class="flex justify-between items-baseline">
+                <span class="text-[10px] text-gray-400 uppercase tracking-wider">Cmd</span>
+                <span class="text-white font-bold text-xs">#${cmd.id}</span>
+            </div>
+            <div class="flex justify-between items-baseline mt-0.5">
+                <span class="text-[10px] text-gray-400">${dateFormatted}</span>
+                <span class="text-nebula-cyan font-bold text-sm">${parseFloat(cmd.total).toFixed(2)}€</span>
+            </div>
+        </div>
+
+        <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
+            <div class="text-white font-bold truncate">${escapeHTML(cmd.client_nom)}</div>
+            <div class="text-gray-400 truncate">📞 ${cmd.telephone}</div>
+            ${adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : ''}
+            ${cmd.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(cmd.zone_nom)}</div>` : ''}
+        </div>
+
+        <div class="px-2.5 py-0.5 flex justify-between text-[9px] text-nebula-violet uppercase tracking-wider">
+            <span>Article</span>
+            <span>P.U. / Total</span>
+        </div>
+
+        <div class="px-2.5">
+            ${itemsHtml}
+        </div>
+
+        <div class="px-2 py-1.5 bg-black/40 border-t border-dashed border-white/15 space-y-1">
+            <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
+            <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
+            <div class="flex gap-1">
+                ${tel ? `<a href="https://wa.me/${tel}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WA</a>` : ''}
+                ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+                <button onclick="deleteCommande(${cmd.id})" class="px-2 py-1 bg-red-500/15 text-red-400 rounded border border-red-500/30 text-[9px] font-bold">🗑</button>
+            </div>
+        </div>
+    </div>`;
+}
         async function updateStatut(id, statut) { try { await fetch(`${API_URL}/commandes/${id}/statut`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ statut }) }); loadCommandes(); } catch (e) {} }
         async function assignLivreur(id, livreur_id) { if (!livreur_id) return; try { await fetch(`${API_URL}/commandes/${id}/assign`, { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ livreur_id })}); alert('Assigné !'); loadCommandes(); } catch (e) {} }
         
@@ -1207,10 +1211,11 @@ function renderGroupedCommandeCard(orders) {
                                 <button class="px-2 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-[10px] font-bold hover:bg-nebula-violet/30" onclick="event.stopPropagation(); openFlavorModal(${cat.id})">+ Saveur</button>
                                 ${cat.visible_client === false
         ? `<button class="px-1.5 py-1 bg-red-500/20 text-red-400 rounded text-[10px] hover:bg-red-500/30" onclick="event.stopPropagation(); toggleCategoryVisibility(\${cat.id})" title="Categorie masquee - cliquer pour afficher">🚫</button>`
-        : `<button class="px-1.5 py-1 bg-green-500/20 text-green-400 rounded text-[10px] hover:bg-green-500/30" onclick="event.stopPropagation(); toggleCategoryVisibility(\${cat.id})" title="Categorie visible - cliquer pour masquer">👁️</button>`
+        : ``
     }
-    <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" title="Masquer/Afficher" class="px-1.5 py-1 bg-amber-500/20 text-amber-400 rounded text-[10px] hover:bg-amber-500/30 mr-1">👁️</button>
-                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
+    
+                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" <button onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" class="px-1.5 py-1 ${cat.visible_client === false ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} rounded text-[10px] hover:brightness-125 mr-1" title="Afficher/Masquer">${cat.visible_client === false ? '🚫' : '👁️'}</button>
+                                onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
                                 <button class="px-1.5 py-1 text-red-400 text-[10px] hover:text-red-300" onclick="event.stopPropagation(); deleteCategory(${cat.id})">🗑️</button>
                             </div>
                         </div>
