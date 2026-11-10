@@ -489,6 +489,8 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
     }
     await client.query('DELETE FROM commande_items WHERE commande_id = $1', [req.params.id]);
     await client.query('DELETE FROM commandes WHERE id = $1', [req.params.id]);
+    // Nettoyage des notifications liées à cette commande
+    await client.query("DELETE FROM notifications WHERE titre LIKE $1", ['Commande #' + req.params.id + '%']);
     await client.query('COMMIT');
     await logAction(req.user, 'Suppression Commande', `Cmd #${req.params.id} supprimée (Stock restauré)`);
     res.json({ success: true });
