@@ -98,6 +98,14 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS avis (id SERIAL PRIMARY KEY, note INTEGER NOT NULL, commentaire TEXT NOT NULL, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP, approuve BOOLEAN DEFAULT false);
       CREATE TABLE IF NOT EXISTS sondages (id SERIAL PRIMARY KEY, question TEXT NOT NULL, options JSONB NOT NULL, actif BOOLEAN DEFAULT true, date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
       CREATE TABLE IF NOT EXISTS sondage_votes (id SERIAL PRIMARY KEY, sondage_id INTEGER REFERENCES sondages(id) ON DELETE CASCADE, option_index INTEGER NOT NULL, ip_hash VARCHAR(64), date_vote TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+        titre VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        lu BOOLEAN DEFAULT false,
+        date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS livreur_id INTEGER REFERENCES utilisateurs(id);');
     await pool.query('ALTER TABLE commandes ADD COLUMN IF NOT EXISTS valide_par VARCHAR(100);');

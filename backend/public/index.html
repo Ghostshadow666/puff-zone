@@ -44,7 +44,7 @@
 
     <style>
         /* ===== NOTIFICATIONS UI ===== */
-        .notif-wrapper { position: relative; display: inline-block; margin-left: 10px; }
+        .notif-wrapper { position: relative; display: inline-block; margin-right: 8px; }
         .notif-bell { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: rgba(157, 78, 221, 0.1); border: 1px solid rgba(157, 78, 221, 0.3); transition: all 0.3s ease; padding: 2px; }
         .notif-bell:hover { background: rgba(157, 78, 221, 0.2); box-shadow: 0 0 15px rgba(157, 78, 221, 0.4); transform: scale(1.05); }
         .notif-bell img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
@@ -129,10 +129,28 @@
           <a href="/livreur.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all uppercase tracking-wider"><i data-lucide="truck" class="w-3.5 h-3.5"></i> Livreur</a>
           <a href="/admin.html" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 text-[10px] font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all uppercase tracking-wider"><i data-lucide="shield" class="w-3.5 h-3.5"></i> Admin</a>
           <div id="user-greeting" class="text-xs font-space font-bold text-gray-300 hidden md:block px-2"></div>
+          
+          <!-- NOTIFICATIONS CLIENT -->
+          <div class="notif-wrapper" id="notifWrapper" style="display: none;">
+              <div class="notif-bell" onclick="toggleNotifDropdown()">
+                  <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%230a0a14' stroke='%239d4edd' stroke-width='2'/><path d='M50 20 C40 20 35 30 35 40 L35 55 L25 65 L75 65 L65 55 L65 40 C65 30 60 20 50 20 Z' fill='none' stroke='%234cc9f0' stroke-width='3'/><circle cx='50' cy='72' r='5' fill='%234cc9f0'/><circle cx='70' cy='25' r='10' fill='%23f72585'/><text x='70' y='29' font-size='12' fill='white' text-anchor='middle' font-weight='bold'>3</text></svg>" alt="Notifications">
+                  <span class="notif-badge" id="notifBadge" style="display: none;">0</span>
+              </div>
+              <div class="notif-dropdown" id="notifDropdown">
+                  <div class="notif-header">
+                      <span>🔔 Notifications</span>
+                      <span class="notif-close" onclick="toggleNotifDropdown()">✕</span>
+                  </div>
+                  <div class="notif-list" id="notifList">
+                      <div class="notif-empty">Aucune notification.</div>
+                  </div>
+              </div>
+          </div>
+
           <a href="/compte.html" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs font-space font-bold text-gray-300 hover:text-white hover:border-nebula-cyan transition-all">
-    <i data-lucide="user" class="w-4 h-4 text-nebula-cyan"></i>
-    <span class="hidden sm:inline">Mon Compte</span>
-</a>
+            <i data-lucide="user" class="w-4 h-4 text-nebula-cyan"></i>
+            <span class="hidden sm:inline">Mon Compte</span>
+          </a>
           
           <button onclick="toggleCart()" class="relative p-3 rounded-2xl bg-space-surface hover:bg-space-card border border-white/15 text-white transition-all group">
             <i data-lucide="shopping-bag" class="w-5 h-5 group-hover:text-nebula-cyan transition-colors"></i>
@@ -142,13 +160,7 @@
 
       </div>
     </div>
-  
-    
-            </div>
-        </div>
-    </div>
-
-</header>
+  </header>
 
   <!-- HERO SECTION -->
   <section id="hero" class="relative min-h-[70vh] flex items-center justify-center z-10 py-12">
