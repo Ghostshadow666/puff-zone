@@ -1209,13 +1209,10 @@ function renderGroupedCommandeCard(orders) {
                             </div>
                             <div class="flex gap-1 items-center flex-shrink-0">
                                 <button class="px-2 py-1 bg-nebula-violet/20 text-nebula-cyan rounded text-[10px] font-bold hover:bg-nebula-violet/30" onclick="event.stopPropagation(); openFlavorModal(${cat.id})">+ Saveur</button>
-                                ${cat.visible_client === false
-        ? `<button class="px-1.5 py-1 bg-red-500/20 text-red-400 rounded text-[10px] hover:bg-red-500/30" onclick="event.stopPropagation(); toggleCategoryVisibility(\${cat.id})" title="Categorie masquee - cliquer pour afficher">🚫</button>`
-        : ``
-    }
-    
-                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" <button onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" class="px-1.5 py-1 ${cat.visible_client === false ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} rounded text-[10px] hover:brightness-125 mr-1" title="Afficher/Masquer">${cat.visible_client === false ? '🚫' : '👁️'}</button>
-                                onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
+                                ${cat.visible_client === false 
+                                    ? `<button class="px-1.5 py-1 bg-red-500/20 text-red-400 rounded text-[10px] hover:bg-red-500/30 mr-1" onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" title="Masquee - cliquer pour afficher">🚫</button>` 
+                                    : `<button class="px-1.5 py-1 bg-green-500/20 text-green-400 rounded text-[10px] hover:bg-green-500/30 mr-1" onclick="event.stopPropagation(); toggleCategoryVisibility(${cat.id})" title="Visible - cliquer pour masquer">👁️</button>`}
+                                <button class="px-1.5 py-1 bg-white/5 text-white rounded text-[10px] hover:bg-white/10" onclick="event.stopPropagation(); editCategory(${cat.id})">✏️</button>
                                 <button class="px-1.5 py-1 text-red-400 text-[10px] hover:text-red-300" onclick="event.stopPropagation(); deleteCategory(${cat.id})">🗑️</button>
                             </div>
                         </div>
