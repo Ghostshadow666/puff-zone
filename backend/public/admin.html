@@ -6,6 +6,19 @@
     <title>PUFF ZONE &mdash; Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+
+function cleanPhoneForWhatsApp(phone) {
+    if (!phone) return '';
+    // On retire tout ce qui n'est pas un chiffre
+    let cleaned = String(phone).replace(/\D/g, '');
+    // Si le numéro commence par 0 (format local belge/français), on le remplace par l'indicatif
+    // (On suppose ici que c'est la Belgique, à adapter si besoin)
+    if (cleaned.startsWith('0')) {
+        cleaned = '32' + cleaned.substring(1); // 32 = Belgique
+    }
+    return cleaned;
+}
+
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { nebula: { violet: '#9d4edd', magenta: '#f72585', cyan: '#4cc9f0', deep: '#3a0ca3' }, space: { bg: '#03020a', card: 'rgba(14, 11, 26, 0.55)', surface: 'rgba(22, 17, 43, 0.65)', border: 'rgba(255, 255, 255, 0.12)' } }, fontFamily: { space: ['Space Grotesk', 'sans-serif'], sans: ['Plus Jakarta Sans', 'sans-serif'] } } } }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>

@@ -1,3 +1,16 @@
+
+function cleanPhoneForWhatsApp(phone) {
+    if (!phone) return '';
+    // On retire tout ce qui n'est pas un chiffre
+    let cleaned = String(phone).replace(/\D/g, '');
+    // Si le numéro commence par 0 (format local belge/français), on le remplace par l'indicatif
+    // (On suppose ici que c'est la Belgique, à adapter si besoin)
+    if (cleaned.startsWith('0')) {
+        cleaned = '32' + cleaned.substring(1); // 32 = Belgique
+    }
+    return cleaned;
+}
+
 const API_URL = '/api';
 let allCategories = [];
 let allFlavors = [];
