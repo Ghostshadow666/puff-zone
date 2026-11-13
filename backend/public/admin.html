@@ -95,7 +95,8 @@ function cleanPhoneForWhatsApp(phone) {
             <div class="glass-panel p-6 rounded-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-space font-bold text-white">🔒 Clients</h2>
-                    <button onclick="openDuplicatesModal()" class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all border border-nebula-cyan/30">🔍 Doublons</button>
+                    <button onclick="exportClientsCSV()" class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-cyan transition-all border border-nebula-violet/30 mr-2">📥 Exporter</button>
+                <button onclick="openDuplicatesModal()" class="px-4 py-2 rounded-lg bg-space-surface text-white text-xs font-bold hover:bg-nebula-violet transition-all border border-nebula-cyan/30">🔍 Doublons</button>
                 </div>
                 <div id="clientsList" class="text-center text-gray-400 text-sm italic">Chargement...</div>
             </div>
@@ -941,7 +942,41 @@ function renderGroupedCommandeCard(orders) {
             } catch(e) { el.innerHTML = '<p class="text-xs text-red-400">Erreur de chargement.</p>'; }
         }
 
-        function openDuplicatesModal() {
+        function exportClientsCSV() {
+    if (!allClientsData || allClientsData.length === 0) {
+        alert('Aucun client a exporter.');
+        return;
+    }
+    
+    // Construction du contenu CSV
+    let csvContent = "ID;Nom;Telephone;WhatsApp;Adresse;Date_Creation\n";
+    
+    allClientsData.forEach(c => {
+        const id = c.id || '';
+        const nom = (c.nom || '').replace(/;/g, ',');
+        const tel = c.telephone || '';
+        const wa = c.whatsapp || '';
+        const adresse = (c.adresse || '').replace(/;/g, ',');
+        const date = c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '';
+        
+        csvContent += `${id};${nom};${tel};${wa};${adresse};${date}\n`;
+    });
+    
+    // Telechargement du fichier
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `export_clients_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log('Export CSV termine.');
+}
+
+function openDuplicatesModal() {
             const modal = document.getElementById('duplicatesModal');
             const list = document.getElementById('duplicatesList');
             modal.classList.remove('hidden');
