@@ -77,6 +77,17 @@ app.use((req, res, next) => {
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Trop de tentatives.' } });
 const publicLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 15, message: { error: 'Trop de requêtes. Veuillez patienter une minute.' } });
 
+function cleanPhoneNumber(phone) {
+    if (!phone) return '';
+    let result = '';
+    for (let i = 0; i < String(phone).length; i++) {
+        const c = String(phone)[i];
+        if (c >= '0' && c <= '9') result += c;
+    }
+    if (result.startsWith('0')) result = '32' + result.substring(1);
+    return result ? '+' + result : '';
+}
+
 const logAction = async (user, action, details) => {
   try { await pool.query('INSERT INTO logs_activite (user_name, user_role, action, details) VALUES ($1, $2, $3, $4)', [user ? user.name : 'Inconnu', user ? user.role : 'Inconnu', action, details]); } catch (e) {}
 };
@@ -196,7 +207,9 @@ app.post('/api/login-livreur', loginLimiter, async (req, res) => {
 });
 
 app.post('/api/clients/register', publicLimiter, async (req, res) => { 
-  const { telephone, nom, adresse, whatsapp } = req.body; 
+  let { telephone, nom, adresse, whatsapp } = req.body;
+    telephone = cleanPhoneNumber(telephone);
+    if (whatsapp) whatsapp = cleanPhoneNumber(whatsapp); 
   try { 
     let r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]); 
     if (r.rows.length === 0) r = await pool.query('INSERT INTO clients (telephone, nom, adresse, whatsapp) VALUES ($1,$2,$3,$4) RETURNING *', [telephone, nom, adresse, whatsapp]); 
@@ -213,7 +226,8 @@ async function addNotification(client_id, titre, message) {
 }
 
 app.post('/api/clients/login', async (req, res) => { 
-  const { telephone } = req.body; 
+  let { telephone } = req.body;
+    telephone = cleanPhoneNumber(telephone); 
   try { 
     const r = await pool.query('SELECT * FROM clients WHERE telephone = $1', [telephone]); 
     if (r.rows.length === 0) return res.status(404).json({ error: 'Non reconnu' }); 
@@ -230,7 +244,8 @@ app.post('/api/clients/login', async (req, res) => {
 });
 
 app.put('/api/clients/:id', async (req, res) => { 
-  const { nom, adresse, whatsapp } = req.body; 
+  let { nom, adresse, whatsapp } = req.body;
+    if (whatsapp) whatsapp = cleanPhoneNumber(whatsapp); 
   try { 
     const r = await pool.query('UPDATE clients SET nom=$1, adresse=$2, whatsapp=$3 WHERE id=$4 RETURNING *', [nom, adresse, whatsapp, req.params.id]); 
     res.json({ success: true, client: r.rows[0] }); 
