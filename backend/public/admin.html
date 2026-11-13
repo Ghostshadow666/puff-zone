@@ -675,7 +675,7 @@ function switchTab(tabId, btn) {
 function renderGroupedCommandeCard(orders) {
     const firstOrder = orders[0];
     const totalGrouped = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
-    const tel = (firstOrder.whatsapp || firstOrder.telephone || '').replace(/\D/g, '');
+    const tel = (firstOrder.telephone || firstOrder.whatsapp || '').replace(/\D/g, '');
     const adresse = firstOrder.adresse || '';
     const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
     const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
@@ -774,7 +774,7 @@ function renderGroupedCommandeCard(orders) {
 
         function renderCommandeCard(cmd, isTerminee) {
     const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
-    const tel = (cmd.whatsapp || cmd.telephone || '').replace(/\D/g, '');
+    const tel = (cmd.telephone || cmd.whatsapp || '').replace(/\D/g, '');
     const adresse = cmd.adresse || '';
     const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
     const dateFormatted = new Date(cmd.date_commande).toLocaleDateString('fr-FR');
