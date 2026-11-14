@@ -2,10 +2,9 @@
 <html lang="fr" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PUFF ZONE | Galaxie Vaping & Nebula Experience</title>
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -40,7 +39,7 @@
     .text-glow-nebula { text-shadow: 0 0 16px rgba(157, 78, 221, 0.7), 0 0 30px rgba(247, 37, 133, 0.4); }
     .text-glow-cyan { text-shadow: 0 0 14px rgba(76, 201, 240, 0.8); }
     #space-stars { display: none; }
-  
+
     /* ===== DRAWER CATEGORIE ===== */
     #categoryDrawer::-webkit-scrollbar { width: 6px; }
     #categoryDrawer::-webkit-scrollbar-track { background: rgba(11, 11, 18, 0.8); }
@@ -48,75 +47,39 @@
     #categoryDrawer::-webkit-scrollbar-thumb:hover { background: #4cc9f0; }
     body.overflow-hidden { overflow: hidden; }
 
-</style>
+    /* ===== NOTIFICATIONS UI ===== */
+    .notif-wrapper { position: relative; display: inline-block; margin-right: 8px; }
+    .notif-bell { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: rgba(157, 78, 221, 0.1); border: 1px solid rgba(157, 78, 221, 0.3); transition: all 0.3s ease; padding: 2px; }
+    .notif-bell:hover { background: rgba(157, 78, 221, 0.2); box-shadow: 0 0 15px rgba(157, 78, 221, 0.4); transform: scale(1.05); }
+    .notif-bell img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+    .notif-badge { position: absolute; top: -2px; right: -2px; background: #f72585; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #03020a; animation: pulse-badge 2s infinite; }
+    @keyframes pulse-badge { 0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(247, 37, 133, 0); } 100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); } }
+    
+    .notif-dropdown { position: absolute; top: 55px; right: -60px; width: 300px; max-height: 400px; overflow-y: auto; background: rgba(14, 11, 26, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(157, 78, 221, 0.3); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 9999; display: none; flex-direction: column; }
+    .notif-dropdown.active { display: flex; }
+    .notif-header { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; color: #fff; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .notif-list { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .notif-item { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+    .notif-item:hover { background: rgba(255,255,255,0.06); }
+    .notif-item.unread { border-left: 3px solid #4cc9f0; background: rgba(76, 201, 240, 0.05); }
+    .notif-item-title { font-weight: bold; color: #fff; font-size: 13px; margin-bottom: 4px; }
+    .notif-item-msg { color: #aaa; font-size: 12px; line-height: 1.4; }
+    .notif-item-date { color: #666; font-size: 10px; margin-top: 6px; text-align: right; }
+    .notif-empty { padding: 20px; text-align: center; color: #666; font-size: 13px; font-style: italic; }
+    .notif-close { cursor: pointer; color: #666; font-size: 18px; }
+    .notif-close:hover { color: #fff; }
 
-    <style>
-        /* ===== NOTIFICATIONS UI ===== */
-        .notif-wrapper { position: relative; display: inline-block; margin-right: 8px; }
-        .notif-bell { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: rgba(157, 78, 221, 0.1); border: 1px solid rgba(157, 78, 221, 0.3); transition: all 0.3s ease; padding: 2px; }
-        .notif-bell:hover { background: rgba(157, 78, 221, 0.2); box-shadow: 0 0 15px rgba(157, 78, 221, 0.4); transform: scale(1.05); }
-        .notif-bell img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
-        .notif-badge { position: absolute; top: -2px; right: -2px; background: #f72585; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #03020a; animation: pulse-badge 2s infinite; }
-        @keyframes pulse-badge { 0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(247, 37, 133, 0); } 100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); } }
-        
-        .notif-dropdown { position: absolute; top: 55px; right: -60px; width: 300px; max-height: 400px; overflow-y: auto; background: rgba(14, 11, 26, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(157, 78, 221, 0.3); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 9999; display: none; flex-direction: column; }
-        .notif-dropdown.active { display: flex; }
-        .notif-header { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; color: #fff; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .notif-list { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-        .notif-item { padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
-        .notif-item:hover { background: rgba(255,255,255,0.06); }
-        .notif-item.unread { border-left: 3px solid #4cc9f0; background: rgba(76, 201, 240, 0.05); }
-        .notif-item-title { font-weight: bold; color: #fff; font-size: 13px; margin-bottom: 4px; }
-        .notif-item-msg { color: #aaa; font-size: 12px; line-height: 1.4; }
-        .notif-item-date { color: #666; font-size: 10px; margin-top: 6px; text-align: right; }
-        .notif-empty { padding: 20px; text-align: center; color: #666; font-size: 13px; font-style: italic; }
-        .notif-close { cursor: pointer; color: #666; font-size: 18px; }
-        .notif-close:hover { color: #fff; }
-    </style>
-
-    <style>
-        /* ===== FIX ZOOM MOBILE (iOS Safari) ===== */
-        /* On force la taille de police à 16px minimum pour éviter le zoom auto */
-        input, textarea, select {
-            font-size: 16px !important;
-            touch-action: manipulation;
-        }
-        
-        /* On améliore la cliquabilité des boutons sur mobile */
-        button, .btn, a[onclick] {
-            touch-action: manipulation;
-            cursor: pointer;
-        }
-    </style>
-
+    /* ===== FIX ZOOM MOBILE (iOS Safari) ===== */
+    input, textarea, select {
+        font-size: 16px !important;
+        touch-action: manipulation;
+    }
+    button, .btn, a[onclick] {
+        touch-action: manipulation;
+        cursor: pointer;
+    }
+  </style>
 </head>
-
-<!-- Bouton flottant Avis -->
-<button onclick="openAvisModal()" class="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-nebula-violet/90 to-nebula-cyan/90 text-white font-bold text-sm shadow-[0_0_20px_rgba(76,201,240,0.5)] hover:scale-105 transition-transform backdrop-blur-md border border-white/20">
-    <i data-lucide="star" class="w-4 h-4 text-yellow-300 fill-current"></i>
-    Laisser un avis
-</button>
-
-<!-- Modale Avis -->
-<div id="avis-modal" class="fixed inset-0 z-[10000] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-nebula-cyan/30 relative">
-        <button onclick="closeAvisModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
-        <h3 class="text-xl font-cosmic font-bold text-white mb-2 text-center">Votre <span class="text-nebula-cyan">Avis</span></h3>
-        <p class="text-gray-400 text-xs text-center mb-4">Partagez votre experience en toute anonymat.</p>
-        
-        <div class="flex justify-center gap-2 mb-4 text-3xl text-gray-500 cursor-pointer" id="star-rating">
-            <span data-val="1" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="2" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="3" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="4" class="hover:text-yellow-400 transition-colors">â˜…</span>
-            <span data-val="5" class="hover:text-yellow-400 transition-colors">â˜…</span>
-        </div>
-        
-        <textarea id="avis-text" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg p-3 text-white outline-none focus:border-nebula-cyan mb-4 text-sm" placeholder="Qu'avez-vous pense de votre commande ?"></textarea>
-        
-        <button onclick="submitAvis()" class="w-full py-3 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white font-bold text-sm shadow-lg hover:opacity-90 transition">Envoyer mon avis</button>
-    </div>
-</div>
 
 <body class="selection:bg-nebula-violet selection:text-white relative">
 
@@ -190,7 +153,7 @@
   <section id="hero" class="relative min-h-[70vh] flex items-center justify-center z-10 py-12">
     <div class="max-w-7xl mx-auto px-4 text-center z-10">
       
-      <!-- SONDAGE (dans la zone rouge) -->
+      <!-- SONDAGE -->
       <div id="sondage-container" class="mb-8 hidden">
         <div class="glass-panel p-6 rounded-2xl border border-nebula-cyan/30 max-w-md mx-auto text-left">
             <h3 class="font-space font-bold text-white mb-3 flex items-center gap-2">
@@ -276,38 +239,47 @@
     </div>
   </div>
 
-  <!-- MODALE DE CONNEXION -->
-  <div id="login-modal" style="display:flex; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3, 2, 10, 0.9); z-index:9999; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
-    <div class="glass-panel" style="padding:40px; border-radius:20px; width:90%; max-width:400px; text-align:center;">
+  <!-- MODALE DE CONNEXION / INSCRIPTION (REFaite pour mobile) -->
+  <div id="login-modal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="display:flex; background:rgba(3, 2, 10, 0.9); backdrop-filter: blur(10px);">
+    <div class="glass-panel w-full max-w-md p-6 sm:p-8 rounded-2xl text-center max-h-[90vh] overflow-y-auto">
         <h2 class="font-space font-bold text-2xl text-white mb-6">PUFF ZONE</h2>
+        
+        <!-- ETAPE 1 : CHOIX -->
         <div id="step-choice">
-            <button onclick="showLoginForm()" class="w-full py-3 rounded-xl bg-nebula-violet text-white font-bold mb-3">Se Connecter</button>
-            <button onclick="showRegisterForm()" class="w-full py-3 rounded-xl border border-nebula-violet text-nebula-violet font-bold mb-3">Cr&eacute;er un compte</button>
+            <button onclick="showLoginForm()" class="w-full py-3 rounded-xl bg-nebula-violet text-white font-bold mb-3 active:scale-95 transition-transform">Se Connecter</button>
+            <button onclick="showRegisterForm()" class="w-full py-3 rounded-xl border border-nebula-violet text-nebula-violet font-bold mb-3 active:scale-95 transition-transform">Créer un compte</button>
         </div>
+
+        <!-- ETAPE 2 : CONNEXION -->
         <div id="step-phone" style="display: none;">
-            <input type="text" id="phone-input" placeholder="T&eacute;l&eacute;phone" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none">
-            <button onclick="checkPhone()" class="w-full py-3 rounded-xl bg-nebula-cyan text-black font-bold mb-3">Continuer</button>
-            <button onclick="backToChoice()" class="text-xs text-gray-400">Retour</button>
+            <form onsubmit="event.preventDefault(); checkPhone();">
+                <input type="tel" id="phone-input" placeholder="Téléphone" inputmode="numeric" autocomplete="tel" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none focus:border-nebula-cyan" style="font-size: 16px;">
+                <button type="submit" class="w-full py-3 rounded-xl bg-nebula-cyan text-black font-bold mb-3 active:scale-95 transition-transform">Continuer</button>
+            </form>
+            <button onclick="backToChoice()" class="text-xs text-gray-400 mt-2">← Retour</button>
         </div>
+
+        <!-- ETAPE 3 : INSCRIPTION -->
         <div id="step-info" style="display:none;">
-            <input type="text" id="name-input" placeholder="Nom" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
-            
-            <input type="text" id="address-input" placeholder="Adresse" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
-            <input type="text" id="whatsapp-input" placeholder="Téléphone / WhatsApp" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none">
-            <button type="button" onclick="saveProfile()" class="w-full py-3 rounded-xl bg-nebula-magenta text-white font-bold mb-3 cursor-pointer">S'inscrire</button>
-            <button onclick="backToChoice()" class="text-xs text-gray-400">Retour</button>
+            <form onsubmit="event.preventDefault(); saveProfile();">
+                <input type="text" id="name-input" placeholder="Nom" autocomplete="name" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none focus:border-nebula-cyan" style="font-size: 16px;">
+                <input type="text" id="address-input" placeholder="Adresse" autocomplete="street-address" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none focus:border-nebula-cyan" style="font-size: 16px;">
+                <input type="tel" id="whatsapp-input" placeholder="Téléphone / WhatsApp" inputmode="numeric" autocomplete="tel" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none focus:border-nebula-cyan" style="font-size: 16px;">
+                <button type="submit" class="w-full py-3 rounded-xl bg-nebula-magenta text-white font-bold mb-3 active:scale-95 transition-transform">S'inscrire</button>
+            </form>
+            <button onclick="backToChoice()" class="text-xs text-gray-400 mt-2">← Retour</button>
         </div>
     </div>
   </div>
 
   <script src="catalogue.js?v=2"></script>
-  <script src="script.js?v=11"></script>
+  <script src="script.js?v=12"></script>
   <script src="bg-animation.js"></script>
   <script>
     lucide.createIcons();
   </script>
 
-<!-- Section Avis (Bas de page - DÃ©pliable) -->
+<!-- Section Avis -->
 <section class="max-w-4xl mx-auto px-4 py-10 relative z-10 border-t border-white/10 mt-10">
     <div class="text-center">
         <button onclick="toggleAvisList()" class="inline-flex items-center gap-2 text-nebula-cyan hover:text-white transition-colors font-bold text-sm">
@@ -321,7 +293,6 @@
     </div>
 </section>
 
-
 <!-- MODALE BANNISSEMENT -->
 <div id="banned-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(3, 2, 10, 0.95); z-index:99999; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
     <div class="glass-panel" style="padding:40px; border-radius:20px; width:90%; max-width:500px; text-align:center; border:2px solid #EF4444;">
@@ -332,142 +303,14 @@
     </div>
 </div>
 
-
-    <script>
-        // ===== NOTIFICATIONS CLIENT JS =====
-        let notifInterval = null;
-
-        function toggleNotifDropdown() {
-            const dd = document.getElementById('notifDropdown');
-            if (dd) dd.classList.toggle('active');
-            
-            if (dd && dd.classList.contains('active')) {
-                markNotifsAsRead();
-            }
-        }
-
-        async function loadClientNotifications() {
-            const clientStr = localStorage.getItem('puff_client');
-            if (!clientStr) return;
-            
-            try {
-                const client = JSON.parse(clientStr);
-                if (!client || !client.id) return;
-
-                const wrapper = document.getElementById('notifWrapper');
-                if (wrapper) wrapper.style.display = 'block';
-
-                const res = await fetch(`/api/client/notifications/${client.id}`);
-                if (!res.ok) return;
-                
-                const notifs = await res.json();
-                renderClientNotifications(notifs);
-                
-            } catch(e) { console.error('Erreur notif:', e); }
-        }
-
-        function renderClientNotifications(notifs) {
-            const list = document.getElementById('notifList');
-            const badge = document.getElementById('notifBadge');
-            if (!list || !badge) return;
-
-            const unread = notifs.filter(n => !n.lu);
-            
-            if (unread.length > 0) {
-                badge.textContent = unread.length > 9 ? '9+' : unread.length;
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-
-            if (notifs.length === 0) {
-                list.innerHTML = '<div class="notif-empty">Aucune notification.</div>';
-                return;
-            }
-
-            list.innerHTML = notifs.map(n => {
-                const date = new Date(n.date_creation).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                return `
-                    <div class="notif-item ${n.lu ? '' : 'unread'}">
-                        <div class="notif-item-title">${n.titre}</div>
-                        <div class="notif-item-msg">${n.message}</div>
-                        <div class="notif-item-date">${date}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function clearAllNotifs() {
-            if (!confirm('Effacer toutes vos notifications ?')) return;
-            const clientStr = localStorage.getItem('puff_client');
-            if (!clientStr) return;
-            try {
-                const client = JSON.parse(clientStr);
-                if (!client || !client.id) return;
-                await fetch(`/api/client/notifications/${client.id}/clear`, { method: 'DELETE' });
-                loadClientNotifications();
-            } catch(e) { alert('Erreur réseau.'); }
-        }
-
-        async function markNotifsAsRead() {
-            const clientStr = localStorage.getItem('puff_client');
-            if (!clientStr) return;
-            try {
-                const client = JSON.parse(clientStr);
-                if (!client || !client.id) return;
-                await fetch(`/api/client/notifications/${client.id}/read`, { method: 'PUT' });
-                const badge = document.getElementById('notifBadge');
-                if (badge) badge.style.display = 'none';
-                document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-            } catch(e) {}
-        }
-
-        function initNotifSystem() {
-            loadClientNotifications();
-            if (notifInterval) clearInterval(notifInterval);
-            notifInterval = setInterval(loadClientNotifications, 20000);
-        }
-
-        window.addEventListener('load', initNotifSystem);
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'puff_client') initNotifSystem();
-        });
-        
-        setInterval(() => {
-            const client = localStorage.getItem('puff_client');
-            const wrapper = document.getElementById('notifWrapper');
-            if (client && wrapper && wrapper.style.display === 'none') {
-                initNotifSystem();
-            }
-        }, 2000);
-    </script>
-
-
-  
-
-
-  <!-- DRAWER CATEGORIE (STYLE GEMINI) -->
-  <div id="drawerBackdrop" 
-       class="fixed inset-0 bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-[9998]"
-       onclick="closeCategoryDrawer()"></div>
-
-  <aside id="categoryDrawer" 
-         class="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-[#0a0a14]/95 backdrop-blur-xl border-l border-nebula-cyan/30 shadow-[-10px_0_30px_rgba(76,201,240,0.2)] transform translate-x-full transition-transform duration-300 ease-in-out z-[9999] flex flex-col font-space">
-    
-    <!-- Header du Drawer -->
+<!-- DRAWER CATEGORIE -->
+<div id="drawerBackdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 z-[9998]" onclick="closeCategoryDrawer()"></div>
+<aside id="categoryDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-[#0a0a14]/95 backdrop-blur-xl border-l border-nebula-cyan/30 shadow-[-10px_0_30px_rgba(76,201,240,0.2)] transform translate-x-full transition-transform duration-300 ease-in-out z-[9999] flex flex-col font-space">
     <div class="p-5 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-nebula-violet/10 to-transparent">
-      <h2 id="drawerCategoryTitle" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-nebula-cyan to-nebula-magenta uppercase tracking-wider">
-        Détails Catégorie
-      </h2>
-      <button onclick="closeCategoryDrawer()" class="text-gray-400 hover:text-red-400 p-2 text-2xl font-bold transition-colors bg-white/5 rounded-full w-8 h-8 flex items-center justify-center">
-        &times;
-      </button>
+      <h2 id="drawerCategoryTitle" class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-nebula-cyan to-nebula-magenta uppercase tracking-wider">Détails Catégorie</h2>
+      <button onclick="closeCategoryDrawer()" class="text-gray-400 hover:text-red-400 p-2 text-2xl font-bold transition-colors bg-white/5 rounded-full w-8 h-8 flex items-center justify-center">&times;</button>
     </div>
-
-    <!-- Contenu du Drawer (Scrollable) -->
     <div class="p-5 overflow-y-auto flex-1 flex flex-col gap-6">
-      
-      <!-- Image Principale (Grande, comme sur le mockup) -->
       <div class="w-full h-48 rounded-2xl overflow-hidden border-2 border-nebula-cyan/30 relative group shadow-[0_0_20px_rgba(76,201,240,0.15)]">
         <img id="drawerCategoryImage" src="" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
@@ -476,19 +319,35 @@
             <p id="drawerCategoryDesc" class="text-[10px] text-gray-300"></p>
         </div>
       </div>
-
-      <!-- Liste des Saveurs -->
       <div>
-        <h4 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-4 flex items-center gap-2">
-            <i data-lucide="list" class="w-4 h-4 text-nebula-cyan"></i> Saveurs disponibles
-        </h4>
-        <div id="flavorsList" class="space-y-3">
-          <!-- Injecté dynamiquement en JS -->
-        </div>
+        <h4 class="text-xs uppercase tracking-widest text-gray-400 font-bold mb-4 flex items-center gap-2"><i data-lucide="list" class="w-4 h-4 text-nebula-cyan"></i> Saveurs disponibles</h4>
+        <div id="flavorsList" class="space-y-3"></div>
       </div>
-
     </div>
-  </aside>
+</aside>
+
+<!-- Bouton flottant Avis -->
+<button onclick="openAvisModal()" class="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-nebula-violet/90 to-nebula-cyan/90 text-white font-bold text-sm shadow-[0_0_20px_rgba(76,201,240,0.5)] hover:scale-105 transition-transform backdrop-blur-md border border-white/20">
+    <i data-lucide="star" class="w-4 h-4 text-yellow-300 fill-current"></i> Laisser un avis
+</button>
+
+<!-- Modale Avis -->
+<div id="avis-modal" class="fixed inset-0 z-[10000] hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-nebula-cyan/30 relative">
+        <button onclick="closeAvisModal()" class="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+        <h3 class="text-xl font-cosmic font-bold text-white mb-2 text-center">Votre <span class="text-nebula-cyan">Avis</span></h3>
+        <p class="text-gray-400 text-xs text-center mb-4">Partagez votre experience en toute anonymat.</p>
+        <div class="flex justify-center gap-2 mb-4 text-3xl text-gray-500 cursor-pointer" id="star-rating">
+            <span data-val="1" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="2" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="3" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="4" class="hover:text-yellow-400 transition-colors">★</span>
+            <span data-val="5" class="hover:text-yellow-400 transition-colors">★</span>
+        </div>
+        <textarea id="avis-text" rows="4" class="w-full bg-space-bg border border-white/10 rounded-lg p-3 text-white outline-none focus:border-nebula-cyan mb-4 text-sm" placeholder="Qu'avez-vous pense de votre commande ?"></textarea>
+        <button onclick="submitAvis()" class="w-full py-3 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white font-bold text-sm shadow-lg hover:opacity-90 transition">Envoyer mon avis</button>
+    </div>
+</div>
 
 </body>
 </html>

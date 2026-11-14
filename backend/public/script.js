@@ -1,14 +1,16 @@
-
+// ===== FONCTIONS UTILITAIRES =====
 function cleanPhoneForWhatsApp(phone) {
     if (!phone) return '';
-    // On retire tout ce qui n'est pas un chiffre
     let cleaned = String(phone).replace(/\D/g, '');
-    // Si le numéro commence par 0 (format local belge/français), on le remplace par l'indicatif
-    // (On suppose ici que c'est la Belgique, à adapter si besoin)
     if (cleaned.startsWith('0')) {
-        cleaned = '32' + cleaned.substring(1); // 32 = Belgique
+        cleaned = '32' + cleaned.substring(1);
     }
     return cleaned;
+}
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 const API_URL = '/api';
@@ -19,27 +21,31 @@ let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 let selectedZone = null;
 
+// ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', () => {
+    // On vérifie que l'élément existe avant d'agir (évite les crashs)
+    const loginModal = document.getElementById('login-modal');
     if (currentUser) {
-        document.getElementById('login-modal').style.display = 'none';
+        if (loginModal) loginModal.style.display = 'none';
         updateGreeting();
     } else {
-        document.getElementById('login-modal').style.display = 'flex';
+        if (loginModal) loginModal.style.display = 'flex';
     }
+    
     loadSettings();
     loadPromos();
     loadCatalogue();
     loadZones();
-    loadSondage(); // Charger le sondage actif
+    loadSondage();
 });
 
+// ===== CHARGEMENT DES DONNÉES =====
 async function loadSettings() {
     try {
         const res = await fetch(`${API_URL}/settings`);
         const data = await res.json();
         const marquee = document.getElementById('promo-marquee');
         if (marquee && data.banner_text) {
-            // On duplique le texte pour un défilement infini fluide
             let html = '';
             for(let i=0; i<8; i++) {
                 html += `<span class="flex items-center gap-2 mx-4"><i data-lucide="sparkles" class="w-4 h-4 text-nebula-cyan"></i> ${data.banner_text}</span>`;
@@ -54,8 +60,6 @@ async function loadPromos() {
     try {
         const res = await fetch(`${API_URL}/promo/public`);
         const promos = await res.json();
-        // Les promos peuvent être ajoutées au bandeau plus tard si besoin, 
-        // pour l'instant on gère uniquement le texte personnalisé.
     } catch(e) { console.error(e); }
 }
 
@@ -72,22 +76,18 @@ async function loadCatalogue() {
     }
 }
 
-
-// ===== DRAWER CATEGORIE LOGIC =====
+// ===== DRAWER CATEGORIE (dans catalogue.js normalement, mais on garde au cas où) =====
 function openCategoryDrawer(categoryId) {
-    // On récupère les vraies données depuis les variables globales
     const cat = allCategories.find(c => c.id === categoryId);
     if (!cat) return;
 
     const catFlavors = allFlavors.filter(f => f.categorie_id === cat.id);
 
-    // Remplissage des infos catégorie
     document.getElementById('drawerCategoryTitle').textContent = cat.nom;
     document.getElementById('drawerCategoryImage').src = cat.image_url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23151028"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">📦</text></svg>';
     document.getElementById('drawerCategoryCount').textContent = catFlavors.length + ' produit' + (catFlavors.length > 1 ? 's' : '') + ' disponible' + (catFlavors.length > 1 ? 's' : '');
     document.getElementById('drawerCategoryDesc').textContent = 'U: ' + parseFloat(cat.prix_unite).toFixed(2) + '€' + (cat.prix_lot_5 ? ' | Lot 5: ' + parseFloat(cat.prix_lot_5).toFixed(2) + '€' : '') + (cat.prix_lot_10 ? ' | Lot 10: ' + parseFloat(cat.prix_lot_10).toFixed(2) + '€' : '');
 
-    // Remplissage des saveurs
     const list = document.getElementById('flavorsList');
     if (catFlavors.length === 0) {
         list.innerHTML = '<p class="text-sm text-gray-500 italic text-center py-4">Aucune saveur disponible pour le moment.</p>';
@@ -119,7 +119,6 @@ function openCategoryDrawer(categoryId) {
         }).join('');
     }
 
-    // Animation d'ouverture
     document.getElementById('categoryDrawer').classList.remove('translate-x-full');
     document.getElementById('drawerBackdrop').classList.remove('opacity-0', 'pointer-events-none');
     document.body.classList.add('overflow-hidden');
@@ -131,16 +130,11 @@ function closeCategoryDrawer() {
     document.body.classList.remove('overflow-hidden');
 }
 
-// Fermeture avec la touche Echap
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeCategoryDrawer();
 });
-// ==================================
 
-
-
-
-
+// ===== PANIER =====
 function addToCart(flavId) {
     if(!currentUser) { document.getElementById('login-modal').style.display = 'flex'; return; }
     const flav = allFlavors.find(f => f.id === flavId);
@@ -167,30 +161,26 @@ function updateQty(index, change) {
     updateCartUI();
 }
 
-
 function calculerPrixItem(item) {
-    // Cette fonction n'est plus utilisée directement pour le total global
-    // car on regroupe par catégorie. On la garde pour la compatibilité.
     return { total: item.prix * item.qty, detail: '' };
 }
 
-
-    fetch(`${API_URL}/settings/order-window`).then(r => r.json()).then(sched => {
-        const bannerId = 'closed-banner';
-        let banner = document.getElementById(bannerId);
-        if (!sched.isOpen) {
-            if (!banner) {
-                banner = document.createElement('div');
-                banner.id = bannerId;
-                banner.className = 'bg-red-500/20 border border-red-500/50 text-red-400 text-xs text-center p-2 rounded-lg mb-2 font-bold animate-pulse';
-                banner.innerHTML = `🔒 Commandes fermées. Ouverture à ${sched.start}`;
-                const cartItems = document.getElementById('cart-items');
-                if (cartItems) cartItems.parentNode.insertBefore(banner, cartItems);
-            }
-        } else {
-            if (banner) banner.remove();
+fetch(`${API_URL}/settings/order-window`).then(r => r.json()).then(sched => {
+    const bannerId = 'closed-banner';
+    let banner = document.getElementById(bannerId);
+    if (!sched.isOpen) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = bannerId;
+            banner.className = 'bg-red-500/20 border border-red-500/50 text-red-400 text-xs text-center p-2 rounded-lg mb-2 font-bold animate-pulse';
+            banner.innerHTML = `🔒 Commandes fermées. Ouverture à ${sched.start}`;
+            const cartItems = document.getElementById('cart-items');
+            if (cartItems) cartItems.parentNode.insertBefore(banner, cartItems);
         }
-    }).catch(()=>{});
+    } else {
+        if (banner) banner.remove();
+    }
+}).catch(()=>{});
 
 function updateCartUI() {
     const count = cart.reduce((sum, item) => sum + item.qty, 0); 
@@ -211,7 +201,6 @@ function updateCartUI() {
         return; 
     }
     
-    // --- CALCUL PAR CATÉGORIE (LOTS MIXTES) ---
     const itemsByCategory = {};
     cart.forEach(item => {
         const catName = item.categorie;
@@ -316,41 +305,95 @@ function toggleCart() {
     }
 }
 
-function showLoginForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'block'; document.getElementById('step-info').style.display = 'none'; }
-function showRegisterForm() { document.getElementById('step-choice').style.display = 'none'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'block'; }
-function backToChoice() { document.getElementById('step-choice').style.display = 'block'; document.getElementById('step-phone').style.display = 'none'; document.getElementById('step-info').style.display = 'none'; }
+// ===== AUTHENTIFICATION =====
+function showLoginForm() { 
+    document.getElementById('step-choice').style.display = 'none'; 
+    document.getElementById('step-phone').style.display = 'block'; 
+    document.getElementById('step-info').style.display = 'none'; 
+}
+function showRegisterForm() { 
+    document.getElementById('step-choice').style.display = 'none'; 
+    document.getElementById('step-phone').style.display = 'none'; 
+    document.getElementById('step-info').style.display = 'block'; 
+}
+function backToChoice() { 
+    document.getElementById('step-choice').style.display = 'block'; 
+    document.getElementById('step-phone').style.display = 'none'; 
+    document.getElementById('step-info').style.display = 'none'; 
+}
 
 async function checkPhone() {
     const phone = document.getElementById('phone-input').value;
     if(!phone || phone.length < 8) return alert('Numéro invalide');
     try {
         const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) });
-        if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
-        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('whatsapp-input').value = phone; }
+        if (res.ok) { 
+            const data = await res.json(); 
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
+            document.getElementById('login-modal').style.display = 'none'; 
+            updateGreeting(); 
+        }
+        else { 
+            alert('Numéro non reconnu.'); 
+            showRegisterForm(); 
+            document.getElementById('whatsapp-input').value = phone; 
+        }
     } catch(e) { alert('Erreur serveur.'); }
 }
 
 async function saveProfile() {
-    const phone = document.getElementById('phone-input-reg').value;
+    const whatsapp = document.getElementById('whatsapp-input').value;
     const nom = document.getElementById('name-input').value;
     const adresse = document.getElementById('address-input').value;
-    const whatsapp = document.getElementById('whatsapp-input').value;
-    if(!phone || !nom || !adresse) return alert('Remplissez les champs.');
+    
+    if(!whatsapp || !nom || !adresse) return alert('Remplissez tous les champs.');
+    
     try {
-        const res = await fetch(`${API_URL}/clients/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone, nom, adresse, whatsapp }) });
+        const res = await fetch(`${API_URL}/clients/register`, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ telephone: whatsapp, nom, adresse, whatsapp: whatsapp }) 
+        });
         const data = await res.json();
-        if(data.success) { currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); alert('Compte créé !'); }
-    } catch(e) { alert('Erreur.'); }
+        if(data.success) { 
+            currentUser = data.client; 
+            localStorage.setItem('puff_client', JSON.stringify(currentUser)); 
+            document.getElementById('login-modal').style.display = 'none'; 
+            updateGreeting(); 
+            alert('Compte créé !'); 
+        } else {
+            alert('Erreur: ' + (data.error || 'inconnue'));
+        }
+    } catch(e) { alert('Erreur de connexion.'); }
 }
 
-function updateGreeting() { const el = document.getElementById('user-greeting'); if(el && currentUser) el.innerHTML = `👋 ${currentUser.nom}`; }
-function logout() { localStorage.removeItem('puff_client'); location.reload(); }
+function updateGreeting() { 
+    const el = document.getElementById('user-greeting'); 
+    if(el && currentUser) el.innerHTML = `👋 ${currentUser.nom}`; 
+}
+function logout() { 
+    localStorage.removeItem('puff_client'); 
+    location.reload(); 
+}
 
+// ===== ZONES & PROMOS =====
 async function loadZones() { 
-    try { const res = await fetch(`${API_URL}/zones`); allZones = await res.json(); const select = document.getElementById('zone-select'); if(select) { select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); } } catch (e) { console.error(e); } 
+    try { 
+        const res = await fetch(`${API_URL}/zones`); 
+        allZones = await res.json(); 
+        const select = document.getElementById('zone-select'); 
+        if(select) { 
+            select.innerHTML = '<option value="">-- Choisir votre zone --</option>' + allZones.map(z => `<option value="${z.id}">${z.nom} (Min: ${z.min_commande}€)</option>`).join(''); 
+        } 
+    } catch (e) { console.error(e); } 
 }
 
-function applyZone() { const zoneId = document.getElementById('zone-select').value; selectedZone = allZones.find(z => z.id == zoneId) || null; updateCartUI(); }
+function applyZone() { 
+    const zoneId = document.getElementById('zone-select').value; 
+    selectedZone = allZones.find(z => z.id == zoneId) || null; 
+    updateCartUI(); 
+}
 
 async function applyPromo() {
     const code = document.getElementById('promo-input').value.trim();
@@ -492,7 +535,6 @@ async function loadSondage() {
         document.getElementById('sondage-container').classList.remove('hidden');
         document.getElementById('sondage-question').textContent = currentSondage.question;
         
-        // Vérifier si l'utilisateur a déjà voté (localStorage)
         const hasVoted = localStorage.getItem('sondage_voted_' + currentSondage.id);
         
         const optionsContainer = document.getElementById('sondage-options');
@@ -501,12 +543,10 @@ async function loadSondage() {
         const msg = document.getElementById('sondage-msg');
         
         if (hasVoted) {
-            // Afficher les résultats
             optionsContainer.innerHTML = '';
             voteBtn.classList.add('hidden');
             await loadSondageResults(currentSondage.id);
         } else {
-            // Afficher les options
             optionsContainer.innerHTML = '';
             const options = typeof currentSondage.options === 'string' ? JSON.parse(currentSondage.options) : currentSondage.options;
             options.forEach((opt, i) => {
@@ -514,7 +554,6 @@ async function loadSondage() {
                 btn.className = 'w-full text-left p-3 rounded-xl bg-space-surface/60 border border-white/10 hover:border-nebula-cyan transition-all text-sm text-white';
                 btn.textContent = opt;
                 btn.onclick = () => {
-                    // Désélectionner les autres
                     optionsContainer.querySelectorAll('button').forEach(b => b.classList.remove('border-nebula-cyan', 'bg-nebula-cyan/10'));
                     btn.classList.add('border-nebula-cyan', 'bg-nebula-cyan/10');
                     selectedSondageOption = i;
@@ -543,12 +582,10 @@ async function submitVote() {
         const data = await res.json();
         
         if (res.ok && data.success) {
-            // Marquer comme voté dans localStorage
             localStorage.setItem('sondage_voted_' + currentSondage.id, 'true');
             document.getElementById('sondage-msg').textContent = '✅ Merci pour votre vote !';
             document.getElementById('sondage-msg').className = 'text-xs text-center mt-2 text-green-400';
             
-            // Afficher les résultats
             document.getElementById('sondage-options').innerHTML = '';
             document.getElementById('sondage-vote-btn').classList.add('hidden');
             await loadSondageResults(currentSondage.id);
@@ -597,7 +634,7 @@ async function loadSondageResults(sondageId) {
     }
 }
 
-// ===== INITIALISATION =====
+// ===== INITIALISATION FINALE (étoiles avis) =====
 document.addEventListener('DOMContentLoaded', () => {
     const starSpans = document.querySelectorAll('#star-rating span');
     if (starSpans.length > 0) {
