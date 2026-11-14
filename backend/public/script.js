@@ -326,7 +326,7 @@ async function checkPhone() {
     try {
         const res = await fetch(`${API_URL}/clients/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ telephone: phone }) });
         if (res.ok) { const data = await res.json(); currentUser = data.client; localStorage.setItem('puff_client', JSON.stringify(currentUser)); document.getElementById('login-modal').style.display = 'none'; updateGreeting(); }
-        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('phone-input-reg').value = phone; }
+        else { alert('Numéro non reconnu.'); showRegisterForm(); document.getElementById('whatsapp-input').value = phone; }
     } catch(e) { alert('Erreur serveur.'); }
 }
 
