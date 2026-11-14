@@ -73,6 +73,22 @@
         .notif-close { cursor: pointer; color: #666; font-size: 18px; }
         .notif-close:hover { color: #fff; }
     </style>
+
+    <style>
+        /* ===== FIX ZOOM MOBILE (iOS Safari) ===== */
+        /* On force la taille de police à 16px minimum pour éviter le zoom auto */
+        input, textarea, select {
+            font-size: 16px !important;
+            touch-action: manipulation;
+        }
+        
+        /* On améliore la cliquabilité des boutons sur mobile */
+        button, .btn, a[onclick] {
+            touch-action: manipulation;
+            cursor: pointer;
+        }
+    </style>
+
 </head>
 
 <!-- Bouton flottant Avis -->
@@ -278,7 +294,7 @@
             
             <input type="text" id="address-input" placeholder="Adresse" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-2 outline-none">
             <input type="text" id="whatsapp-input" placeholder="Téléphone / WhatsApp" class="w-full bg-space-bg border border-white/10 rounded-lg py-3 px-4 text-white mb-4 outline-none">
-            <button onclick="saveProfile()" class="w-full py-3 rounded-xl bg-nebula-magenta text-white font-bold mb-3">S'inscrire</button>
+            <button type="button" onclick="saveProfile()" class="w-full py-3 rounded-xl bg-nebula-magenta text-white font-bold mb-3 cursor-pointer">S'inscrire</button>
             <button onclick="backToChoice()" class="text-xs text-gray-400">Retour</button>
         </div>
     </div>
