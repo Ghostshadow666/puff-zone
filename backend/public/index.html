@@ -214,6 +214,12 @@
       </div>
 
       <div class="p-4 bg-space-surface/50 border-b border-white/10 space-y-3">
+        <!-- Choix Livraison / Retrait -->
+        <div class="flex gap-2 mb-2">
+            <button id="btn-livraison" onclick="setModeLivraison('livraison')" class="flex-1 py-2 rounded-lg bg-nebula-violet text-white text-xs font-bold transition-all active:scale-95">🚚 Livraison</button>
+            <button id="btn-retrait" onclick="setModeLivraison('retrait')" class="flex-1 py-2 rounded-lg bg-space-bg border border-white/10 text-gray-400 text-xs font-bold transition-all active:scale-95">🏠 Retrait</button>
+        </div>
+
         <select id="zone-select" onchange="applyZone()" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-nebula-cyan">
             <option value="">-- Choisir votre zone --</option>
         </select>
