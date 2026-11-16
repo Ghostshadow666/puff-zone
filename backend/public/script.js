@@ -457,7 +457,7 @@ async function checkout() {
 
     if(!currentUser || !currentUser.id) return alert("Connectez-vous.");
     if(cart.length === 0) return alert('Panier vide');
-    if(!selectedZone) return alert('Veuillez choisir une zone.');
+    if (modeLivraison === 'livraison' && !selectedZone) return alert('Veuillez choisir une zone pour la livraison.');
     
     const totalOriginal = cart.reduce((sum, item) => sum + (item.prix * item.qty), 0);
     const promoCode = window.appliedPromoCode || null;
@@ -465,7 +465,7 @@ async function checkout() {
     const btn = document.getElementById('checkout-btn'); btn.disabled = true;
 
     try {
-        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: zoneNom, mode_livraison: modeLivraison }) });
+        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: modeLivraison === 'retrait' ? null : zoneNom, mode_livraison: modeLivraison }) });
         const data = await res.json();
         if(res.ok && data.success) {
             alert('✅ Commande envoyée avec succès !');
