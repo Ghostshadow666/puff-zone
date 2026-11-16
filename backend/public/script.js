@@ -20,6 +20,7 @@ let allZones = [];
 let cart = [];
 let currentUser = JSON.parse(localStorage.getItem('puff_client')) || null;
 let selectedZone = null;
+let modeLivraison = 'livraison';
 
 // ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -291,6 +292,26 @@ function updateCartUI() {
     }
 }
 
+
+function setModeLivraison(mode) {
+    modeLivraison = mode;
+    const btnLiv = document.getElementById('btn-livraison');
+    const btnRet = document.getElementById('btn-retrait');
+    const selectZone = document.getElementById('zone-select');
+    
+    if (mode === 'livraison') {
+        if (btnLiv) btnLiv.className = 'flex-1 py-2 rounded-lg bg-nebula-violet text-white text-xs font-bold transition-all active:scale-95';
+        if (btnRet) btnRet.className = 'flex-1 py-2 rounded-lg bg-space-bg border border-white/10 text-gray-400 text-xs font-bold transition-all active:scale-95';
+        if (selectZone) selectZone.disabled = false;
+    } else {
+        if (btnLiv) btnLiv.className = 'flex-1 py-2 rounded-lg bg-space-bg border border-white/10 text-gray-400 text-xs font-bold transition-all active:scale-95';
+        if (btnRet) btnRet.className = 'flex-1 py-2 rounded-lg bg-nebula-cyan text-black text-xs font-bold transition-all active:scale-95';
+        if (selectZone) selectZone.disabled = true;
+        selectedZone = null;
+    }
+    updateCartUI();
+}
+
 function toggleCart() { 
     const drawer = document.getElementById('cart-drawer');
     const panel = document.getElementById('cart-panel');
@@ -433,7 +454,7 @@ async function checkout() {
     const btn = document.getElementById('checkout-btn'); btn.disabled = true;
 
     try {
-        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: zoneNom }) });
+        const res = await fetch(`${API_URL}/commandes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: currentUser.id, cart: cart, total: totalOriginal, promo_code: promoCode, valide_par: currentUser.nom, zone: zoneNom, mode_livraison: modeLivraison }) });
         const data = await res.json();
         if(res.ok && data.success) {
             alert('✅ Commande envoyée avec succès !');

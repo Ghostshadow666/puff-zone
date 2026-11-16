@@ -354,7 +354,15 @@ app.post('/api/saveurs', authenticateToken, isAdmin, async (req, res) => {
 app.put('/api/saveurs/:id', authenticateToken, isAdmin, async (req, res) => { 
   const { categorie_id, nom, stock } = req.body; 
   try { 
-    await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]); 
+    const oldStockInfo = await pool.query('SELECT stock FROM saveurs WHERE id=$1', [req.params.id]);
+    const oldStockValue = oldStockInfo.rows.length > 0 ? oldStockInfo.rows[0].stock : 0;
+    
+    await pool.query('UPDATE saveurs SET categorie_id=$1, nom=$2, stock=$3 WHERE id=$4', [categorie_id, nom, stock, req.params.id]);
+    
+    if (oldStockValue !== parseInt(stock)) {
+      await pool.query('INSERT INTO logs_stock (saveur_id, saveur_nom, type_mouvement, quantite_avant, quantite_apres, variation, user_nom, details) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
+        [req.params.id, nom, 'manuel', oldStockValue, parseInt(stock), parseInt(stock) - oldStockValue, req.user ? req.user.name : 'Admin', 'Modification manuelle du stock']);
+    } 
     await logAction(req.user, 'Modif Saveur', nom); 
     res.json({ success: true }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
@@ -402,7 +410,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
     return res.status(403).json({ error: "Les commandes sont actuellement fermées. Revenez pendant nos horaires d'ouverture." });
   }
  
-  const { client_id, cart, total, promo_code, valide_par, zone } = req.body; 
+  const { client_id, cart, total, promo_code, valide_par, zone, mode_livraison } = req.body; 
   const client = await pool.connect();
   
   try { 
@@ -461,7 +469,7 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
       if (p.rows.length > 0) finalTotal -= (finalTotal * (p.rows[0].pourcentage / 100)); 
     } 
 
-    const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom) VALUES ($1,$2,$3,$4,$5) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null]); 
+    const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom, mode_livraison) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null, mode_livraison || 'livraison']); 
     
     for (const item of cart) { 
       const catInfo = await client.query('SELECT s.categorie_id, c.prix_unite, c.nom as cat_nom FROM saveurs s JOIN categories c ON s.categorie_id = c.id WHERE s.id = $1', [item.id]);
@@ -469,7 +477,14 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
       await client.query('INSERT INTO commande_items (commande_id, saveur_nom, quantite, prix, categorie_nom) VALUES ($1,$2,$3,$4,$5)', 
           [cmd.rows[0].id, item.nom, item.qty, catInfo.rows[0].prix_unite, catInfo.rows[0].cat_nom]); 
           
-      await client.query('UPDATE saveurs SET stock = stock - $1 WHERE id = $2', [item.qty, item.id]); 
+      const stockBefore = await client.query('SELECT stock, nom FROM saveurs WHERE id = $1', [item.id]);
+      const stockAvant = stockBefore.rows[0].stock;
+      const saveurNom = stockBefore.rows[0].nom;
+      
+      await client.query('UPDATE saveurs SET stock = stock - $1 WHERE id = $2', [item.qty, item.id]);
+      
+      await client.query('INSERT INTO logs_stock (saveur_id, saveur_nom, type_mouvement, quantite_avant, quantite_apres, variation, user_nom, details) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
+        [item.id, saveurNom, 'commande', stockAvant, stockAvant - item.qty, -item.qty, valide_par || 'Client', 'Commande #' + cmd.rows[0].id]); 
     } 
 
     await client.query('COMMIT');
@@ -500,7 +515,14 @@ app.delete('/api/commandes/:id', authenticateToken, isAdmin, async (req, res) =>
     await client.query('BEGIN');
     const items = await client.query('SELECT saveur_nom, quantite FROM commande_items WHERE commande_id = $1', [req.params.id]);
     for (const item of items.rows) {
-      await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]);
+      const stockBeforeDelete = await client.query('SELECT stock, id FROM saveurs WHERE nom = $1', [item.saveur_nom]);
+      if (stockBeforeDelete.rows.length > 0) {
+        const sAvant = stockBeforeDelete.rows[0].stock;
+        const sId = stockBeforeDelete.rows[0].id;
+        await client.query('UPDATE saveurs SET stock = stock + $1 WHERE nom = $2', [item.quantite, item.saveur_nom]);
+        await client.query('INSERT INTO logs_stock (saveur_id, saveur_nom, type_mouvement, quantite_avant, quantite_apres, variation, user_nom, details) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
+          [sId, item.saveur_nom, 'annulation', sAvant, sAvant + item.quantite, item.quantite, req.user ? req.user.name : 'Admin', 'Suppression Cmd #' + req.params.id]);
+      }
     }
     await client.query('DELETE FROM commande_items WHERE commande_id = $1', [req.params.id]);
     await client.query('DELETE FROM commandes WHERE id = $1', [req.params.id]);
