@@ -63,6 +63,7 @@ function cleanPhoneForWhatsApp(phone) {
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-clients', this)">Clients</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-stats', this)">Stats</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-stock', this)">Stock</button>
+                <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs-stock', this)">📊 Logs Stock</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-ventes', this)">Ventes</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-logs', this)">Logs</button>
                 <button class="nav-tab glass-panel px-4 py-2 rounded-xl text-xs font-space font-bold text-gray-400 hover:text-white transition-all" onclick="switchTab('tab-settings', this)">Paramètres</button>
@@ -546,6 +547,61 @@ async function editStockInline(flavorId, badgeEl) {
 }
 // =============================
 
+
+// ===== LOGS STOCK =====
+async function loadLogsStock() {
+    const tbody = document.getElementById('logsStockBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-gray-500"><i data-lucide="loader" class="w-5 h-5 animate-spin inline"></i> Chargement...</td></tr>';
+    
+    try {
+        const type = document.getElementById('logs-stock-type')?.value || 'all';
+        const res = await fetch(`${API_URL}/admin/logs-stock?type_mouvement=${type}`);
+        if (!res.ok) throw new Error('Erreur API');
+        const logs = await res.json();
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-gray-500 italic">Aucun mouvement enregistré.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(log => {
+            // Badge de type
+            let typeBadge = '';
+            if (log.type_mouvement === 'commande') typeBadge = '<span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold">📦 Commande</span>';
+            else if (log.type_mouvement === 'annulation') typeBadge = '<span class="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] font-bold">↩️ Annulation</span>';
+            else if (log.type_mouvement === 'manuel') typeBadge = '<span class="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold">✏️ Manuel</span>';
+            
+            // Variation colorée
+            const variation = log.variation;
+            const varColor = variation > 0 ? 'text-green-400' : 'text-red-400';
+            const varSign = variation > 0 ? '+' : '';
+            
+            // Date formatée
+            const date = new Date(log.date_creation).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+            
+            return `
+            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td class="p-3 text-gray-400 text-[10px]">${date}</td>
+                <td class="p-3 text-white font-bold">${escapeHTML(log.saveur_nom || 'Saveur supprimée')}</td>
+                <td class="p-3">${typeBadge}</td>
+                <td class="p-3 text-center font-bold ${varColor}">${varSign}${variation}</td>
+                <td class="p-3 text-center text-gray-500">${log.quantite_avant}</td>
+                <td class="p-3 text-center text-white font-bold">${log.quantite_apres}</td>
+                <td class="p-3 text-gray-400">${escapeHTML(log.user_nom || 'Système')}</td>
+                <td class="p-3 text-gray-500 text-[10px]">${escapeHTML(log.details || '-')}</td>
+            </tr>`;
+        }).join('');
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center p-6 text-red-400">Erreur de chargement.</td></tr>';
+    }
+}
+
 function switchTab(tabId, btn) {
             document.querySelectorAll('.nav-tab').forEach(b => { 
                 b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 
@@ -574,6 +630,7 @@ function switchTab(tabId, btn) {
             if(tabId === 'tab-logs') loadLogs(); 
             if(tabId === 'tab-securite') { loadSecurity(); loadMaintenance(); }
             if(tabId === 'tab-avis') { loadAvis(); markAvisAsSeen(); }
+            if(tabId === 'tab-logs-stock') loadLogsStock();
             if(tabId === 'tab-sondages') loadSondages();
         }
         function logoutAdmin() { localStorage.removeItem('puff_staff'); localStorage.removeItem('token'); window.location.href = '/admin-login.html'; }

@@ -954,5 +954,34 @@ app.delete('/api/client/notifications/:client_id/clear', async (req, res) => {
 });
 // =======================================
 
+
+// ===== ROUTES LOGS STOCK =====
+app.get('/api/admin/logs-stock', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { saveur_id, type_mouvement } = req.query;
+    let query = 'SELECT * FROM logs_stock';
+    const params = [];
+    const conditions = [];
+    
+    if (saveur_id) {
+      params.push(saveur_id);
+      conditions.push(`saveur_id = ${params.length}`);
+    }
+    if (type_mouvement && type_mouvement !== 'all') {
+      params.push(type_mouvement);
+      conditions.push(`type_mouvement = ${params.length}`);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY date_creation DESC LIMIT 500';
+    
+    const r = await pool.query(query, params);
+    res.json(r.rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Erreur' }); }
+});
+// ========================================
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
