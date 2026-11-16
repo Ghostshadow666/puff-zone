@@ -202,6 +202,7 @@ function updateCartUI() {
         return; 
     }
     
+    // --- CALCUL PAR CATÉGORIE (LOTS MIXTES) ---
     const itemsByCategory = {};
     cart.forEach(item => {
         const catName = item.categorie;
@@ -279,14 +280,24 @@ function updateCartUI() {
     const zoneMsg = document.getElementById('zone-msg');
     
     if(checkoutBtn) {
-        if (!selectedZone) {
-            checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
+        // SI RETRAIT : bouton actif, pas besoin de zone
+        if (modeLivraison === 'retrait') {
+            checkoutBtn.disabled = false;
+            checkoutBtn.style.opacity = '1';
+            if (zoneMsg) zoneMsg.innerHTML = "🏠 Retrait à domicile (pas de frais).";
+        } 
+        // SINON : vérification normale de la zone
+        else if (!selectedZone) {
+            checkoutBtn.disabled = true; 
+            checkoutBtn.style.opacity = '0.5';
             if(zoneMsg) { zoneMsg.innerHTML = "⚠️ Choisissez votre zone."; }
         } else if (total < selectedZone.min_commande) {
-            checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5';
+            checkoutBtn.disabled = true; 
+            checkoutBtn.style.opacity = '0.5';
             if(zoneMsg) { zoneMsg.innerHTML = `⚠️ Min. ${selectedZone.min_commande}€ pour ${selectedZone.nom}.`; }
         } else {
-            checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1';
+            checkoutBtn.disabled = false; 
+            checkoutBtn.style.opacity = '1';
             if(zoneMsg) { zoneMsg.innerHTML = ""; }
         }
     }
