@@ -872,10 +872,11 @@ function renderGroupedCommandeCard(orders) {
 
         function renderCommandeCard(cmd, isTerminee) {
     const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
-    const tel = (cmd.telephone || cmd.whatsapp || '').replace(/\D/g, '');
+    const tel = (cmd.telephone || cmd.whatsapp || '').replace(/\\D/g, '');
     const adresse = cmd.adresse || '';
     const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
     const dateFormatted = new Date(cmd.date_commande).toLocaleDateString('fr-FR');
+    const isRetrait = cmd.mode_livraison === 'retrait';
 
     if (isTerminee) {
         return `<div class="p-2 mb-1.5 bg-green-500/5 rounded border border-green-500/20 flex justify-between items-center">
@@ -928,8 +929,8 @@ function renderGroupedCommandeCard(orders) {
         <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
             <div class="text-white font-bold truncate">${escapeHTML(cmd.client_nom)}</div>
             <div class="text-gray-400 truncate">📞 ${cmd.telephone}</div>
-            ${firstOrder.mode_livraison === 'retrait' ? '' : (adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : '')}
-            ${cmd.mode_livraison === 'retrait' ? `<div class="text-yellow-400 font-bold mt-1 text-[10px]">🏠 RETRAIT</div>` : (cmd.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(cmd.zone_nom)}</div>` : '')}
+            ${isRetrait ? `<div class="text-yellow-400 font-bold mt-1">🏠 RETRAIT À DOMICILE</div>` : (adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : '')}
+            ${!isRetrait && cmd.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(cmd.zone_nom)}</div>` : ''}
         </div>
 
         <div class="px-2.5 py-0.5 flex justify-between text-[9px] text-nebula-violet uppercase tracking-wider">
@@ -945,8 +946,8 @@ function renderGroupedCommandeCard(orders) {
             <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="updateStatut(${cmd.id}, this.value)">${optionsStatut}</select>
             <select class="w-full bg-space-bg border border-white/10 rounded text-[10px] p-1 text-white outline-none focus:border-nebula-cyan" onchange="assignLivreur(${cmd.id}, this.value)">${optionsLivreur}</select>
             <div class="flex gap-1">
-                ${tel ? `<a href="https://wa.me/${tel.replace(/\D/g, '')}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WA</a>` : ''}
-                ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+                ${tel ? `<a href="https://wa.me/${tel.replace(/\\D/g, '')}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WA</a>` : ''}
+                ${!isRetrait && adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
                 <button onclick="deleteCommande(${cmd.id})" class="px-2 py-1 bg-red-500/15 text-red-400 rounded border border-red-500/30 text-[9px] font-bold">🗑</button>
             </div>
         </div>
