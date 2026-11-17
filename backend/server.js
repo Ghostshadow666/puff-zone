@@ -983,5 +983,55 @@ app.get('/api/admin/logs-stock', authenticateToken, isAdmin, async (req, res) =>
 });
 // ========================================
 
+
+// ===== ROUTE ARCHIVE & PURGE VENTES =====
+app.post('/api/admin/archive-ventes', authenticateToken, isAdmin, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Calculer le CA total et le nombre de commandes
+    const totalRes = await client.query("SELECT COALESCE(SUM(total), 0) as ca, COUNT(id) as nb FROM commandes WHERE statut = 'livre'");
+    const totalCA = parseFloat(totalRes.rows[0].ca);
+    const nbCommandes = parseInt(totalRes.rows[0].nb);
+    
+    // 2. Calculer le Top 5 des saveurs
+    const topRes = await client.query("SELECT saveur_nom, SUM(quantite) as total_qte FROM commande_items GROUP BY saveur_nom ORDER BY total_qte DESC LIMIT 5");
+    const topSaveurs = topRes.rows;
+    
+    // 3. Sauvegarder dans archives_ventes
+    await client.query(
+      "INSERT INTO archives_ventes (total_ca, nb_commandes, top_saveurs, details) VALUES ($1, $2, $3, $4)",
+      [totalCA, nbCommandes, JSON.stringify(topSaveurs), 'Purge manuelle par ' + req.user.name]
+    );
+    
+    // 4. Supprimer les commandes livrées (et leurs items)
+    await client.query("DELETE FROM commande_items WHERE commande_id IN (SELECT id FROM commandes WHERE statut = 'livre')");
+    await client.query("DELETE FROM commandes WHERE statut = 'livre'");
+    
+    await client.query('COMMIT');
+    await logAction(req.user, 'Archivage Ventes', `CA: ${totalCA}€ - ${nbCommandes} commandes`);
+    
+    res.json({ success: true, message: 'Ventes archivées et purgées.', totalCA, nbCommandes });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error(e);
+    res.status(500).json({ error: 'Erreur lors de l\'archivage.' });
+  } finally {
+    client.release();
+  }
+});
+// ========================================
+
+
+// ===== ROUTE LISTE ARCHIVES =====
+app.get('/api/admin/archives', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM archives_ventes ORDER BY date_archive DESC');
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: 'Erreur' }); }
+});
+// ================================
+
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Serveur sur port ${PORT}`));
