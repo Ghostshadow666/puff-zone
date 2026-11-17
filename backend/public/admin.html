@@ -762,7 +762,66 @@ function switchTab(tabId, btn) {
         document.addEventListener('DOMContentLoaded', () => {
             checkAvisNotif(); loadDrivers(); initMap(); loadZones(); loadUsers(); loadCatalogue(); loadVentes(); checkNotifications(); });
 
-        async function loadDrivers() { try { const res = await fetch(`${API_URL}/livreurs`); const d = await res.json(); if(!Array.isArray(d)) return; allLivreurs = d; const el = document.getElementById('driverList'); if(d.length === 0) { el.innerHTML = 'Aucun livreur.'; return; } el.innerHTML = d.map(x => `<div class="p-4 mb-3 bg-space-surface rounded-xl border border-white/10 flex justify-between items-center"><div><div class="font-bold text-white">🛵 ${x.name}</div><div class="text-xs text-gray-400 mt-1">📦 Livraisons: ${x.total_livraisons} | 💰 CA: ${parseFloat(x.total_ca).toFixed(2)} €</div></div><button class="px-3 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs" onclick="deleteDriver(${x.id})">Supprimer</button></div>`).join(''); } catch(e) { console.error(e); } }
+        async function loadDrivers() { 
+    try { 
+        const res = await fetch(`${API_URL}/livreurs`); 
+        const d = await res.json(); 
+        if(!Array.isArray(d)) return; 
+        allLivreurs = d; 
+        const el = document.getElementById('driverList'); 
+        
+        if(d.length === 0) { 
+            el.innerHTML = '<div class="text-center text-gray-500 italic py-4">Aucun livreur enregistré.</div>'; 
+            return; 
+        } 
+
+        // On sépare les livreurs actifs (qui ont des livraisons) des inactifs
+        const actifs = d.filter(x => parseInt(x.total_livraisons) > 0);
+        const inactifs = d.filter(x => parseInt(x.total_livraisons) === 0);
+
+        let html = '';
+
+        // Section Livreurs Actifs
+        if (actifs.length > 0) {
+            html += `<h3 class="text-xs font-bold text-nebula-cyan uppercase tracking-wider mb-2 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Livreurs Actifs (${actifs.length})</h3>`;
+            html += actifs.map(x => renderDriverCard(x, true)).join('');
+        }
+
+        // Section Livreurs Inactifs
+        if (inactifs.length > 0) {
+            html += `<h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-4 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4"></i> Livreurs Inactifs (${inactifs.length})</h3>`;
+            html += inactifs.map(x => renderDriverCard(x, false)).join('');
+        }
+
+        el.innerHTML = html;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch(e) { console.error(e); } 
+}
+
+function renderDriverCard(x, isActive) {
+    const borderClass = isActive ? 'border-green-500/30' : 'border-white/10';
+    const badgeClass = isActive ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400';
+    const badgeText = isActive ? 'ACTIF' : 'INACTIF';
+    
+    return `<div class="p-3 mb-2 bg-space-surface rounded-xl border ${borderClass} flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <div class="flex items-center gap-3 flex-1">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-nebula-violet to-nebula-cyan flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                ${(x.name || '?').charAt(0).toUpperCase()}
+            </div>
+            <div class="min-w-0">
+                <div class="text-white font-bold text-sm flex items-center gap-2 flex-wrap">
+                    ${escapeHTML(x.name)}
+                    <span class="${badgeClass} px-1.5 py-0.5 rounded text-[9px] font-bold">${badgeText}</span>
+                </div>
+                <div class="text-[11px] text-gray-400 flex items-center gap-3 mt-0.5 flex-wrap">
+                    <span>📦 ${x.total_livraisons} livraisons</span>
+                    <span>💰 ${parseFloat(x.total_ca).toFixed(2)} €</span>
+                </div>
+            </div>
+        </div>
+        <button class="px-2.5 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-[11px] font-bold hover:bg-red-500/20 transition-colors flex-shrink-0" onclick="deleteDriver(${x.id})">Supprimer</button>
+    </div>`;
+}
         async function deleteDriver(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/livreurs/${id}`, { method: 'DELETE' }); loadDrivers(); } }
         async function loadCommandes() {
             try {
