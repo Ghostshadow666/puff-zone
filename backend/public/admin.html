@@ -222,6 +222,14 @@ function cleanPhoneForWhatsApp(phone) {
                     <div class="text-xs font-bold text-gray-400 uppercase">Chiffre d'Affaires Global</div>
                     <div id="totalCA" class="text-3xl font-extrabold text-green-400 mt-2">0.00 €</div>
                 </div>
+
+                <!-- NOUVEAU : Resume des archives -->
+                <div id="ventes-archives-summary" class="mb-6 hidden">
+                    <h3 class="text-sm font-bold text-nebula-cyan uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <i data-lucide="archive" class="w-4 h-4"></i> Resume des archives
+                    </h3>
+                    <div class="flex flex-wrap gap-2" id="ventes-archives-list"></div>
+                </div>
                 
                 <div id="ventesList" class="space-y-2 max-h-[500px] overflow-y-auto pr-2">Chargement...</div>
                 
@@ -1510,7 +1518,36 @@ async function loadVentes() {
         document.getElementById('totalCA').innerText = data.totalCA.toFixed(2) + ' €';
         currentVentePage = 1;
         renderVentesPage();
+        
+        // NOUVEAU : Charger le resume des archives
+        loadVentesArchivesSummary();
     } catch(e) { document.getElementById('ventesList').innerHTML = 'Erreur.'; }
+}
+
+async function loadVentesArchivesSummary() {
+    const container = document.getElementById('ventes-archives-summary');
+    const list = document.getElementById('ventes-archives-list');
+    if (!container || !list) return;
+    
+    try {
+        const res = await fetch(`${API_URL}/admin/archives`);
+        const archives = await res.json();
+        
+        if (archives.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+        
+        container.classList.remove('hidden');
+        list.innerHTML = archives.map(a => {
+            const date = new Date(a.date_archive).toLocaleDateString('fr-FR');
+            return `<div class="bg-space-surface rounded-lg border border-white/10 px-3 py-2 text-xs">
+                <div class="text-gray-400">${date}</div>
+                <div class="text-white font-bold">${parseFloat(a.total_ca).toFixed(2)}€</div>
+                <div class="text-[10px] text-gray-500">${a.nb_commandes} commandes</div>
+            </div>`;
+        }).join('');
+    } catch(e) { console.error(e); }
 }
 
 function renderVentesPage() {
