@@ -1680,13 +1680,22 @@ async function loadArchives() {
         
         el.innerHTML = archives.map(a => {
             const date = new Date(a.date_archive).toLocaleString('fr-FR');
+            
             let topHtml = '';
             if (a.top_saveurs && Array.isArray(a.top_saveurs)) {
                 topHtml = a.top_saveurs.map((t, idx) => `<div class="text-[10px] text-gray-400">${idx+1}. ${t.saveur_nom} (${t.total_qte} ventes)</div>`).join('');
             }
+            
+            let livreursHtml = '';
+            if (a.stats_livreurs && Array.isArray(a.stats_livreurs) && a.stats_livreurs.length > 0) {
+                livreursHtml = a.stats_livreurs.map(l => `<div class="text-[10px] text-gray-400 flex justify-between"><span>🛵 ${l.name}</span><span>${l.nb_livraisons} livraisons - ${parseFloat(l.total_ca).toFixed(2)}€</span></div>`).join('');
+            } else {
+                livreursHtml = '<div class="text-[10px] text-gray-500 italic">Aucune livraison enregistrée.</div>';
+            }
+            
             return `
             <div class="bg-space-surface rounded-xl border border-white/10 p-4">
-                <div class="flex justify-between items-start mb-2">
+                <div class="flex justify-between items-start mb-3">
                     <div>
                         <div class="text-white font-bold">Archive du ${date}</div>
                         <div class="text-[10px] text-gray-500">${a.details || ''}</div>
@@ -1696,9 +1705,16 @@ async function loadArchives() {
                         <div class="text-[10px] text-gray-400">${a.nb_commandes} commandes</div>
                     </div>
                 </div>
-                <div class="border-t border-white/5 pt-2 mt-2">
-                    <div class="text-[10px] font-bold text-nebula-cyan uppercase mb-1">Top 5 Saveurs</div>
-                    ${topHtml}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-white/5 pt-3">
+                    <div>
+                        <div class="text-[10px] font-bold text-nebula-cyan uppercase mb-1">Top 5 Saveurs</div>
+                        ${topHtml}
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-nebula-magenta uppercase mb-1">Stats Livreurs</div>
+                        ${livreursHtml}
+                    </div>
                 </div>
             </div>`;
         }).join('');

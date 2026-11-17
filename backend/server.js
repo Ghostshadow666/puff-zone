@@ -999,13 +999,25 @@ app.post('/api/admin/archive-ventes', authenticateToken, isAdmin, async (req, re
     const topRes = await client.query("SELECT saveur_nom, SUM(quantite) as total_qte FROM commande_items GROUP BY saveur_nom ORDER BY total_qte DESC LIMIT 5");
     const topSaveurs = topRes.rows;
     
-    // 3. Sauvegarder dans archives_ventes
+    // 3. Calculer les stats par livreur
+    const livreursRes = await client.query(`
+      SELECT u.name, COUNT(c.id) as nb_livraisons, COALESCE(SUM(c.total), 0) as total_ca
+      FROM utilisateurs u
+      LEFT JOIN commandes c ON c.livreur_id = u.id AND c.statut = 'livre'
+      WHERE u.role = 'livreur'
+      GROUP BY u.id, u.name
+      HAVING COUNT(c.id) > 0
+      ORDER BY nb_livraisons DESC
+    `);
+    const statsLivreurs = livreursRes.rows;
+    
+    // 4. Sauvegarder dans archives_ventes (avec les stats livreurs)
     await client.query(
-      "INSERT INTO archives_ventes (total_ca, nb_commandes, top_saveurs, details) VALUES ($1, $2, $3, $4)",
-      [totalCA, nbCommandes, JSON.stringify(topSaveurs), 'Purge manuelle par ' + req.user.name]
+      "INSERT INTO archives_ventes (total_ca, nb_commandes, top_saveurs, stats_livreurs, details) VALUES ($1, $2, $3, $4, $5)",
+      [totalCA, nbCommandes, JSON.stringify(topSaveurs), JSON.stringify(statsLivreurs), 'Purge manuelle par ' + req.user.name]
     );
     
-    // 4. Supprimer les commandes livrées (et leurs items)
+    // 5. Supprimer les commandes livrées (et leurs items)
     await client.query("DELETE FROM commande_items WHERE commande_id IN (SELECT id FROM commandes WHERE statut = 'livre')");
     await client.query("DELETE FROM commandes WHERE statut = 'livre'");
     
