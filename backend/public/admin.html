@@ -773,11 +773,12 @@ function switchTab(tabId, btn) {
 function renderGroupedCommandeCard(orders) {
     const firstOrder = orders[0];
     const totalGrouped = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
-    const tel = (firstOrder.telephone || firstOrder.whatsapp || '').replace(/\D/g, '');
+    const tel = (firstOrder.telephone || firstOrder.whatsapp || '').replace(/\\D/g, '');
     const adresse = firstOrder.adresse || '';
     const mapLink = adresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresse)}` : '#';
     const statuts = { 'en_attente': 'En attente', 'en_preparation': 'Preparation', 'en_livraison': 'En livraison', 'livre': 'Livre' };
     const dateFormatted = new Date(firstOrder.date_commande).toLocaleDateString('fr-FR');
+    const isRetrait = firstOrder.mode_livraison === 'retrait';
 
     let ordersDetailHtml = '';
     orders.forEach(cmd => {
@@ -833,8 +834,8 @@ function renderGroupedCommandeCard(orders) {
         <div class="px-2.5 py-1 text-[10px] border-b border-dashed border-white/15">
             <div class="text-white font-bold truncate">${escapeHTML(firstOrder.client_nom)}</div>
             <div class="text-gray-400 truncate">📞 ${firstOrder.telephone}</div>
-            ${cmd.mode_livraison === 'retrait' ? '' : (adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : '')}
-            ${firstOrder.mode_livraison === 'retrait' ? `<div class="text-yellow-400 font-bold mt-1 text-[10px]">🏠 RETRAIT</div>` : (firstOrder.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(firstOrder.zone_nom)}</div>` : '')}
+            ${isRetrait ? `<div class="text-yellow-400 font-bold mt-1">🏠 RETRAIT À DOMICILE</div>` : (adresse ? `<div class="text-gray-500 truncate">📍 ${escapeHTML(adresse)}</div>` : '')}
+            ${!isRetrait && firstOrder.zone_nom ? `<div class="text-green-400 truncate">Zone: ${escapeHTML(firstOrder.zone_nom)}</div>` : ''}
         </div>
 
         <div class="px-2.5 py-1 max-h-56 overflow-y-auto">
@@ -843,8 +844,8 @@ function renderGroupedCommandeCard(orders) {
         ${assignLivreurSelect ? `<div class="px-2 pb-1">${assignLivreurSelect}</div>` : ''}
 
         <div class="px-2 py-1.5 bg-black/40 border-t border-dashed border-white/15 flex gap-1">
-            ${tel ? `<a href="https://wa.me/${tel.replace(/\D/g, '')}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
-            ${adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
+            ${tel ? `<a href="https://wa.me/${tel.replace(/\\D/g, '')}" target="_blank" class="flex-1 py-1 rounded bg-green-500/15 text-green-400 border border-green-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i> WhatsApp</a>` : ''}
+            ${!isRetrait && adresse ? `<a href="${mapLink}" target="_blank" class="flex-1 py-1 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[9px] font-bold flex items-center justify-center gap-1"><i data-lucide="map" class="w-3 h-3"></i> Maps</a>` : ''}
         </div>
     </div>`;
 }
