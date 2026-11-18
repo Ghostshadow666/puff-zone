@@ -837,7 +837,7 @@ app.post('/api/promo/check', async (req, res) => {
     const r = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [code]); 
     if (r.rows.length === 0) return res.status(404).json({ error: 'Invalide' }); 
     const promo = r.rows[0];
-    res.json({ success: true, pourcentage: promo.pourcentage, categorie_id: promo.categorie_id, image_url: promo.image_url }); 
+    res.json({ success: true, pourcentage: promo.pourcentage, categorie_id: promo.categorie_id, image_url: promo.image_url, quantite_min: promo.quantite_min }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
@@ -849,13 +849,28 @@ app.get('/api/promo', authenticateToken, isAdmin, async (req, res) => {
 });
 
 app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => { 
-  const { code, pourcentage, categorie_id, image_url } = req.body; 
+  const { code, pourcentage, categorie_id, image_url, quantite_min } = req.body; 
   try { 
-    const r = await pool.query('INSERT INTO codes_promo (code, pourcentage, categorie_id, image_url) VALUES ($1, $2, $3, $4) RETURNING *', [code.toUpperCase(), pourcentage, categorie_id || null, image_url || null]); 
+    const r = await pool.query('INSERT INTO codes_promo (code, pourcentage, categorie_id, image_url, quantite_min) VALUES ($1, $2, $3, $4, $5) RETURNING *', [code.toUpperCase(), pourcentage, categorie_id || null, image_url || null, quantite_min || null]); 
     await logAction(req.user, 'Creation Promo', code); 
     res.json(r.rows[0]); 
   } catch (e) { console.error(e); res.status(500).json({ error: "Existe déjà" }); } 
 });
+
+
+// ===== MODIFICATION PROMO =====
+app.put('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => {
+  const { code, pourcentage, categorie_id, image_url, quantite_min } = req.body;
+  try {
+    await pool.query(
+      'UPDATE codes_promo SET code = $1, pourcentage = $2, categorie_id = $3, image_url = $4, quantite_min = $5 WHERE id = $6',
+      [code.toUpperCase(), pourcentage, categorie_id || null, image_url || null, quantite_min || null, req.params.id]
+    );
+    await logAction(req.user, 'Modification Promo', code);
+    res.json({ success: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Erreur' }); }
+});
+// ==============================
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => { 
   try { 

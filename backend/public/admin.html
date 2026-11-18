@@ -125,8 +125,9 @@ function cleanPhoneForWhatsApp(phone) {
         <div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
         <div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div><label class="text-xs font-bold text-gray-400 block mb-1">Catégorie (optionnel)</label><select id="promoCategorie" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"><option value="">Toutes les catégories</option></select></div>
+        <div><label class="text-xs font-bold text-gray-400 block mb-1">Quantité minimum (optionnel)</label><input type="number" id="promoQuantiteMin" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" placeholder="Ex: 10" min="1"></div>
         <div><label class="text-xs font-bold text-gray-400 block mb-1">Image promo (optionnel)</label><input type="file" id="promoImage" accept="image/*" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"></div>
     </div>
     <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button>
@@ -1267,12 +1268,61 @@ function openDuplicatesModal() {
     } catch(e) { alert('Erreur.'); } 
 }
         
-        async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
+        async function loadPromos() { 
+    try { 
+        const [resPromos, resCats] = await Promise.all([fetch(`${API_URL}/promo`), fetch(`${API_URL}/categories`)]);
+        const promos = await resPromos.json(); 
+        const cats = await resCats.json();
+        
+        document.getElementById('promoList').innerHTML = promos.map(p => {
+            const cat = cats.find(c => c.id === p.categorie_id);
+            const catName = cat ? cat.nom : 'Toutes les catégories';
+            const condText = p.quantite_min ? ` (min. ${p.quantite_min} unités)` : '';
+            
+            return `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                <div class="flex-1">
+                    <div class="text-white font-bold text-sm flex items-center gap-2">
+                        🏷️ ${p.code}
+                        <span class="bg-nebula-cyan/20 text-nebula-cyan px-2 py-0.5 rounded text-[10px] font-bold">-${p.pourcentage}%</span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        📦 ${catName}${condText}
+                    </div>
+                    ${p.image_url ? `<img src="${p.image_url}" class="w-16 h-16 object-cover rounded mt-2 border border-white/10">` : ''}
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold hover:bg-blue-500/30" onclick="editPromo(${p.id})">✏️ Modifier</button>
+                    <button class="px-3 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold hover:bg-red-500/30" onclick="deletePromo(${p.id})">🗑️</button>
+                </div>
+            </div>`;
+        }).join(''); 
+    } catch (e) { console.error(e); } 
+}
+
+async function editPromo(id) {
+    const res = await fetch(`${API_URL}/promo`);
+    const promos = await res.json();
+    const promo = promos.find(p => p.id === id);
+    if (!promo) return;
+    
+    document.getElementById('promoCode').value = promo.code;
+    document.getElementById('promoPct').value = promo.pourcentage;
+    document.getElementById('promoCategorie').value = promo.categorie_id || '';
+    document.getElementById('promoQuantiteMin').value = promo.quantite_min || '';
+    
+    // On stocke l'ID pour la modification
+    document.getElementById('addPromoForm').dataset.editId = id;
+    document.querySelector('#addPromoForm button[type="submit"]').textContent = 'Modifier';
+    
+    // Scroll vers le formulaire
+    document.getElementById('addPromoForm').scrollIntoView({ behavior: 'smooth' });
+}
         document.getElementById('addPromoForm').addEventListener('submit', async (e) => { 
     e.preventDefault(); 
     const code = document.getElementById('promoCode').value;
     const pourcentage = parseInt(document.getElementById('promoPct').value);
     const categorie_id = document.getElementById('promoCategorie').value || null;
+    const quantite_min = parseInt(document.getElementById('promoQuantiteMin').value) || null;
     const imageFile = document.getElementById('promoImage').files[0];
     
     let image_url = null;
@@ -1287,7 +1337,7 @@ function openDuplicatesModal() {
     await fetch(`${API_URL}/promo`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ code, pourcentage, categorie_id, image_url }) 
+        body: JSON.stringify({ code, pourcentage, categorie_id, image_url, quantite_min }) 
     }); 
     document.getElementById('addPromoForm').reset(); 
     loadPromos(); 
