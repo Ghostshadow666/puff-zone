@@ -41,6 +41,38 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===== CHARGEMENT DES DONNÉES =====
+
+// ===== AFFICHAGE PUB PROMO =====
+async function loadActivePromo() {
+    try {
+        const res = await fetch(`${API_URL}/promo/public`);
+        const promos = await res.json();
+        
+        // On cherche la dernière promo active avec une image
+        const promoWithImage = promos.find(p => p.image_url);
+        
+        if (promoWithImage) {
+            const container = document.getElementById('promo-image-container');
+            const img = document.getElementById('promo-image');
+            const text = document.getElementById('promo-image-text');
+            
+            if (container && img && text) {
+                img.src = promoWithImage.image_url;
+                text.textContent = `-${promoWithImage.pourcentage}% avec le code ${promoWithImage.code}`;
+                container.classList.add('active');
+            }
+        }
+    } catch(e) { console.error('Erreur promo:', e); }
+}
+
+function openPromoDetails() {
+    // Optionnel : ouvrir une modale avec les détails
+    // Pour l'instant, on ne fait rien (ou on pourrait rediriger vers le panier)
+    const cartBtn = document.getElementById('cart-drawer');
+    if (cartBtn) toggleCart();
+}
+// ===============================
+
 async function loadSettings() {
     try {
         const res = await fetch(`${API_URL}/settings`);

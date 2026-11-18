@@ -79,6 +79,31 @@
         cursor: pointer;
     }
   </style>
+<style>
+    /* Style pour l'affiche promo (pub permanente) */
+    #promo-image-container {
+        display: none; /* Masqué par défaut, affiché si promo active */
+        filter: drop-shadow(0 0 20px rgba(76, 201, 240, 0.4));
+    }
+    #promo-image-container.active {
+        display: block;
+    }
+    #promo-image {
+        transition: transform 0.3s ease;
+    }
+    #promo-image-container:hover #promo-image {
+        transform: scale(1.02);
+    }
+    /* Sur mobile, on réduit la taille pour ne pas gêner */
+    @media (max-width: 768px) {
+        #promo-image-container {
+            max-width: 120px;
+            top: auto;
+            bottom: 20px;
+            right: 10px;
+        }
+    }
+</style>
 </head>
 
 <body class="selection:bg-nebula-violet selection:text-white relative">
@@ -186,7 +211,7 @@
   <!-- CATALOGUE -->
   <section id="shop" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
     <!-- Image Promo (affichee si code promo avec image) -->
-    <div id="promo-image-container" class="hidden fixed top-32 right-4 z-30 max-w-[200px]">
+    <div id="promo-image-container" class="fixed top-32 right-4 z-30 w-full max-w-[200px] md:max-w-[250px] transition-all duration-500 hover:scale-105 cursor-pointer" onclick="openPromoDetails()">
         <img id="promo-image" src="" alt="Promo" class="w-full rounded-2xl border-2 border-nebula-cyan shadow-[0_0_30px_rgba(76,201,240,0.5)]">
         <div id="promo-image-text" class="mt-2 text-center text-xs font-bold text-nebula-cyan"></div>
     </div>
