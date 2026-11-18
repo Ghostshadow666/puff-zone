@@ -488,15 +488,53 @@ async function applyPromo() {
     try {
         const res = await fetch(`${API_URL}/promo/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: code }) });
         const data = await res.json();
-        if (data.success) {
-            window.appliedPromoCode = code; window.appliedPromoPct = data.pourcentage;
-            msg.innerHTML = `✅ Code appliqué : -${data.pourcentage}%`; msg.style.color = "#22C55E";
-            if (typeof updateCartUI === "function") updateCartUI();
-        } else {
+        
+        if (!data.success) {
             window.appliedPromoCode = null; window.appliedPromoPct = 0;
             msg.innerHTML = `❌ ${data.error || 'Code invalide'}`; msg.style.color = "#EF4444";
             if (typeof updateCartUI === "function") updateCartUI();
+            return;
         }
+
+        // VÉRIFICATION DE LA CONDITION DE QUANTITÉ
+        if (data.categorie_id && data.quantite_min) {
+            const cat = allCategories.find(c => c.id === data.categorie_id);
+            const catName = cat ? cat.nom : '';
+            const catItems = cart.filter(item => item.categorie === catName);
+            const totalQty = catItems.reduce((sum, item) => sum + item.qty, 0);
+            
+            if (totalQty < data.quantite_min) {
+                msg.innerHTML = `⚠️ Ajoutez ${data.quantite_min - totalQty} unités de ${catName} pour bénéficier de -${data.pourcentage}%`;
+                msg.style.color = "#F59E0B";
+                window.appliedPromoCode = null;
+                window.appliedPromoPct = 0;
+                window.appliedPromoCategorie = null;
+                window.appliedPromoQuantiteMin = null;
+                updateCartUI();
+                return;
+            }
+        }
+
+        // Application de la promo
+        window.appliedPromoCode = code; 
+        window.appliedPromoPct = data.pourcentage;
+        window.appliedPromoCategorie = data.categorie_id;
+        window.appliedPromoQuantiteMin = data.quantite_min;
+        msg.innerHTML = `✅ Code appliqué : -${data.pourcentage}%`; msg.style.color = "#22C55E";
+        
+        // Afficher l'image promo si elle existe
+        const imgContainer = document.getElementById('promo-image-container');
+        const img = document.getElementById('promo-image');
+        const imgText = document.getElementById('promo-image-text');
+        if (data.image_url && imgContainer && img) {
+            img.src = data.image_url;
+            imgText.textContent = `-${data.pourcentage}% avec le code ${code}`;
+            imgContainer.classList.add('active');
+            imgContainer.classList.remove('hidden');
+            imgContainer.style.display = 'block';
+        }
+        
+        if (typeof updateCartUI === "function") updateCartUI();
     } catch (e) { msg.textContent = "Erreur"; }
 }
 
