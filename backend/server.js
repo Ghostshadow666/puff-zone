@@ -830,7 +830,7 @@ app.delete('/api/utilisateurs/:id', authenticateToken, isAdmin, async (req, res)
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
-app.get('/api/promo/public', async (req, res) => { try { const r = await pool.query("SELECT code, pourcentage FROM codes_promo WHERE actif = true"); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
+app.get('/api/promo/public', async (req, res) => { try { const r = await pool.query("SELECT code, pourcentage, image_url FROM codes_promo WHERE actif = true ORDER BY id DESC"); res.json(r.rows); } catch (e) { res.status(500).json({ error: 'Erreur' }); } });
 app.post('/api/promo/check', async (req, res) => { 
   const { code } = req.body; 
   try { 

@@ -24,6 +24,8 @@ let modeLivraison = 'livraison';
 
 // ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', () => {
+    // Forcer le chargement de la promo
+    setTimeout(loadActivePromo, 1000);
     // On vérifie que l'élément existe avant d'agir (évite les crashs)
     const loginModal = document.getElementById('login-modal');
     if (currentUser) {
