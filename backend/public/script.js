@@ -520,6 +520,7 @@ async function applyPromo() {
         window.appliedPromoPct = data.pourcentage;
         window.appliedPromoCategorie = data.categorie_id;
         window.appliedPromoQuantiteMin = data.quantite_min;
+        console.log('DEBUG: quantite_min recu =', data.quantite_min);
         msg.innerHTML = `✅ Code appliqué : -${data.pourcentage}%`; msg.style.color = "#22C55E";
         
         // Afficher l'image promo si elle existe
