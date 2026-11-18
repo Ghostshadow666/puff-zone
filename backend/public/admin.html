@@ -723,7 +723,7 @@ function switchTab(tabId, btn) {
             if(tabId === 'tab-zones' && map) setTimeout(() => map.invalidateSize(), 150);
             if(tabId === 'tab-commandes') { loadCommandes(); document.getElementById('notif-badge').classList.add('hidden'); }
             if(tabId === 'tab-clients') loadClients(); 
-            if(tabId === 'tab-settings') { loadSettings(); loadPromos(); }
+            if(tabId === 'tab-settings') { loadSettings(); loadPromos(); loadPromoCategorieOptions(); }
             if(tabId === 'tab-stats') loadStats(); 
             if(tabId === 'tab-ventes') loadVentes();
             if(tabId === 'tab-logs') loadLogs(); 
