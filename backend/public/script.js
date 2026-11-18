@@ -197,6 +197,8 @@ function updateCartUI() {
         window.appliedPromoCode = null; window.appliedPromoPct = 0;
         if(document.getElementById('promo-input')) document.getElementById('promo-input').value = '';
         if(document.getElementById('promo-msg')) document.getElementById('promo-msg').textContent = '';
+        const promoImg = document.getElementById('promo-image-container');
+        if(promoImg) promoImg.classList.add('hidden');
         const cb = document.getElementById('checkout-btn');
         if(cb) { cb.disabled = true; cb.style.opacity = '0.5'; }
         return; 
@@ -272,7 +274,24 @@ function updateCartUI() {
     itemsContainer.innerHTML = detailsHtml; 
     
     let finalTotal = total;
-    if (window.appliedPromoPct > 0) { finalTotal = total - (total * (window.appliedPromoPct / 100)); }
+    if (window.appliedPromoPct > 0) { 
+        if (window.appliedPromoCategorie) {
+            // Réduction uniquement sur la catégorie
+            let totalCategorie = 0;
+            for (const catName in itemsByCategory) {
+                const cat = itemsByCategory[catName];
+                if (cat.items[0] && allCategories.find(c => c.nom === catName && c.id === window.appliedPromoCategorie)) {
+                    let qty = cat.total_qty;
+                    if (cat.prix_lot_10 && qty >= 10) { totalCategorie += Math.floor(qty / 10) * cat.prix_lot_10; qty = qty % 10; }
+                    if (cat.prix_lot_5 && qty >= 5) { totalCategorie += Math.floor(qty / 5) * cat.prix_lot_5; qty = qty % 5; }
+                    if (qty > 0) { totalCategorie += qty * cat.prix_unite; }
+                }
+            }
+            finalTotal = total - (totalCategorie * (window.appliedPromoPct / 100));
+        } else {
+            finalTotal = total - (total * (window.appliedPromoPct / 100));
+        }
+    }
     const ctp = document.getElementById('cart-total-price');
     if(ctp) ctp.innerHTML = finalTotal.toFixed(2) + ' €';
 

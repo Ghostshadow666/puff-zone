@@ -120,7 +120,17 @@ function cleanPhoneForWhatsApp(phone) {
     <p class="text-[10px] text-gray-500 mt-2">Ex: 22:00 à 06:00 (passe minuit). Les clients ne pourront pas valider leur panier hors de cette plage.</p>
 </div>
 <button onclick="saveSettings()" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Enregistrer les modifications</button></div></div>
-            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2><form id="addPromoForm" class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div><div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div></div><button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button></form></div>
+            <div class="glass-panel p-6 rounded-2xl mb-6"><h2 class="text-xl font-space font-bold text-white mb-4">➕ Créer un Code Promo</h2><form id="addPromoForm" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label class="text-xs font-bold text-gray-400 block mb-1">Code</label><input type="text" id="promoCode" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" required></div>
+        <div><label class="text-xs font-bold text-gray-400 block mb-1">Réduction (%)</label><input type="number" id="promoPct" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none" min="1" max="100" required></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div><label class="text-xs font-bold text-gray-400 block mb-1">Catégorie (optionnel)</label><select id="promoCategorie" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"><option value="">Toutes les catégories</option></select></div>
+        <div><label class="text-xs font-bold text-gray-400 block mb-1">Image promo (optionnel)</label><input type="file" id="promoImage" accept="image/*" class="w-full bg-space-bg border border-white/10 rounded-lg py-2 px-3 text-white outline-none"></div>
+    </div>
+    <button type="submit" class="px-6 py-2 rounded-xl bg-gradient-to-r from-nebula-violet to-nebula-cyan text-white text-xs font-bold">Créer</button>
+</form></div>
             <div class="glass-panel p-6 rounded-2xl"><h2 class="text-xl font-space font-bold text-white mb-4">🏷️ Codes actifs</h2><div id="promoList" class="text-center text-gray-400 text-sm italic">Chargement...</div></div>
         </div>
         <div id="tab-stats" class="tab-content hidden">
@@ -680,6 +690,17 @@ async function loadLogsStock() {
     }
 }
 
+
+async function loadPromoCategorieOptions() {
+    try {
+        const res = await fetch(`${API_URL}/categories`);
+        const cats = await res.json();
+        const select = document.getElementById('promoCategorie');
+        if (select) {
+            select.innerHTML = '<option value="">Toutes les catégories</option>' + cats.map(c => `<option value="${c.id}">${escapeHTML(c.nom)}</option>`).join('');
+        }
+    } catch(e) {}
+}
 function switchTab(tabId, btn) {
             document.querySelectorAll('.nav-tab').forEach(b => { 
                 b.classList.remove('active', 'bg-gradient-to-r', 'from-nebula-violet', 'to-nebula-cyan', 'text-white'); 
@@ -1247,7 +1268,30 @@ function openDuplicatesModal() {
 }
         
         async function loadPromos() { try { const res = await fetch(`${API_URL}/promo`); const promos = await res.json(); document.getElementById('promoList').innerHTML = promos.map(p => `<div class="p-3 mb-2 bg-space-surface rounded-lg border border-white/10 flex justify-between items-center"><div><div class="text-white text-sm">🏷️ ${p.code}</div><div class="text-xs text-gray-400">-${p.pourcentage}%</div></div><button class="text-red-400" onclick="deletePromo(${p.id})">🗑️</button></div>`).join(''); } catch (e) {} }
-        document.getElementById('addPromoForm').addEventListener('submit', async (e) => { e.preventDefault(); await fetch(`${API_URL}/promo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body:JSON.stringify({ code:document.getElementById('promoCode').value, pourcentage: parseInt(document.getElementById('promoPct').value) }) }); document.getElementById('addPromoForm').reset(); loadPromos(); });
+        document.getElementById('addPromoForm').addEventListener('submit', async (e) => { 
+    e.preventDefault(); 
+    const code = document.getElementById('promoCode').value;
+    const pourcentage = parseInt(document.getElementById('promoPct').value);
+    const categorie_id = document.getElementById('promoCategorie').value || null;
+    const imageFile = document.getElementById('promoImage').files[0];
+    
+    let image_url = null;
+    if (imageFile) {
+        image_url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => resolve(evt.target.result);
+            reader.readAsDataURL(imageFile);
+        });
+    }
+    
+    await fetch(`${API_URL}/promo`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ code, pourcentage, categorie_id, image_url }) 
+    }); 
+    document.getElementById('addPromoForm').reset(); 
+    loadPromos(); 
+});
         async function deletePromo(id) { if(confirm('Supprimer ?')) { await fetch(`${API_URL}/promo/${id}`, { method: 'DELETE' }); loadPromos(); } }
         
         let chartTop = null, chartCA = null;

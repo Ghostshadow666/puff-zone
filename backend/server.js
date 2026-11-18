@@ -466,7 +466,28 @@ app.post('/api/commandes', publicLimiter, async (req, res) => {
     let finalTotal = calculatedTotal; 
     if (promo_code) { 
       const p = await client.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1)', [promo_code]); 
-      if (p.rows.length > 0) finalTotal -= (finalTotal * (p.rows[0].pourcentage / 100)); 
+      if (p.rows.length > 0) {
+        const promo = p.rows[0];
+        const reductionPct = promo.pourcentage / 100;
+        
+        if (promo.categorie_id) {
+          // Réduction uniquement sur la catégorie ciblée
+          let totalCategorie = 0;
+          for (const catId in itemsByCategory) {
+            if (parseInt(catId) === promo.categorie_id) {
+              const cat = itemsByCategory[catId];
+              let qty = cat.total_qty;
+              if (cat.prix_lot_10 && qty >= 10) { totalCategorie += Math.floor(qty / 10) * cat.prix_lot_10; qty = qty % 10; }
+              if (cat.prix_lot_5 && qty >= 5) { totalCategorie += Math.floor(qty / 5) * cat.prix_lot_5; qty = qty % 5; }
+              if (qty > 0) { totalCategorie += qty * cat.prix_unite; }
+            }
+          }
+          finalTotal -= (totalCategorie * reductionPct);
+        } else {
+          // Réduction sur tout le panier
+          finalTotal -= (finalTotal * reductionPct);
+        }
+      }
     } 
 
     const cmd = await client.query('INSERT INTO commandes (client_id, total, valide_par, promo_code, zone_nom, mode_livraison) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id', [client_id, finalTotal, valide_par || 'Client', promo_code || null, zone || null, mode_livraison || 'livraison']); 
@@ -815,7 +836,8 @@ app.post('/api/promo/check', async (req, res) => {
   try { 
     const r = await pool.query('SELECT * FROM codes_promo WHERE UPPER(code) = UPPER($1) AND actif = true', [code]); 
     if (r.rows.length === 0) return res.status(404).json({ error: 'Invalide' }); 
-    res.json({ success: true, pourcentage: r.rows[0].pourcentage }); 
+    const promo = r.rows[0];
+    res.json({ success: true, pourcentage: promo.pourcentage, categorie_id: promo.categorie_id, image_url: promo.image_url }); 
   } catch (e) { res.status(500).json({ error: 'Erreur' }); } 
 });
 
@@ -827,12 +849,12 @@ app.get('/api/promo', authenticateToken, isAdmin, async (req, res) => {
 });
 
 app.post('/api/promo', authenticateToken, isAdmin, async (req, res) => { 
-  const { code, pourcentage } = req.body; 
+  const { code, pourcentage, categorie_id, image_url } = req.body; 
   try { 
-    const r = await pool.query('INSERT INTO codes_promo (code, pourcentage) VALUES ($1, $2) RETURNING *', [code.toUpperCase(), pourcentage]); 
+    const r = await pool.query('INSERT INTO codes_promo (code, pourcentage, categorie_id, image_url) VALUES ($1, $2, $3, $4) RETURNING *', [code.toUpperCase(), pourcentage, categorie_id || null, image_url || null]); 
     await logAction(req.user, 'Creation Promo', code); 
     res.json(r.rows[0]); 
-  } catch (e) { res.status(500).json({ error: "Existe déjà" }); } 
+  } catch (e) { console.error(e); res.status(500).json({ error: "Existe déjà" }); } 
 });
 
 app.delete('/api/promo/:id', authenticateToken, isAdmin, async (req, res) => { 
